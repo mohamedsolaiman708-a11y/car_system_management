@@ -106,12 +106,42 @@ class SupabaseInventoryRepository implements InventoryRepository {
       _client.from('inventory_items').select('id').eq('status', 'maintenance').count(CountOption.exact),
     ]);
 
+    final totalRes = responses[0] as PostgrestResponse;
+    final availableRes = responses[1] as PostgrestResponse;
+    final onContractRes = responses[2] as PostgrestResponse;
+    final maintenanceRes = responses[3] as PostgrestResponse;
+
     return {
-      'total': (responses[0] as PostgrestResponse).count ?? 0,
-      'available': (responses[1] as PostgrestResponse).count ?? 0,
-      'on_contract': (responses[2] as PostgrestResponse).count ?? 0,
-      'maintenance': (responses[3] as PostgrestResponse).count ?? 0,
+      'total': totalRes.count ?? 0,
+      'available': availableRes.count ?? 0,
+      'on_contract': onContractRes.count ?? 0,
+      'maintenance': maintenanceRes.count ?? 0,
     };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMaintenanceLogs(String vehicleId) async {
+    final response = await _client
+        .from('maintenance_logs')
+        .select()
+        .eq('inventory_item_id', vehicleId)
+        .order('performed_at', ascending: false);
+    
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
+  @override
+  Future<void> addMaintenanceLog({
+    required String vehicleId,
+    required String description,
+    required double cost,
+  }) async {
+    await _client.from('maintenance_logs').insert({
+      'inventory_item_id': vehicleId,
+      'description': description,
+      'cost': cost,
+      'performed_at': DateTime.now().toIso8601String().split('T')[0], // format as YYYY-MM-DD
+    });
   }
 }
 

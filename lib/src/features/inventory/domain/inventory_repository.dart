@@ -20,4 +20,13 @@ abstract class InventoryRepository {
   Future<List<String>> getMakes();
 
   Future<Map<String, dynamic>> getInventoryStats();
+
+  // Maintenance Logs
+  Future<List<Map<String, dynamic>>> getMaintenanceLogs(String vehicleId);
+  
+  Future<void> addMaintenanceLog({
+    required String vehicleId,
+    required String description,
+    required double cost,
+  });
 }

@@ -25,6 +25,43 @@ class CrmController extends _$CrmController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => ref.read(crmRepositoryProvider).deleteCustomer(id));
   }
+
+  // Phase 17: Document Management Methods
+  Future<void> uploadDocument({
+    required String customerId,
+    required String? contractId,
+    required String documentType,
+    required String fileName,
+    required List<int> fileBytes,
+  }) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() => ref.read(crmRepositoryProvider).uploadDocument(
+          customerId: customerId,
+          contractId: contractId,
+          documentType: documentType,
+          fileName: fileName,
+          fileBytes: fileBytes,
+        ));
+    
+    if (!result.hasError) {
+      ref.invalidate(customerDocumentsProvider(customerId));
+    }
+    state = result;
+  }
+
+  Future<void> deleteDocument({
+    required String documentId,
+    required String filePath,
+    required String customerId,
+  }) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() => ref.read(crmRepositoryProvider).deleteDocument(documentId, filePath));
+    
+    if (!result.hasError) {
+      ref.invalidate(customerDocumentsProvider(customerId));
+    }
+    state = result;
+  }
 }
 
 @riverpod

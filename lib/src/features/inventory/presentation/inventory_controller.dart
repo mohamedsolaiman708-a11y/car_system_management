@@ -25,6 +25,18 @@ class InventoryController extends _$InventoryController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => ref.read(inventoryRepositoryProvider).deleteVehicle(id));
   }
+
+  Future<void> addMaintenanceLog(String vehicleId, String description, double cost) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => 
+      ref.read(inventoryRepositoryProvider).addMaintenanceLog(
+        vehicleId: vehicleId,
+        description: description,
+        cost: cost,
+      )
+    );
+    ref.invalidate(vehicleMaintenanceLogsProvider(vehicleId));
+  }
 }
 
 @riverpod
@@ -52,6 +64,6 @@ Future<Map<String, dynamic>> inventoryStats(InventoryStatsRef ref) {
 }
 
 @riverpod
-Future<List<String>> vehicleMakes(VehicleMakesRef ref) {
-  return ref.watch(inventoryRepositoryProvider).getMakes();
+Future<List<Map<String, dynamic>>> vehicleMaintenanceLogs(VehicleMaintenanceLogsRef ref, String vehicleId) {
+  return ref.watch(inventoryRepositoryProvider).getMaintenanceLogs(vehicleId);
 }

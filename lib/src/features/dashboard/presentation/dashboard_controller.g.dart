@@ -8,9 +8,7 @@ part of 'dashboard_controller.dart';
 
 String _$staffStatsHash() => r'14533cc9aa253fffd7af169bd0b93b48e0095aff';
 
-/// مزود وظيفي بسيط لجلب الإحصائيات (هذا سيولد staffStatsProvider)
-///
-/// Copied from [staffStats].
+/// See also [staffStats].
 @ProviderFor(staffStats)
 final staffStatsProvider =
     AutoDisposeFutureProvider<Map<String, dynamic>>.internal(

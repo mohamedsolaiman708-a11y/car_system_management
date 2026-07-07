@@ -13,22 +13,11 @@ class SupabaseDashboardRepository {
   Future<Map<String, dynamic>> getStaffStats() async {
     try {
       final List<dynamic> responses = await Future.wait<dynamic>([
-        // 0. إجمالي المستثمرين
         _client.from('investors').select('id').count(CountOption.exact),
-
-        // 1. العقود النشطة
         _client.from('financing_contracts').select('id').eq('status', 'active').count(CountOption.exact),
-
-        // 2. إجمالي الإيرادات
         _client.from('payments').select('amount_total.sum()'),
-
-        // 3. طلبات الانضمام المعلقة
         _client.from('profiles').select('id').eq('is_active', false).count(CountOption.exact),
-
-        // 4. رأس المال المستثمر
         _client.from('investors').select('deployed_capital.sum()'),
-
-        // 5. إجمالي العملاء
         _client.from('customers').select('id').count(CountOption.exact),
       ]);
 
@@ -48,13 +37,47 @@ class SupabaseDashboardRepository {
         'total_customers': totalCustomersRes.count ?? 0,
       };
     } catch (e, stackTrace) {
-      developer.log(
-        'Error fetching dashboard stats',
-        error: e,
-        stackTrace: stackTrace,
-        name: 'DashboardRepository',
-      );
+      developer.log('Error fetching dashboard stats', error: e, stackTrace: stackTrace);
       rethrow;
+    }
+  }
+
+  /// وظيفة البحث الشامل (Phase 15) - محدثة لتشمل الموظفين والمدفوعات
+  Future<Map<String, List<dynamic>>> globalSearch(String query) async {
+    try {
+      final results = await Future.wait([
+        // 1. البحث في العملاء
+        _client.from('customers').select('id, full_name, national_id').or('full_name.ilike.%$query%,national_id.ilike.%$query%').limit(5),
+        // 2. البحث في السيارات
+        _client.from('inventory_items').select('id, make, model, license_plate, vin').or('make.ilike.%$query%,model.ilike.%$query%,license_plate.ilike.%$query%,vin.ilike.%$query%').limit(5),
+        // 3. البحث في العقود
+        _client.from('financing_contracts').select('id, contract_no').ilike('contract_no', '%$query%').limit(5),
+        // 4. البحث في المستثمرين
+        _client.from('investors').select('id, full_name').ilike('full_name', '%$query%').limit(5),
+        // 5. البحث في الموظفين (profiles)
+        _client.from('profiles').select('id, full_name').ilike('full_name', '%$query%').limit(5),
+        // 6. البحث في المدفوعات (برقم المرجع)
+        _client.from('payments').select('id, reference_no, amount_total').ilike('reference_no', '%$query%').limit(5),
+      ]);
+
+      return {
+        'customers': results[0] as List,
+        'vehicles': results[1] as List,
+        'contracts': results[2] as List,
+        'investors': results[3] as List,
+        'staff': results[4] as List,
+        'payments': results[5] as List,
+      };
+    } catch (e) {
+      developer.log('Global search error', error: e);
+      return {
+        'customers': [], 
+        'vehicles': [], 
+        'contracts': [], 
+        'investors': [],
+        'staff': [],
+        'payments': []
+      };
     }
   }
 

@@ -192,7 +192,7 @@ class _InvestorDetailsControllerProviderElement
 }
 
 String _$investorTransactionsControllerHash() =>
-    r'c616ce564cab9b9aedc6131ba406612784f77a2d';
+    r'8e8449767e8be728eb4a1bd27789e6c986c38661';
 
 abstract class _$InvestorTransactionsController
     extends BuildlessAutoDisposeAsyncNotifier<List<InvestorTransaction>> {
@@ -340,6 +340,328 @@ class _InvestorTransactionsControllerProviderElement
   @override
   String get investorId =>
       (origin as InvestorTransactionsControllerProvider).investorId;
+}
+
+String _$pendingInvestorsControllerHash() =>
+    r'adea416bee2b861baa26f74da1c2a467a8139c48';
+
+/// See also [PendingInvestorsController].
+@ProviderFor(PendingInvestorsController)
+final pendingInvestorsControllerProvider =
+    AutoDisposeAsyncNotifierProvider<
+      PendingInvestorsController,
+      List<Map<String, dynamic>>
+    >.internal(
+      PendingInvestorsController.new,
+      name: r'pendingInvestorsControllerProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$pendingInvestorsControllerHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$PendingInvestorsController =
+    AutoDisposeAsyncNotifier<List<Map<String, dynamic>>>;
+String _$investorFundedContractsControllerHash() =>
+    r'2f47786fdad744cd0206923149d417e89d12783c';
+
+abstract class _$InvestorFundedContractsController
+    extends BuildlessAutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
+  late final String investorId;
+
+  FutureOr<List<Map<String, dynamic>>> build(String investorId);
+}
+
+/// See also [InvestorFundedContractsController].
+@ProviderFor(InvestorFundedContractsController)
+const investorFundedContractsControllerProvider =
+    InvestorFundedContractsControllerFamily();
+
+/// See also [InvestorFundedContractsController].
+class InvestorFundedContractsControllerFamily
+    extends Family<AsyncValue<List<Map<String, dynamic>>>> {
+  /// See also [InvestorFundedContractsController].
+  const InvestorFundedContractsControllerFamily();
+
+  /// See also [InvestorFundedContractsController].
+  InvestorFundedContractsControllerProvider call(String investorId) {
+    return InvestorFundedContractsControllerProvider(investorId);
+  }
+
+  @override
+  InvestorFundedContractsControllerProvider getProviderOverride(
+    covariant InvestorFundedContractsControllerProvider provider,
+  ) {
+    return call(provider.investorId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'investorFundedContractsControllerProvider';
+}
+
+/// See also [InvestorFundedContractsController].
+class InvestorFundedContractsControllerProvider
+    extends
+        AutoDisposeAsyncNotifierProviderImpl<
+          InvestorFundedContractsController,
+          List<Map<String, dynamic>>
+        > {
+  /// See also [InvestorFundedContractsController].
+  InvestorFundedContractsControllerProvider(String investorId)
+    : this._internal(
+        () => InvestorFundedContractsController()..investorId = investorId,
+        from: investorFundedContractsControllerProvider,
+        name: r'investorFundedContractsControllerProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$investorFundedContractsControllerHash,
+        dependencies: InvestorFundedContractsControllerFamily._dependencies,
+        allTransitiveDependencies:
+            InvestorFundedContractsControllerFamily._allTransitiveDependencies,
+        investorId: investorId,
+      );
+
+  InvestorFundedContractsControllerProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.investorId,
+  }) : super.internal();
+
+  final String investorId;
+
+  @override
+  FutureOr<List<Map<String, dynamic>>> runNotifierBuild(
+    covariant InvestorFundedContractsController notifier,
+  ) {
+    return notifier.build(investorId);
+  }
+
+  @override
+  Override overrideWith(InvestorFundedContractsController Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: InvestorFundedContractsControllerProvider._internal(
+        () => create()..investorId = investorId,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        investorId: investorId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeAsyncNotifierProviderElement<
+    InvestorFundedContractsController,
+    List<Map<String, dynamic>>
+  >
+  createElement() {
+    return _InvestorFundedContractsControllerProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InvestorFundedContractsControllerProvider &&
+        other.investorId == investorId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, investorId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin InvestorFundedContractsControllerRef
+    on AutoDisposeAsyncNotifierProviderRef<List<Map<String, dynamic>>> {
+  /// The parameter `investorId` of this provider.
+  String get investorId;
+}
+
+class _InvestorFundedContractsControllerProviderElement
+    extends
+        AutoDisposeAsyncNotifierProviderElement<
+          InvestorFundedContractsController,
+          List<Map<String, dynamic>>
+        >
+    with InvestorFundedContractsControllerRef {
+  _InvestorFundedContractsControllerProviderElement(super.provider);
+
+  @override
+  String get investorId =>
+      (origin as InvestorFundedContractsControllerProvider).investorId;
+}
+
+String _$investorDocumentsControllerHash() =>
+    r'f0a582924da09915bea2a1441a349f9b6ab65b73';
+
+abstract class _$InvestorDocumentsController
+    extends BuildlessAutoDisposeAsyncNotifier<List<AppDocument>> {
+  late final String investorId;
+
+  FutureOr<List<AppDocument>> build(String investorId);
+}
+
+/// See also [InvestorDocumentsController].
+@ProviderFor(InvestorDocumentsController)
+const investorDocumentsControllerProvider = InvestorDocumentsControllerFamily();
+
+/// See also [InvestorDocumentsController].
+class InvestorDocumentsControllerFamily
+    extends Family<AsyncValue<List<AppDocument>>> {
+  /// See also [InvestorDocumentsController].
+  const InvestorDocumentsControllerFamily();
+
+  /// See also [InvestorDocumentsController].
+  InvestorDocumentsControllerProvider call(String investorId) {
+    return InvestorDocumentsControllerProvider(investorId);
+  }
+
+  @override
+  InvestorDocumentsControllerProvider getProviderOverride(
+    covariant InvestorDocumentsControllerProvider provider,
+  ) {
+    return call(provider.investorId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'investorDocumentsControllerProvider';
+}
+
+/// See also [InvestorDocumentsController].
+class InvestorDocumentsControllerProvider
+    extends
+        AutoDisposeAsyncNotifierProviderImpl<
+          InvestorDocumentsController,
+          List<AppDocument>
+        > {
+  /// See also [InvestorDocumentsController].
+  InvestorDocumentsControllerProvider(String investorId)
+    : this._internal(
+        () => InvestorDocumentsController()..investorId = investorId,
+        from: investorDocumentsControllerProvider,
+        name: r'investorDocumentsControllerProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$investorDocumentsControllerHash,
+        dependencies: InvestorDocumentsControllerFamily._dependencies,
+        allTransitiveDependencies:
+            InvestorDocumentsControllerFamily._allTransitiveDependencies,
+        investorId: investorId,
+      );
+
+  InvestorDocumentsControllerProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.investorId,
+  }) : super.internal();
+
+  final String investorId;
+
+  @override
+  FutureOr<List<AppDocument>> runNotifierBuild(
+    covariant InvestorDocumentsController notifier,
+  ) {
+    return notifier.build(investorId);
+  }
+
+  @override
+  Override overrideWith(InvestorDocumentsController Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: InvestorDocumentsControllerProvider._internal(
+        () => create()..investorId = investorId,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        investorId: investorId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeAsyncNotifierProviderElement<
+    InvestorDocumentsController,
+    List<AppDocument>
+  >
+  createElement() {
+    return _InvestorDocumentsControllerProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InvestorDocumentsControllerProvider &&
+        other.investorId == investorId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, investorId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin InvestorDocumentsControllerRef
+    on AutoDisposeAsyncNotifierProviderRef<List<AppDocument>> {
+  /// The parameter `investorId` of this provider.
+  String get investorId;
+}
+
+class _InvestorDocumentsControllerProviderElement
+    extends
+        AutoDisposeAsyncNotifierProviderElement<
+          InvestorDocumentsController,
+          List<AppDocument>
+        >
+    with InvestorDocumentsControllerRef {
+  _InvestorDocumentsControllerProviderElement(super.provider);
+
+  @override
+  String get investorId =>
+      (origin as InvestorDocumentsControllerProvider).investorId;
 }
 
 // ignore_for_file: type=lint

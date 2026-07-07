@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:go_router/go_router.dart';
+import '../../domain/vehicle.dart';
 import '../inventory_controller.dart';
-import '../domain/vehicle.dart';
 
 class VehicleDetailsScreen extends ConsumerWidget {
   final String id;
@@ -19,8 +19,14 @@ class VehicleDetailsScreen extends ConsumerWidget {
         title: const Text('تفاصيل المركبة'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'تعديل البيانات',
             onPressed: () => context.push('/inventory/$id/edit'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            tooltip: 'حذف من المخزون',
+            onPressed: () => _confirmDelete(context, ref),
           ),
         ],
       ),
@@ -40,8 +46,8 @@ class VehicleDetailsScreen extends ConsumerWidget {
                   _buildMainInfo(vehicle, currencyFormat),
                   const SizedBox(height: 32),
                   _buildTechnicalSpecs(vehicle),
-                  const SizedBox(height: 32),
-                  _buildActionButtons(context, vehicle),
+                  const SizedBox(height: 40),
+                  _buildActionButtons(context, ref, vehicle),
                 ],
               ),
             ),
@@ -61,10 +67,11 @@ class VehicleDetailsScreen extends ConsumerWidget {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: Colors.blue.shade50,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.blue.shade100),
           ),
-          child: const Icon(Icons.directions_car, size: 64, color: Colors.grey),
+          child: Icon(Icons.directions_car_filled, size: 64, color: Colors.blue.shade900),
         ),
         const SizedBox(width: 24),
         Expanded(
@@ -77,7 +84,7 @@ class VehicleDetailsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'رقم الهيكل (VIN): ${vehicle.vin}',
+                'رقم الهيكل: ${vehicle.vin}',
                 style: const TextStyle(fontSize: 16, color: Colors.blueGrey),
               ),
               const SizedBox(height: 12),
@@ -106,81 +113,120 @@ class VehicleDetailsScreen extends ConsumerWidget {
 
   Widget _buildTechnicalSpecs(Vehicle vehicle) {
     final specs = vehicle.technicalSpecs;
-    if (specs.isEmpty) return const SizedBox.shrink();
-
     return _buildSection(
       title: 'المواصفات الفنية',
       icon: Icons.settings_applications_outlined,
-      children: specs.entries.map((e) => _buildInfoRow(e.key, e.value.toString())).toList(),
+      children: specs.isEmpty 
+        ? [const Text('لا توجد مواصفات فنية مسجلة', style: TextStyle(color: Colors.grey))]
+        : specs.entries.map((e) => _buildInfoRow(e.key, e.value.toString())).toList(),
     );
   }
 
   Widget _buildSection({required String title, required IconData icon, required List<Widget> children}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: Colors.blue.shade800, size: 24),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueGrey),
-            ),
-          ],
-        ),
-        const Divider(height: 32),
-        ...children,
-      ],
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 16)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+          Row(
+            children: [
+              Icon(icon, color: Colors.blue.shade800, size: 20),
+              const SizedBox(width: 12),
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const Divider(height: 32),
+          ...children,
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, Vehicle vehicle) {
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 15)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, WidgetRef ref, Vehicle vehicle) {
     return Row(
       children: [
         if (vehicle.status == 'available')
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () {
-                // Navigate to create contract with this vehicle
-              },
-              icon: const Icon(Icons.add_assignment),
-              label: const Text('إنشاء عقد تمويل'),
+              onPressed: () => context.push('/contracts/new?vehicleId=${vehicle.id}'),
+              icon: const Icon(Icons.add_task),
+              label: const Text('بدء عقد تمويل'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.green.shade700,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
         if (vehicle.status == 'available') const SizedBox(width: 16),
+        
+        // زر الصيانة
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: () {
-              // Register maintenance
-            },
-            icon: const Icon(Icons.build_circle_outlined),
-            label: const Text('تسجيل صيانة'),
+            onPressed: () => _toggleMaintenance(context, ref, vehicle),
+            icon: Icon(vehicle.status == 'maintenance' ? Icons.check_circle_outline : Icons.build_circle_outlined),
+            label: Text(vehicle.status == 'maintenance' ? 'إعادة للمخزون' : 'إرسال للصيانة'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
+              side: BorderSide(color: vehicle.status == 'maintenance' ? Colors.green : Colors.orange),
+              foregroundColor: vehicle.status == 'maintenance' ? Colors.green : Colors.orange.shade900,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
       ],
     );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد الحذف'),
+        content: const Text('هل أنت متأكد من حذف هذه المركبة نهائياً من المخزون؟'),
+        actions: [
+          TextButton(onPressed: () => context.pop(), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () async {
+              await ref.read(inventoryControllerProvider.notifier).deleteVehicle(id);
+              if (context.mounted) {
+                context.pop(); // Close dialog
+                context.pop(); // Back to list
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف المركبة')));
+                ref.invalidate(vehiclesListProvider);
+              }
+            },
+            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleMaintenance(BuildContext context, WidgetRef ref, Vehicle vehicle) async {
+    final newStatus = vehicle.status == 'maintenance' ? 'available' : 'maintenance';
+    await ref.read(inventoryControllerProvider.notifier).updateVehicle(id, {'status': newStatus});
+    ref.invalidate(vehicleDetailsProvider(id));
+    ref.invalidate(vehiclesListProvider);
   }
 }
 
@@ -192,36 +238,20 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color;
     String label;
-
     switch (status) {
-      case 'available':
-        color = Colors.green;
-        label = 'متوفرة للبيع';
-        break;
-      case 'on_contract':
-        color = Colors.blue;
-        label = 'مرتبطة بعقد نشط';
-        break;
-      case 'maintenance':
-        color = Colors.orange;
-        label = 'في الصيانة';
-        break;
-      default:
-        color = Colors.grey;
-        label = status;
+      case 'available': color = Colors.green; label = 'متوفرة'; break;
+      case 'on_contract': color = Colors.blue; label = 'مباعة / عقد'; break;
+      case 'maintenance': color = Colors.orange; label = 'في الصيانة'; break;
+      default: color = Colors.grey; label = status;
     }
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
+      child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
     );
   }
 }

@@ -1058,7 +1058,7 @@ class _CustomerDocumentsProviderElement
   String get id => (origin as CustomerDocumentsProvider).id;
 }
 
-String _$crmControllerHash() => r'694ac18a64c172e4205dcd9e1a194e3f51601c3b';
+String _$crmControllerHash() => r'19d950f16af61ed47cb1449af86ee191751b81dd';
 
 /// See also [CrmController].
 @ProviderFor(CrmController)

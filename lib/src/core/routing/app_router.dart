@@ -21,6 +21,28 @@ import '../../features/crm/presentation/screens/create_customer_screen.dart';
 import '../../features/crm/presentation/screens/customer_details_screen.dart';
 import '../../features/crm/presentation/screens/edit_customer_screen.dart';
 
+// Inventory Screens
+import '../../features/inventory/presentation/screens/vehicles_screen.dart';
+import '../../features/inventory/presentation/screens/vehicle_details_screen.dart';
+import '../../features/inventory/presentation/screens/create_vehicle_screen.dart';
+import '../../features/inventory/presentation/screens/edit_vehicle_screen.dart';
+
+// Contracts Screens
+import '../../features/contracts/presentation/screens/contracts_screen.dart';
+import '../../features/contracts/presentation/screens/create_contract_screen.dart';
+import '../../features/contracts/presentation/screens/contract_details_screen.dart';
+
+// Investor Management
+import '../../features/investors/presentation/screens/investors_screen.dart';
+import '../../features/investors/presentation/screens/investor_details_screen.dart';
+import '../../features/investors/presentation/screens/investor_dashboard_screen.dart';
+
+// Dashboard
+import '../../features/dashboard/presentation/screens/staff_dashboard_screen.dart';
+
+// Global Search
+import '../../features/search/presentation/screens/search_screen.dart';
+
 part 'app_router.g.dart';
 
 @riverpod
@@ -34,7 +56,6 @@ GoRouter goRouter(GoRouterRef ref) {
       final isLoggedIn = user != null;
       final path = state.matchedLocation;
 
-      // Public paths that don't require authentication
       if (!isLoggedIn) {
         if (path == '/' || 
             path == '/portal-selection' || 
@@ -44,7 +65,6 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/portal-selection';
       }
 
-      // If logged in, check approval status for investors
       if (user.role == UserRole.investor) {
         if (user.status == 'pending') return '/auth/pending';
         if (user.status == 'rejected') return '/auth/rejected';
@@ -52,8 +72,7 @@ GoRouter goRouter(GoRouterRef ref) {
           return '/investor-portal';
         }
       } else {
-        // Staff logic
-        if (path.startsWith('/auth')) {
+        if (path.startsWith('/auth') || path == '/portal-selection' || path == '/') {
           return '/dashboard';
         }
       }
@@ -106,13 +125,17 @@ GoRouter goRouter(GoRouterRef ref) {
         builder: (context, state) => const SessionExpiredScreen(),
       ),
       
-      // Staff Dashboard
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const StaffDashboardScreen(),
       ),
 
-      // CRM Module Routes
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => const GlobalSearchScreen(),
+      ),
+
+      // CRM Module
       GoRoute(
         path: '/crm/customers',
         builder: (context, state) => const CustomersScreen(),
@@ -138,119 +161,68 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
 
+      // Inventory Module
       GoRoute(
-        path: '/investor-portal',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(title: const Text('Investor Portal')),
-          body: const Center(child: Text('Investor Dashboard')),
-        ),
-      ),
-    ],
-  );
-}
-
-// Simple Staff Dashboard with Navigation to CRM
-class StaffDashboardScreen extends StatelessWidget {
-  const StaffDashboardScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('لوحة تحكم الإدارة'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-               // ref.read(authControllerProvider.notifier).logout();
-            },
+        path: '/inventory',
+        builder: (context, state) => const VehiclesScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const CreateVehicleScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => VehicleDetailsScreen(
+              id: state.pathParameters['id']!,
+            ),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                builder: (context, state) => EditVehicleScreen(
+                  id: state.pathParameters['id']!,
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: GridView.count(
-          padding: const EdgeInsets.all(24),
-          crossAxisCount: MediaQuery.of(context).size.width > 900 ? 4 : (MediaQuery.of(context).size.width > 600 ? 3 : 2),
-          mainAxisSpacing: 20,
-          crossAxisSpacing: 20,
-          children: [
-            _DashboardCard(
-              title: 'إدارة العملاء',
-              icon: Icons.people_alt,
-              color: Colors.blue,
-              onTap: () => context.push('/crm/customers'),
+
+      // Contracts Module
+      GoRoute(
+        path: '/contracts',
+        builder: (context, state) => const ContractsScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const CreateContractScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => ContractDetailsScreen(
+              id: state.pathParameters['id']!,
             ),
-            _DashboardCard(
-              title: 'إدارة المخزون',
-              icon: Icons.directions_car,
-              color: Colors.orange,
-              onTap: () {}, 
-            ),
-            _DashboardCard(
-              title: 'عقود التمويل',
-              icon: Icons.description,
-              color: Colors.green,
-              onTap: () {}, 
-            ),
-            _DashboardCard(
-              title: 'العمليات المالية',
-              icon: Icons.account_balance,
-              color: Colors.purple,
-              onTap: () {}, 
-            ),
-            _DashboardCard(
-              title: 'المستثمرين',
-              icon: Icons.trending_up,
-              color: Colors.teal,
-              onTap: () {}, 
-            ),
-            _DashboardCard(
-              title: 'الإعدادات',
-              icon: Icons.settings,
-              color: Colors.grey,
-              onTap: () {}, 
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-}
 
-class _DashboardCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _DashboardCard({
-    required this.title,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: color),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      // Investor Management (Staff Side)
+      GoRoute(
+        path: '/investors',
+        builder: (context, state) => const InvestorsScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => InvestorDetailsScreen(
+              id: state.pathParameters['id']!,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+
+      GoRoute(
+        path: '/investor-portal',
+        builder: (context, state) => const InvestorDashboardScreen(),
+      ),
+    ],
+  );
 }

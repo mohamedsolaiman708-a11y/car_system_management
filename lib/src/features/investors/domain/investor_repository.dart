@@ -1,22 +1,28 @@
 import 'investor.dart';
 import 'investor_transaction.dart';
+import '../../documents/domain/document.dart';
 
 abstract class InvestorRepository {
-  /// Fetches a list of all investors.
   Future<List<Investor>> getInvestors();
-
-  /// Fetches a specific investor by ID.
   Future<Investor?> getInvestorById(String id);
-
-  /// Creates a new investor profile.
   Future<Investor> createInvestor(String fullName, String email, String? phone);
-
-  /// Fetches all transactions for a specific investor.
   Future<List<InvestorTransaction>> getInvestorTransactions(String investorId);
-
-  /// Records a new financial transaction (Deposit, Withdrawal, etc.).
+  Future<List<Map<String, dynamic>>> getInvestorFundedContracts(String investorId);
   Future<void> addTransaction(InvestorTransaction transaction);
+  Future<void> processDeposit(String investorId, double amount, String description);
+  Future<void> processWithdrawal(String investorId, double amount, String description);
+  Future<void> allocateFunding(String contractId, String investorId, double amount);
+  
+  // --- Approval Flow ---
+  Future<List<Map<String, dynamic>>> getPendingInvestorRequests();
+  Future<void> approveInvestor(String profileId);
+  Future<void> rejectInvestor(String profileId, String reason);
 
-  /// Stream of an investor's data for real-time updates.
   Stream<Investor?> watchInvestor(String id);
+
+  // --- Documents & Profits ---
+  Future<List<AppDocument>> getInvestorDocuments(String investorId);
+  Future<void> uploadInvestorDocument(String investorId, String name, String url);
+  Future<void> deleteDocument(String documentId);
+  Future<void> distributeProfit(String investorId, double amount, String description);
 }

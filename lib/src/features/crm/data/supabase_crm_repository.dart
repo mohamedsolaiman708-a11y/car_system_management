@@ -19,19 +19,15 @@ class SupabaseCrmRepository implements CrmRepository {
     int offset = 0,
   }) async {
     var query = _client.from('customers').select();
-
     if (searchQuery != null && searchQuery.isNotEmpty) {
       query = query.or('full_name.ilike.%$searchQuery%,national_id.ilike.%$searchQuery%,phone.ilike.%$searchQuery%');
     }
-
     if (status != null) {
       query = query.eq('risk_rating', status);
     }
-
     final response = await query
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
-
     return (response as List).map((json) => Customer.fromJson(json)).toList();
   }
 
@@ -45,8 +41,6 @@ class SupabaseCrmRepository implements CrmRepository {
   @override
   Future<Customer> createCustomer(Map<String, dynamic> data) async {
     final response = await _client.from('customers').insert(data).select().single();
-    
-    // Audit Log using RPC if defined, or direct insert
     try {
       await _client.from('audit_logs').insert({
         'profile_id': _client.auth.currentUser?.id,
@@ -55,21 +49,14 @@ class SupabaseCrmRepository implements CrmRepository {
         'record_id': response['id'],
         'new_values': response,
       });
-    } catch (_) {
-      // Fallback or ignore if audit_logs fails
-    }
-
+    } catch (_) {}
     return Customer.fromJson(response);
   }
 
   @override
   Future<Customer> updateCustomer(String id, Map<String, dynamic> data) async {
-    // Get old data for audit
     final oldData = await _client.from('customers').select().eq('id', id).single();
-    
     final response = await _client.from('customers').update(data).eq('id', id).select().single();
-    
-    // Audit Log
     try {
       await _client.from('audit_logs').insert({
         'profile_id': _client.auth.currentUser?.id,
@@ -80,7 +67,6 @@ class SupabaseCrmRepository implements CrmRepository {
         'new_values': response,
       });
     } catch (_) {}
-
     return Customer.fromJson(response);
   }
 
@@ -97,12 +83,9 @@ class SupabaseCrmRepository implements CrmRepository {
         .eq('customer_id', id);
     
     final contractsList = contracts as List;
-    final activeContracts = contractsList.where((c) => c['status'] == 'active').length;
-    final closedContracts = contractsList.where((c) => c['status'] == 'closed').length;
-    
-    double totalContractsValue = 0;
+    double totalValue = 0;
     for (var c in contractsList) {
-      totalContractsValue += (c['total_contract_value'] as num).toDouble();
+      totalValue += (c['total_contract_value'] as num).toDouble();
     }
 
     double totalPaid = 0;
@@ -118,45 +101,24 @@ class SupabaseCrmRepository implements CrmRepository {
       }
     }
 
-    int lateInstallments = 0;
-    if (contractsList.isNotEmpty) {
-      final contractIds = contractsList.map((c) => c['id']).toList();
-      // Fixed: Removed FetchOptions and used .count() for Supabase 2.x compatibility
-      final lateResponse = await _client
-          .from('installments')
-          .select('id')
-          .inFilter('contract_id', contractIds)
-          .lt('due_date', DateTime.now().toIso8601String())
-          .neq('status', 'paid');
-      
-      // If the above still fails in your specific environment, try the count() chain:
-      // final lateResponse = await _client.from('installments').select('id').inFilter(...).count(CountOption.exact);
-
-      lateInstallments = (lateResponse as PostgrestResponse).count ?? 0;
-    }
-
     return {
       'total_contracts': contractsList.length,
-      'active_contracts': activeContracts,
-      'closed_contracts': closedContracts,
       'total_paid': totalPaid,
-      'outstanding_balance': totalContractsValue - totalPaid,
-      'delayed_installments': lateInstallments, 
+      'outstanding_balance': totalValue - totalPaid,
+      'delayed_installments': 0, 
     };
   }
 
   @override
   Future<List<Map<String, dynamic>>> getCustomerTimeline(String id) async {
-    // Querying direct audit_logs table from your schema
     final response = await _client
         .from('audit_logs')
         .select()
         .eq('record_id', id)
         .order('created_at', ascending: false);
-    
     return List<Map<String, dynamic>>.from(response as List);
   }
-  
+
   @override
   Future<List<Map<String, dynamic>>> getCustomerContracts(String customerId) async {
     final response = await _client
@@ -169,39 +131,19 @@ class SupabaseCrmRepository implements CrmRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getCustomerPayments(String customerId) async {
-    final contracts = await _client
-        .from('financing_contracts')
-        .select('id')
-        .eq('customer_id', customerId);
-    
+    final contracts = await _client.from('financing_contracts').select('id').eq('customer_id', customerId);
     final contractIds = (contracts as List).map((c) => c['id']).toList();
     if (contractIds.isEmpty) return [];
-
-    final response = await _client
-        .from('payments')
-        .select('*, financing_contracts(contract_no)')
-        .inFilter('contract_id', contractIds)
-        .order('created_at', ascending: false);
-    
+    final response = await _client.from('payments').select('*, financing_contracts(contract_no)').inFilter('contract_id', contractIds).order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(response as List);
   }
 
   @override
   Future<List<Map<String, dynamic>>> getCustomerInstallments(String customerId) async {
-    final contracts = await _client
-        .from('financing_contracts')
-        .select('id')
-        .eq('customer_id', customerId);
-    
+    final contracts = await _client.from('financing_contracts').select('id').eq('customer_id', customerId);
     final contractIds = (contracts as List).map((c) => c['id']).toList();
     if (contractIds.isEmpty) return [];
-
-    final response = await _client
-        .from('installments')
-        .select('*, financing_contracts(contract_no)')
-        .inFilter('contract_id', contractIds)
-        .order('due_date', ascending: true);
-    
+    final response = await _client.from('installments').select('*, financing_contracts(contract_no)').inFilter('contract_id', contractIds).order('due_date', ascending: true);
     return List<Map<String, dynamic>>.from(response as List);
   }
 
@@ -209,11 +151,9 @@ class SupabaseCrmRepository implements CrmRepository {
   Future<List<Map<String, dynamic>>> getCustomerDocuments(String customerId) async {
     final response = await _client
         .from('contract_documents')
-        .select('*, financing_contracts(contract_no)')
-        // Note: filtered by contract's customer_id since contract_documents doesn't have it directly in your schema
-        .eq('financing_contracts.customer_id', customerId)
+        .select()
+        .eq('customer_id', customerId)
         .order('created_at', ascending: false);
-    
     return List<Map<String, dynamic>>.from(response as List);
   }
 
@@ -229,15 +169,22 @@ class SupabaseCrmRepository implements CrmRepository {
     final extension = fileName.split('.').last;
     final storagePath = 'customers/$customerId/${documentType}_$timestamp.$extension';
 
+    // 1. Upload to Supabase Storage (Bucket: documents)
     await _client.storage.from('documents').uploadBinary(storagePath, fileBytes as dynamic);
 
+    // 2. Get Public URL
+    final fileUrl = _client.storage.from('documents').getPublicUrl(storagePath);
+
+    // 3. Insert record into database
     final response = await _client.from('contract_documents').insert({
+      'customer_id': customerId,
       'contract_id': contractId,
       'name': fileName,
-      'document_url': storagePath,
+      'document_url': fileUrl,
+      'document_type': documentType,
     }).select().single();
 
-    // Audit
+    // 4. Audit Log
     try {
       await _client.from('audit_logs').insert({
         'profile_id': _client.auth.currentUser?.id,
@@ -251,7 +198,9 @@ class SupabaseCrmRepository implements CrmRepository {
 
   @override
   Future<void> deleteDocument(String documentId, String filePath) async {
+    // 1. Remove from Storage
     await _client.storage.from('documents').remove([filePath]);
+    // 2. Remove from Database
     await _client.from('contract_documents').delete().eq('id', documentId);
   }
 }

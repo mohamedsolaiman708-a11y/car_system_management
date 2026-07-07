@@ -7,7 +7,7 @@ part of 'supabase_dashboard_repository.dart';
 // **************************************************************************
 
 String _$dashboardRepositoryHash() =>
-    r'2f1c00cdb7a96557daec04802911495e17b54c27';
+    r'9c16e77bbc22f5c52e1c5d9f1d688bcc39588958';
 
 /// See also [dashboardRepository].
 @ProviderFor(dashboardRepository)

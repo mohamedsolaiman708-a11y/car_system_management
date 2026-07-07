@@ -16,6 +16,11 @@ class StaffDashboardScreen extends ConsumerWidget {
         title: const Text('لوحة تحكم الإدارة'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'البحث الشامل',
+            onPressed: () => context.push('/search'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
           ),
@@ -24,20 +29,23 @@ class StaffDashboardScreen extends ConsumerWidget {
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: statsAsync.when(
-          data: (stats) => SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatsGrid(context, stats),
-                const SizedBox(height: 32),
-                const Text(
-                  'الوصول السريع',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                _buildQuickAccessGrid(context),
-              ],
+          data: (stats) => RefreshIndicator(
+            onRefresh: () => ref.refresh(staffStatsProvider.future),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatsGrid(context, stats),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'الوصول السريع',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildQuickAccessGrid(context),
+                ],
+              ),
             ),
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -102,19 +110,31 @@ class StaffDashboardScreen extends ConsumerWidget {
           title: 'المخزون والسيارات',
           icon: Icons.directions_car,
           color: Colors.orange,
-          onTap: () {}, // To be implemented
+          onTap: () => context.push('/inventory'),
         ),
         _QuickAccessCard(
           title: 'إدارة العقود',
           icon: Icons.assignment,
           color: Colors.green,
-          onTap: () {}, // To be implemented
+          onTap: () => context.push('/contracts'),
         ),
         _QuickAccessCard(
-          title: 'التقارير المالية',
-          icon: Icons.analytics,
-          color: Colors.red,
-          onTap: () {}, // To be implemented
+          title: 'المستثمرين',
+          icon: Icons.monetization_on,
+          color: Colors.teal,
+          onTap: () => context.push('/investors'),
+        ),
+        _QuickAccessCard(
+          title: 'العمليات المالية',
+          icon: Icons.account_balance,
+          color: Colors.purple,
+          onTap: () {}, // Future Phase
+        ),
+        _QuickAccessCard(
+          title: 'الإعدادات',
+          icon: Icons.settings,
+          color: Colors.grey,
+          onTap: () => context.push('/settings'),
         ),
       ],
     );
