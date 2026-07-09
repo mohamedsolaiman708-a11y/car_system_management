@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
+import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../investor_controller.dart';
 import '../widgets/create_investor_dialog.dart';
 
@@ -11,44 +13,69 @@ class InvestorsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 3, // زيادة عدد التبويبات لـ 3
+      length: 3,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('إدارة المستثمرين'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'المستثمرون النشطون'),
-              Tab(text: 'طلبات الانضمام'),
-              Tab(text: 'طلبات السحب'), // التبويب الجديد
+        backgroundColor: Colors.transparent,
+        body: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 24),
+              _buildTabBar(),
+              const SizedBox(height: 16),
+              const Expanded(
+                child: TabBarView(
+                  children: [
+                    ActiveInvestorsList(),
+                    PendingInvestorsList(),
+                    WithdrawalRequestsList(),
+                  ],
+                ),
+              ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                ref.invalidate(investorListControllerProvider);
-                ref.invalidate(pendingInvestorsControllerProvider);
-                ref.invalidate(withdrawalRequestsControllerProvider());
-              },
-            ),
-          ],
-        ),
-        body: const TabBarView(
-          children: [
-            ActiveInvestorsList(),
-            PendingInvestorsList(),
-            WithdrawalRequestsList(), // القائمة الجديدة
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => showDialog(
-            context: context,
-            builder: (context) => const CreateInvestorDialog(),
-          ),
-          label: const Text('إضافة مستثمر'),
-          icon: const Icon(Icons.add),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('مركز إدارة المستثمرين', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            Text('متابعة رؤوس الأموال، المحافظ الاستثمارية، وتوزيع الأرباح', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
+          ],
+        ),
+        if (ResponsiveLayout.isDesktop(context))
+          ElevatedButton.icon(
+            onPressed: () => showDialog(context: context, builder: (context) => const CreateInvestorDialog()),
+            icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+            label: const Text('إضافة مستثمر جديد'),
+            style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTabBar() {
+    return const TabBar(
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
+      labelColor: AppColors.primaryNavy,
+      unselectedLabelColor: AppColors.textGrey,
+      indicatorColor: AppColors.accentGold,
+      indicatorWeight: 3,
+      tabs: [
+        Tab(text: 'المستثمرون النشطون'),
+        Tab(text: 'طلبات الانضمام'),
+        Tab(text: 'طلبات السحب'),
+      ],
     );
   }
 }
@@ -59,40 +86,77 @@ class ActiveInvestorsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final investorsAsync = ref.watch(investorListControllerProvider);
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return investorsAsync.when(
-      data: (investors) => ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: investors.length,
-        itemBuilder: (context, index) {
-          final investor = investors[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-              child: const Icon(Icons.person),
-            ),
-            title: Text(investor.fullName),
-            subtitle: Text(investor.email),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'المتاح: ${investor.availableBalance.toStringAsFixed(2)} ر.س',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-                ),
-                Text(
-                  'المستثمر: ${investor.deployedCapital.toStringAsFixed(2)} ر.س',
-                  style: const TextStyle(color: Colors.blueGrey, fontSize: 12),
-                ),
-              ],
-            ),
-            onTap: () => context.push('/investors/${investor.id}'),
-          );
-        },
-      ),
+      data: (investors) {
+        if (isDesktop) return _buildTable(context, investors, f);
+        return _buildCards(context, investors, f);
+      },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('خطأ في تحميل المستثمرين: $err')),
+      error: (e, _) => Center(child: Text('خطأ: $e')),
+    );
+  }
+
+  Widget _buildTable(BuildContext context, List investors, intl.NumberFormat f) {
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFF0F0F0))),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: DataTable(
+          headingRowColor: MaterialStateProperty.all(AppColors.bgGrey),
+          dataRowHeight: 75,
+          columns: const [
+            DataColumn(label: Text('المستثمر', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('الرصيد المتاح', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('رأس المال العامل', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('إجمالي الأرباح', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('الإجراءات', style: TextStyle(fontWeight: FontWeight.bold))),
+          ],
+          rows: investors.map((inv) => DataRow(
+            cells: [
+              DataCell(Row(
+                children: [
+                  CircleAvatar(backgroundColor: AppColors.accentGold.withOpacity(0.1), child: const Icon(Icons.person, color: AppColors.accentGold, size: 20)),
+                  const SizedBox(width: 12),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(inv.email, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    ],
+                  ),
+                ],
+              )),
+              DataCell(Text('${f.format(inv.availableBalance)} ر.س', style: const TextStyle(color: AppColors.successGreen, fontWeight: FontWeight.bold))),
+              DataCell(Text('${f.format(inv.deployedCapital)} ر.س')),
+              DataCell(Text('${f.format(inv.totalProfitEarned)} ر.س', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
+              DataCell(IconButton(icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14), onPressed: () => context.push('/investors/${inv.id}'))),
+            ],
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCards(BuildContext context, List investors, intl.NumberFormat f) {
+    return ListView.builder(
+      itemCount: investors.length,
+      itemBuilder: (context, index) {
+        final inv = investors[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            title: Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('المتاح: ${f.format(inv.availableBalance)} ر.س'),
+            trailing: const Icon(Icons.chevron_left),
+            onTap: () => context.push('/investors/${inv.id}'),
+          ),
+        );
+      },
     );
   }
 }
@@ -105,84 +169,54 @@ class PendingInvestorsList extends ConsumerWidget {
     final pendingAsync = ref.watch(pendingInvestorsControllerProvider);
 
     return pendingAsync.when(
-      data: (requests) {
-        if (requests.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.mark_email_read_outlined, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('لا توجد طلبات انضمام معلقة حالياً', style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: requests.length,
-          itemBuilder: (context, index) {
-            final request = requests[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                title: Text(request['full_name'] ?? 'بدون اسم'),
-                subtitle: Text(request['email'] ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+      data: (requests) => requests.isEmpty 
+        ? _buildEmptyState('لا توجد طلبات انضمام معلقة حالياً')
+        : ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            itemCount: requests.length,
+            itemBuilder: (context, index) {
+              final req = requests[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0))),
+                child: Row(
                   children: [
-                    ElevatedButton(
-                      onPressed: () => ref.read(pendingInvestorsControllerProvider.notifier).approveInvestor(request['id']),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                      child: const Text('تفعيل'),
+                    const CircleAvatar(child: Icon(Icons.person_outline)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(req['full_name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(req['email'] ?? '', style: const TextStyle(color: AppColors.textGrey, fontSize: 12)),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    OutlinedButton(
-                      onPressed: () => _showRejectDialog(context, ref, request['id']),
-                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('رفض'),
+                    ElevatedButton(
+                      onPressed: () => ref.read(pendingInvestorsControllerProvider.notifier).approveInvestor(req['id']),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.successGreen, minimumSize: const Size(100, 40)),
+                      child: const Text('قبول وتفعيل'),
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-        );
-      },
+              );
+            },
+          ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('خطأ في تحميل الطلبات: $err')),
+      error: (e, _) => Center(child: Text('خطأ: $e')),
     );
   }
 
-  void _showRejectDialog(BuildContext context, WidgetRef ref, String profileId) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('رفض طلب الانضمام'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'سبب الرفض', border: OutlineInputBorder()),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () {
-                if (controller.text.isNotEmpty) {
-                  ref.read(pendingInvestorsControllerProvider.notifier).rejectInvestor(profileId, controller.text);
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: const Text('تأكيد الرفض'),
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget _buildEmptyState(String msg) {
+    return Center(child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.inbox_rounded, size: 60, color: AppColors.bgGrey),
+        const SizedBox(height: 16),
+        Text(msg, style: const TextStyle(color: AppColors.textGrey)),
+      ],
+    ));
   }
 }
 
@@ -194,68 +228,48 @@ class WithdrawalRequestsList extends ConsumerWidget {
     final requestsAsync = ref.watch(withdrawalRequestsControllerProvider(status: 'pending'));
 
     return requestsAsync.when(
-      data: (requests) {
-        if (requests.isEmpty) {
-          return const Center(child: Text('لا توجد طلبات سحب معلقة'));
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: requests.length,
-          itemBuilder: (context, index) {
-            final req = requests[index];
-            final investor = req['investors'];
-            return Card(
-              child: ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.money_off, color: Colors.red)),
-                title: Text(investor['full_name'] ?? 'مستثمر'),
-                subtitle: Text('المبلغ: ${req['amount']} ر.س\n${req['bank_account_details'] ?? ""}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+      data: (requests) => requests.isEmpty
+        ? _buildEmptyState('لا توجد طلبات سحب حالياً')
+        : ListView.builder(
+            itemCount: requests.length,
+            itemBuilder: (context, index) {
+              final req = requests[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.errorRed.withOpacity(0.1))),
+                child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.check_circle, color: Colors.green),
-                      onPressed: () => ref.read(withdrawalRequestsControllerProvider().notifier).approveRequest(req['id']),
+                    const Icon(Icons.account_balance_wallet_rounded, color: AppColors.errorRed),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(req['investors']['full_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text('المبلغ المطلوب: ${req['amount']} ر.س', style: const TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.cancel, color: Colors.red),
-                      onPressed: () => _showRejectWithdrawalDialog(context, ref, req['id']),
-                    ),
+                    TextButton(onPressed: () {}, child: const Text('مراجعة التفاصيل')),
                   ],
                 ),
-              ),
-            );
-          },
-        );
-      },
+              );
+            },
+          ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('خطأ: $e')),
     );
   }
 
-  void _showRejectWithdrawalDialog(BuildContext context, WidgetRef ref, String requestId) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('رفض طلب السحب'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'سبب الرفض'),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(withdrawalRequestsControllerProvider().notifier).rejectRequest(requestId, controller.text);
-                Navigator.pop(context);
-              },
-              child: const Text('رفض الطلب'),
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget _buildEmptyState(String msg) {
+    return Center(child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.hourglass_empty_rounded, size: 60, color: AppColors.bgGrey),
+        const SizedBox(height: 16),
+        Text(msg, style: const TextStyle(color: AppColors.textGrey)),
+      ],
+    ));
   }
 }

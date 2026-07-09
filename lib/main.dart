@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'src/core/routing/app_router.dart';
 import 'l10n/app_localizations.dart';
+import 'src/core/utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,10 +29,9 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(goRouterProvider);
 
     return MaterialApp.router(
-      title: 'Finance System',
+      title: 'Al Sami Auto ERP',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
-      // إضافة إعدادات اللغة (ضرورية لمنع الشاشة الرمادية)
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -39,17 +39,11 @@ class MyApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('ar', ''), // العربية هي الأساس
+        Locale('ar', ''),
         Locale('en', ''),
       ],
-      locale: const Locale('ar', ''), // فرض اللغة العربية للعميل السعودي
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0D1B3E),
-          primary: const Color(0xFF0D1B3E),
-        ),
-        useMaterial3: true,
-      ),
+      locale: const Locale('ar', ''),
+      theme: AppTheme.lightTheme,
     );
   }
 }

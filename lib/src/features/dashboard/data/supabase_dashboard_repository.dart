@@ -10,13 +10,13 @@ class SupabaseDashboardRepository {
 
   SupabaseDashboardRepository(this._client);
 
-  /// جلب الإحصائيات للوحة التحكم عبر RPC (الحل البروفيشنال)
+  /// جلب الإحصائيات للوحة التحكم عبر RPC (ديناميكي 100%)
   Future<Map<String, dynamic>> getStaffStats() async {
     try {
-      // استدعاء وظيفة واحدة من قاعدة البيانات تجلب كل الإحصائيات
+      // استدعاء الوظيفة المحاسبية من السيرفر
       final response = await _client.rpc('get_dashboard_stats');
       
-      // جلب العقود الأخيرة (استعلام منفصل لأنه بيانات متغيرة)
+      // جلب العقود الأخيرة
       final recentContracts = await _client
           .from('financing_contracts')
           .select('contract_no, status, total_contract_value, customers(full_name)')
@@ -26,12 +26,6 @@ class SupabaseDashboardRepository {
       final Map<String, dynamic> stats = Map<String, dynamic>.from(response);
       stats['recent_contracts'] = recentContracts as List;
       
-      // إضافة قيم افتراضية للمتأخرات (يمكن إضافتها لاحقاً للـ RPC)
-      stats['overdue_under_30'] = 0.0;
-      stats['overdue_30_60'] = 0.0;
-      stats['overdue_60_90'] = 0.0;
-      stats['overdue_over_90'] = 0.0;
-
       return stats;
     } catch (e) {
       developer.log('Dashboard Stats Error', error: e);

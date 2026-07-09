@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' as intl;
-import '../../domain/vehicle.dart';
+import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../inventory_controller.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
@@ -13,225 +13,232 @@ class VehiclesScreen extends ConsumerStatefulWidget {
 }
 
 class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
-  String _searchQuery = '';
-  String? _selectedStatus;
+  String searchQuery = '';
+  String? statusFilter;
 
   @override
   Widget build(BuildContext context) {
     final vehiclesAsync = ref.watch(vehiclesListProvider(
-      searchQuery: _searchQuery,
-      status: _selectedStatus,
+      searchQuery: searchQuery,
+      status: statusFilter,
     ));
+    final statsAsync = ref.watch(inventoryStatsProvider);
+    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('إدارة المخزون والسيارات'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(vehiclesListProvider),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildFilters(),
-          Expanded(
-            child: vehiclesAsync.when(
-              data: (vehicles) {
-                if (vehicles.isEmpty) {
-                  return const Center(child: Text('لا توجد سيارات في المخزون حالياً'));
-                }
-                return _buildVehiclesGrid(vehicles);
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/inventory/new'),
-        label: const Text('إضافة سيارة جديدة'),
-        icon: const Icon(Icons.add_a_photo_outlined),
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'بحث برقم الهيكل، الماركة، أو اللوحة...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-                filled: true,
-              ),
-              onChanged: (value) => setState(() => _searchQuery = value),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 1,
-            child: DropdownButtonFormField<String>(
-              value: _selectedStatus,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                filled: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12),
-              ),
-              hint: const Text('الحالة'),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('الكل')),
-                DropdownMenuItem(value: 'available', child: Text('متوفرة')),
-                DropdownMenuItem(value: 'on_contract', child: Text('مباعة/عقد')),
-                DropdownMenuItem(value: 'maintenance', child: Text('صيانة')),
-              ],
-              onChanged: (value) => setState(() => _selectedStatus = value),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVehiclesGrid(List<Vehicle> vehicles) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 4 : (MediaQuery.of(context).size.width > 800 ? 3 : 1),
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: vehicles.length,
-      itemBuilder: (context, index) {
-        final vehicle = vehicles[index];
-        return _VehicleCard(vehicle: vehicle);
-      },
-    );
-  }
-}
-
-class _VehicleCard extends StatelessWidget {
-  final Vehicle vehicle;
-  const _VehicleCard({required this.vehicle});
-
-  @override
-  Widget build(BuildContext context) {
-    final currencyFormat = intl.NumberFormat.currency(symbol: 'ر.س', decimalDigits: 0);
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => context.push('/inventory/${vehicle.id}'),
+      backgroundColor: Colors.transparent,
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Vehicle Image Placeholder
-            Container(
-              height: 150,
-              width: double.infinity,
-              color: Colors.grey.shade200,
-              child: const Icon(Icons.directions_car, size: 64, color: Colors.grey),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${vehicle.make} ${vehicle.model}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      _StatusBadge(status: vehicle.status),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'سنة الصنع: ${vehicle.year}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                  const Divider(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('سعر الشراء:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                      Text(
-                        currencyFormat.format(vehicle.purchasePrice),
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('رقم اللوحة:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                      Text(
-                        vehicle.licensePlate ?? 'بدون',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ],
+            _buildHeader(),
+            const SizedBox(height: 24),
+            _buildStatsOverview(statsAsync),
+            const SizedBox(height: 24),
+            _buildSearchAndFilters(),
+            const SizedBox(height: 16),
+            Expanded(
+              child: vehiclesAsync.when(
+                data: (vehicles) => isDesktop 
+                    ? _buildVehiclesTable(vehicles)
+                    : _buildVehiclesGrid(vehicles),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('حدث خطأ: $err')),
               ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: !isDesktop ? FloatingActionButton(
+        onPressed: () => context.push('/inventory/new'),
+        backgroundColor: AppColors.primaryNavy,
+        child: const Icon(Icons.add_road_rounded, color: Colors.white),
+      ) : null,
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('إدارة المخزون والسيارات', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            Text('تتبع الأصول، حالات الصيانة، وتوافر المركبات', style: TextStyle(color: AppColors.textGrey, fontSize: 13)),
+          ],
+        ),
+        if (ResponsiveLayout.isDesktop(context))
+          ElevatedButton.icon(
+            onPressed: () => context.push('/inventory/new'),
+            icon: const Icon(Icons.add_road_rounded, size: 18),
+            label: const Text('إضافة سيارة للمخزون'),
+            style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildStatsOverview(AsyncValue<Map<String, dynamic>> statsAsync) {
+    return statsAsync.when(
+      data: (stats) => Row(
+        children: [
+          _buildMiniStat('الإجمالي', stats['total'] ?? 0, Icons.directions_car_rounded, Colors.blue),
+          const SizedBox(width: 16),
+          _buildMiniStat('متاحة', stats['available'] ?? 0, Icons.check_circle_rounded, Colors.green),
+          const SizedBox(width: 16),
+          _buildMiniStat('مباعة/عقود', stats['on_contract'] ?? 0, Icons.assignment_turned_in_rounded, AppColors.accentGold),
+          const SizedBox(width: 16),
+          _buildMiniStat('صيانة', stats['maintenance'] ?? 0, Icons.build_rounded, Colors.orange),
+        ],
+      ),
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => const SizedBox(),
+    );
+  }
+
+  Widget _buildMiniStat(String label, dynamic value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0))),
+        child: Row(
+          children: [
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: color, size: 20)),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+                Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textGrey)),
+              ],
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
+  Widget _buildSearchAndFilters() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0))),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              onChanged: (val) => setState(() => searchQuery = val),
+              decoration: InputDecoration(
+                hintText: 'بحث برقم اللوحة، الموديل، أو رقم الهيكل (VIN)...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                filled: true,
+                fillColor: AppColors.bgGrey,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          _buildFilterDropdown(),
+        ],
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    Color color;
-    String label;
+  Widget _buildFilterDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFEEEEEE))),
+      child: DropdownButton<String>(
+        value: statusFilter,
+        hint: const Text('الحالة', style: TextStyle(fontSize: 13)),
+        underline: const SizedBox(),
+        onChanged: (val) => setState(() => statusFilter = val),
+        items: [
+          const DropdownMenuItem(value: null, child: Text('الكل')),
+          const DropdownMenuItem(value: 'available', child: Text('متاحة')),
+          const DropdownMenuItem(value: 'on_contract', child: Text('تحت عقد')),
+          const DropdownMenuItem(value: 'maintenance', child: Text('صيانة')),
+        ],
+      ),
+    );
+  }
 
-    switch (status) {
-      case 'available':
-        color = Colors.green;
-        label = 'متوفرة';
-        break;
-      case 'on_contract':
-        color = Colors.blue;
-        label = 'في عقد';
-        break;
-      case 'maintenance':
-        color = Colors.orange;
-        label = 'صيانة';
-        break;
-      default:
-        color = Colors.grey;
-        label = status;
-    }
+  Widget _buildVehiclesTable(List<dynamic> vehicles) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0))),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: SingleChildScrollView(
+          child: DataTable(
+            headingRowColor: MaterialStateProperty.all(AppColors.bgGrey),
+            columns: const [
+              DataColumn(label: Text('المركبة', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('رقم اللوحة', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('الموديل', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('الحالة', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('سعر الشراء', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('الإجراءات', style: TextStyle(fontWeight: FontWeight.bold))),
+            ],
+            rows: vehicles.map((v) => DataRow(
+              cells: [
+                DataCell(Text('${v.make} ${v.model}', style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(4)), child: Text(v.licensePlate ?? '-'))),
+                DataCell(Text(v.year.toString())),
+                DataCell(_buildStatusBadge(v.status)),
+                DataCell(Text('${v.purchasePrice} ر.س')),
+                DataCell(IconButton(icon: const Icon(Icons.settings_outlined, size: 18), onPressed: () => context.push('/inventory/${v.id}'))),
+              ],
+            )).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVehiclesGrid(List<dynamic> vehicles) {
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.8, crossAxisSpacing: 12, mainAxisSpacing: 12),
+      itemCount: vehicles.length,
+      itemBuilder: (context, index) {
+        final v = vehicles[index];
+        return Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Container(color: AppColors.bgGrey, child: const Center(child: Icon(Icons.image_outlined, color: Colors.grey)))),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${v.make} ${v.model}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    _buildStatusBadge(v.status),
+                    const SizedBox(height: 8),
+                    Text(v.licensePlate ?? '-', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color = Colors.grey;
+    String label = status;
+    if (status == 'available') { color = Colors.green; label = 'متاحة'; }
+    if (status == 'on_contract' || status == 'sold') { color = AppColors.accentGold; label = 'مباعة'; }
+    if (status == 'maintenance') { color = Colors.orange; label = 'صيانة'; }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 }

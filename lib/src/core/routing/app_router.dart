@@ -74,6 +74,8 @@ import '../../features/accounting/presentation/screens/accounts_screen.dart';
 import '../../features/accounting/presentation/screens/journal_entries_screen.dart';
 import '../../features/accounting/presentation/screens/trial_balance_screen.dart';
 
+import 'main_scaffold.dart';
+
 part 'app_router.g.dart';
 
 @riverpod
@@ -84,31 +86,25 @@ GoRouter goRouter(GoRouterRef ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      // 🛑 أهم تعديل: إذا كانت البيانات لا تزال قيد التحميل، توقف تماماً ولا تقم بأي توجيه
-      // هذا يمنع طرد المستخدم أثناء عملية تسجيل الدخول
       if (authState.isLoading) return null;
 
       final user = authState.valueOrNull;
       final isLoggedIn = user != null;
       final path = state.matchedLocation;
 
-      // 1. فحص وضع الصيانة
       if (maintenanceModeAsync.value == true && path != '/maintenance') {
         if (isLoggedIn && user.role != UserRole.admin) return '/maintenance';
         if (!isLoggedIn) return '/maintenance';
       }
 
-      // 2. إذا لم يكن مسجلاً
       if (!isLoggedIn) {
         if (path == '/portal-selection' || path.startsWith('/auth') || path == '/maintenance' || path == '/') {
-          // إذا كان في Splash، وجهه لاختيار البوابة
           if (path == '/') return '/portal-selection';
           return null;
         }
         return '/portal-selection';
       }
 
-      // 3. إذا كان مسجلاً (التوجيه التلقائي للداخل)
       if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
         if (user.role == UserRole.investor) {
           if (user.status == 'pending') return '/auth/pending';
@@ -133,81 +129,89 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/auth/pending', builder: (context, state) => const PendingApprovalScreen()),
       GoRoute(path: '/auth/rejected', builder: (context, state) => const AccountRejectedScreen()),
       GoRoute(path: '/auth/session-expired', builder: (context, state) => const SessionExpiredScreen()),
-      GoRoute(path: '/dashboard', builder: (context, state) => const StaffDashboardScreen()),
-      GoRoute(path: '/search', builder: (context, state) => const GlobalSearchScreen()),
-      GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
-      GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
-
-      // CRM
-      GoRoute(
-        path: '/crm/customers',
-        builder: (context, state) => const CustomersScreen(),
+      
+      // Shell Route for Staff Portal
+      ShellRoute(
+        builder: (context, state, child) => MainScaffold(child: child),
         routes: [
-          GoRoute(path: 'new', builder: (context, state) => const CreateCustomerScreen()),
+          GoRoute(path: '/dashboard', builder: (context, state) => const StaffDashboardScreen()),
+          GoRoute(path: '/search', builder: (context, state) => const GlobalSearchScreen()),
+          GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
+          GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
+
+          // CRM
           GoRoute(
-            path: ':id',
-            builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
+            path: '/crm/customers',
+            builder: (context, state) => const CustomersScreen(),
             routes: [
-              GoRoute(path: 'edit', builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!)),
+              GoRoute(path: 'new', builder: (context, state) => const CreateCustomerScreen()),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
+                routes: [
+                  GoRoute(path: 'edit', builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!)),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
 
-      // Inventory
-      GoRoute(
-        path: '/inventory',
-        builder: (context, state) => const VehiclesScreen(),
-        routes: [
-          GoRoute(path: 'new', builder: (context, state) => const CreateVehicleScreen()),
+          // Inventory
           GoRoute(
-            path: ':id',
-            builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
+            path: '/inventory',
+            builder: (context, state) => const VehiclesScreen(),
             routes: [
-              GoRoute(path: 'edit', builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!)),
+              GoRoute(path: 'new', builder: (context, state) => const CreateVehicleScreen()),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
+                routes: [
+                  GoRoute(path: 'edit', builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!)),
+                ],
+              ),
             ],
           ),
+
+          // Contracts
+          GoRoute(
+            path: '/contracts',
+            builder: (context, state) => const ContractsScreen(),
+            routes: [
+              GoRoute(path: 'new', builder: (context, state) => const CreateContractScreen()),
+              GoRoute(path: ':id', builder: (context, state) => ContractDetailsScreen(id: state.pathParameters['id']!),),
+            ],
+          ),
+
+          // Investors
+          GoRoute(
+            path: '/investors',
+            builder: (context, state) => const InvestorsScreen(),
+            routes: [
+              GoRoute(path: ':id', builder: (context, state) => InvestorDetailsScreen(id: state.pathParameters['id']!)),
+            ],
+          ),
+
+          // Accounting
+          GoRoute(
+            path: '/accounting',
+            builder: (context, state) => const AccountsScreen(),
+            routes: [
+              GoRoute(path: 'journal', builder: (context, state) => const JournalEntriesScreen()),
+              GoRoute(path: 'trial-balance', builder: (context, state) => const TrialBalanceScreen()),
+            ],
+          ),
+
+          // System
+          GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
+          GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
+          GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
+          GoRoute(path: '/background-jobs', builder: (context, state) => const BackgroundJobsScreen()),
+          GoRoute(path: '/backups', builder: (context, state) => const BackupScreen()),
+          GoRoute(path: '/disaster-recovery', builder: (context, state) => const DisasterRecoveryScreen()),
+          GoRoute(path: '/help-center', builder: (context, state) => const HelpCenterScreen()),
         ],
       ),
 
-      // Contracts
-      GoRoute(
-        path: '/contracts',
-        builder: (context, state) => const ContractsScreen(),
-        routes: [
-          GoRoute(path: 'new', builder: (context, state) => const CreateContractScreen()),
-          GoRoute(path: ':id', builder: (context, state) => ContractDetailsScreen(id: state.pathParameters['id']!)),
-        ],
-      ),
-
-      // Investors
-      GoRoute(
-        path: '/investors',
-        builder: (context, state) => const InvestorsScreen(),
-        routes: [
-          GoRoute(path: ':id', builder: (context, state) => InvestorDetailsScreen(id: state.pathParameters['id']!)),
-        ],
-      ),
       GoRoute(path: '/investor-portal', builder: (context, state) => const InvestorDashboardScreen()),
-
-      // Accounting
-      GoRoute(
-        path: '/accounting',
-        builder: (context, state) => const AccountsScreen(),
-        routes: [
-          GoRoute(path: 'journal', builder: (context, state) => const JournalEntriesScreen()),
-          GoRoute(path: 'trial-balance', builder: (context, state) => const TrialBalanceScreen()),
-        ],
-      ),
-
-      // System
-      GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
-      GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
-      GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
-      GoRoute(path: '/background-jobs', builder: (context, state) => const BackgroundJobsScreen()),
-      GoRoute(path: '/backups', builder: (context, state) => const BackupScreen()),
-      GoRoute(path: '/disaster-recovery', builder: (context, state) => const DisasterRecoveryScreen()),
-      GoRoute(path: '/help-center', builder: (context, state) => const HelpCenterScreen()),
     ],
   );
 }
