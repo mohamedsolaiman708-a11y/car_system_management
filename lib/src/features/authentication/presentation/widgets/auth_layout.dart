@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:car_system_management/src/core/utils/app_theme.dart';
-import 'brand_logo.dart'; 
+import 'brand_logo.dart';
 
 class AuthLayout extends StatelessWidget {
   final String title;
@@ -33,9 +33,14 @@ class AuthLayout extends StatelessWidget {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 12.0,
+                ),
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 460), // عرض ملموم أكثر
+                  constraints: const BoxConstraints(
+                    maxWidth: 460,
+                  ), // عرض ملموم أكثر
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -43,10 +48,12 @@ class AuthLayout extends StatelessWidget {
                       // اللوجو بحجم ملموم واحترافي
                       const BrandLogo(scale: 0.8),
                       const SizedBox(height: 24), // تقليل المسافة من 48 لـ 24
-
                       // كرت البيانات بتصميم زجاجي رشيق
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24), // تقليل الـ Padding الداخلي
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 24,
+                        ), // تقليل الـ Padding الداخلي
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(24),
@@ -87,7 +94,6 @@ class AuthLayout extends StatelessWidget {
                               ),
                             ],
                             const SizedBox(height: 24), // مسافة أقل قبل الفورمة
-                            
                             // تغليف المدخلات بالثيم المودرن
                             Theme(
                               data: Theme.of(context).copyWith(
@@ -117,7 +123,10 @@ class AuthLayout extends StatelessWidget {
       labelStyle: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
       prefixIconColor: AppColors.accentGold,
       suffixIconColor: AppColors.accentGold,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // حقول ملمومة أكثر
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+      ), // حقول ملمومة أكثر
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),

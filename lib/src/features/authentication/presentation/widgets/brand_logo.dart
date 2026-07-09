@@ -14,7 +14,7 @@ class BrandLogo extends StatelessWidget {
         children: [
           // رسمة السيارة بحجم أدق
           CustomPaint(
-            size: const Size(180, 40), 
+            size: const Size(180, 40),
             painter: LuxuryCarPainter(color: AppColors.accentGold),
           ),
           const SizedBox(height: 4),
