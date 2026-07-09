@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:car_system_management/src/core/utils/app_theme.dart';
-import '../screens/portal_selection_screen.dart'; // لاستخدام الـ BrandLogo
+import '../screens/portal_selection_screen.dart';
+import 'brand_logo.dart'; // لاستخدام الـ BrandLogo
 
 class AuthLayout extends StatelessWidget {
   final String title;
@@ -29,7 +30,7 @@ class AuthLayout extends StatelessWidget {
               ),
             ),
           ),
-          
+
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -43,7 +44,7 @@ class AuthLayout extends StatelessWidget {
                       // اللوجو الفخم الموحد للنظام
                       const BrandLogo(),
                       const SizedBox(height: 48),
-                      
+
                       // كرت البيانات بتصميم زجاجي احترافي
                       Container(
                         padding: const EdgeInsets.all(32),
