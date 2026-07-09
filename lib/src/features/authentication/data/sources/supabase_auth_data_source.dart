@@ -37,7 +37,7 @@ class SupabaseAuthDataSource implements AuthDataSource {
         'full_name': fullName,
         'national_id': nationalId,
         'phone': phone,
-        'role': 'investor',
+        'role': 'investor', // تحديد الدور هنا كـ مستثمر
       },
     );
   }
@@ -60,31 +60,45 @@ class SupabaseAuthDataSource implements AuthDataSource {
   @override
   Future<Map<String, dynamic>?> getProfile(String userId) async {
     try {
-      // جلب البروفايل مع الدور (slug)
       final response = await _client
           .from('profiles')
           .select('*, roles(slug)')
           .eq('id', userId)
           .maybeSingle();
       
-      if (response == null) return null;
-
       final authUser = _client.auth.currentUser;
       final now = DateTime.now().toIso8601String();
 
-      // معالجة ذكية للبيانات لمنع Parsing Error في Flutter
-      // نضع قيم افتراضية للحقول التي قد تكون NULL في حالة الإدخال اليدوي
-      String roleSlug = 'admin'; 
-      if (response['roles'] != null && response['roles']['slug'] != null) {
+      // منطق تحديد الدور بشكل آمن
+      String roleSlug = 'investor'; // الدور الافتراضي للأمان هو مستثمر وليس أدمن
+      
+      if (response != null && response['roles'] != null && response['roles']['slug'] != null) {
         roleSlug = (response['roles']['slug'] as String).toLowerCase();
+      } else if (authUser?.userMetadata != null && authUser!.userMetadata!['role'] != null) {
+        // إذا لم يوجد بروفايل بعد، نأخذ الدور من الـ Metadata
+        roleSlug = authUser.userMetadata!['role'].toString().toLowerCase();
+      }
+
+      // إذا لم يكن هناك استجابة من البروفايل (مستخدم جديد جداً)
+      if (response == null) {
+        return {
+          'id': userId,
+          'full_name': authUser?.userMetadata?['full_name'] ?? 'مستثمر جديد',
+          'email': authUser?.email ?? '',
+          'is_active': false, // غير نشط حتى يفعله الأدمن
+          'status': 'pending', // قيد الانتظار
+          'role': roleSlug,
+          'created_at': now,
+          'updated_at': now,
+        };
       }
 
       final mappedData = {
         'id': response['id'],
-        'full_name': response['full_name'] ?? 'مستخدم نظام',
+        'full_name': response['full_name'] ?? authUser?.userMetadata?['full_name'] ?? 'مستخدم نظام',
         'email': authUser?.email ?? 'no-email@system.com',
-        'is_active': response['is_active'] ?? true,
-        'status': response['status'] ?? 'approved',
+        'is_active': response['is_active'] ?? false,
+        'status': response['status'] ?? 'pending', // الافتراضي قيد الانتظار
         'role': roleSlug, 
         'created_at': response['created_at'] ?? now,
         'updated_at': response['updated_at'] ?? now,

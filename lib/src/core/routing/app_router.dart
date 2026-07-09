@@ -92,11 +92,13 @@ GoRouter goRouter(GoRouterRef ref) {
       final isLoggedIn = user != null;
       final path = state.matchedLocation;
 
+      // 1. حماية وضع الصيانة
       if (maintenanceModeAsync.value == true && path != '/maintenance') {
         if (isLoggedIn && user.role != UserRole.admin) return '/maintenance';
         if (!isLoggedIn) return '/maintenance';
       }
 
+      // 2. إذا كان المستخدم غير مسجل دخول
       if (!isLoggedIn) {
         if (path == '/portal-selection' || path.startsWith('/auth') || path == '/maintenance' || path == '/') {
           if (path == '/') return '/portal-selection';
@@ -105,12 +107,34 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/portal-selection';
       }
 
+      // 3. حماية حالة الحساب (Pending/Rejected) - تطبق على الجميع
+      if (user.status == 'pending' && path != '/auth/pending') {
+        return '/auth/pending';
+      }
+      if (user.status == 'rejected' && path != '/auth/rejected') {
+        return '/auth/rejected';
+      }
+
+      // 4. توجيه المستخدمين بعد تسجيل الدخول الناجح
       if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
         if (user.role == UserRole.investor) {
-          if (user.status == 'pending') return '/auth/pending';
-          if (user.status == 'rejected') return '/auth/rejected';
           return '/investor-portal';
         }
+        return '/dashboard';
+      }
+
+      // 5. حماية المسارات بناءً على الدور (RBAC)
+      // منع المستثمرين من دخول لوحة تحكم الموظفين
+      final staffPaths = [
+        '/dashboard', '/crm', '/inventory', '/contracts', 
+        '/investors', '/accounting', '/settings', '/staff-management'
+      ];
+      if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) {
+        return '/investor-portal';
+      }
+
+      // منع الموظفين من دخول بوابة المستثمرين
+      if (user.role != UserRole.investor && path.startsWith('/investor-portal')) {
         return '/dashboard';
       }
 
