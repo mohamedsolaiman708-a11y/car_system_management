@@ -16,6 +16,7 @@ class CreateContractScreen extends ConsumerStatefulWidget {
 
 class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
   
   // الأطراف والمركبة
   String? _selectedCustomerId;
@@ -27,19 +28,19 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   final _profitRateController = TextEditingController(text: '15'); 
   final _durationController = TextEditingController(text: '12');
 
-  // رسوم الخدمات (مطابقة للصورة 9)
+  // رسوم الخدمات
   final _moroorFeesController = TextEditingController(text: '0');
   final _tammFeesController = TextEditingController(text: '0');
   final _insuranceFeesController = TextEditingController(text: '0');
   final _vatController = TextEditingController(text: '0');
 
-  // بيانات الكفيل (مطابقة للصورة 8)
+  // بيانات الكفيل
   final _g1NameController = TextEditingController();
   final _g1IdController = TextEditingController();
   final _g1PhoneController = TextEditingController();
   final _g1WorkController = TextEditingController();
 
-  // الشهود (مطابقة للصورة 8)
+  // الشهود
   final _witness1NameController = TextEditingController();
   final _witness2NameController = TextEditingController();
 
@@ -76,6 +77,8 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       return;
     }
 
+    setState(() => _isLoading = true);
+
     final data = {
       'customer_id': _selectedCustomerId,
       'inventory_item_id': _selectedVehicleId,
@@ -85,28 +88,37 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       'duration_months': _contractType == 'installments' ? int.parse(_durationController.text) : 0,
       'status': 'draft',
       'type': _contractType,
-      // بيانات الكفلاء
       'guarantor_1_name': _g1NameController.text,
       'guarantor_1_id': _g1IdController.text,
       'guarantor_1_phone': _g1PhoneController.text,
       'guarantor_1_work': _g1WorkController.text,
-      // الشهود
       'witness_1': _witness1NameController.text,
       'witness_2': _witness2NameController.text,
-      // الرسوم
       'moroor_fees': double.parse(_moroorFeesController.text),
       'tamm_fees': double.parse(_tammFeesController.text),
       'insurance_fees': double.parse(_insuranceFeesController.text),
       'vat_amount': double.parse(_vatController.text),
     };
 
-    await ref.read(contractControllerProvider.notifier).createContract(data);
-    
-    if (mounted && !ref.read(contractControllerProvider).hasError) {
-      // تم تغيير 'sold' إلى 'on_contract' لتجنب خطأ الـ Enum في قاعدة البيانات
-      await ref.read(inventoryControllerProvider.notifier).updateVehicleStatus(_selectedVehicleId!, 'on_contract');
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إصدار الوثيقة وحفظها كمسودة بنجاح'), backgroundColor: Colors.green));
+    try {
+      await ref.read(contractControllerProvider.notifier).createContract(data);
+      
+      final state = ref.read(contractControllerProvider);
+      if (state.hasError) throw state.error!;
+
+      // تحديث حالة السيارة إلى 'sold' مباشرة (الحل الاحترافي)
+      await ref.read(inventoryControllerProvider.notifier).updateVehicleStatus(_selectedVehicleId!, 'sold');
+
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إصدار الوثيقة وحفظها كمسودة بنجاح'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -119,12 +131,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F7FE),
-        appBar: AppBar(
-          title: const Text('إصدار وثيقة مبايعة سيارة'),
-          centerTitle: true,
-          backgroundColor: const Color(0xFF0D1B3E),
-          foregroundColor: Colors.white,
-        ),
+        appBar: AppBar(title: const Text('إصدار وثيقة مبايعة سيارة'), centerTitle: true, backgroundColor: const Color(0xFF0D1B3E), foregroundColor: Colors.white),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Form(
@@ -133,102 +140,23 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
               children: [
                 _buildContractTypeToggle(),
                 const SizedBox(height: 24),
-                
-                _buildSectionCard(
-                  title: 'أطراف العقد والمركبة',
-                  icon: Icons.handshake_rounded,
-                  children: [
-                    _buildCustomerDropdown(customersAsync),
-                    const SizedBox(height: 16),
-                    _buildVehicleDropdown(vehiclesAsync),
-                  ],
-                ),
-
-                if (_contractType == 'installments') ...[
-                  const SizedBox(height: 24),
-                  _buildSectionCard(
-                    title: 'بيانات الكفيل الغارم',
-                    icon: Icons.security_rounded,
-                    children: [
-                      _buildTextField(_g1NameController, 'اسم الكفيل الكامل *'),
-                      Row(
-                        children: [
-                          Expanded(child: _buildTextField(_g1IdController, 'رقم الهوية')),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildTextField(_g1PhoneController, 'رقم الجوال')),
-                        ],
-                      ),
-                      _buildTextField(_g1WorkController, 'جهة العمل'),
-                    ],
-                  ),
-                ],
-
+                _buildSectionCard(title: 'أطراف العقد والمركبة', icon: Icons.handshake_rounded, children: [_buildCustomerDropdown(customersAsync), const SizedBox(height: 16), _buildVehicleDropdown(vehiclesAsync)]),
+                if (_contractType == 'installments') ...[const SizedBox(height: 24), _buildSectionCard(title: 'بيانات الكفيل الغارم', icon: Icons.security_rounded, children: [_buildTextField(_g1NameController, 'اسم الكفيل الكامل *'), Row(children: [Expanded(child: _buildTextField(_g1IdController, 'رقم الهوية')), const SizedBox(width: 16), Expanded(child: _buildTextField(_g1PhoneController, 'رقم الجوال'))]), _buildTextField(_g1WorkController, 'جهة العمل')])],
                 const SizedBox(height: 24),
-                _buildSectionCard(
-                  title: 'الشهود',
-                  icon: Icons.people_alt_rounded,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: _buildTextField(_witness1NameController, 'اسم الشاهد الأول')),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildTextField(_witness2NameController, 'اسم الشاهد الثاني')),
-                      ],
-                    ),
-                  ],
-                ),
-
+                _buildSectionCard(title: 'الشهود', icon: Icons.people_alt_rounded, children: [Row(children: [Expanded(child: _buildTextField(_witness1NameController, 'اسم الشاهد الأول')), const SizedBox(width: 16), Expanded(child: _buildTextField(_witness2NameController, 'اسم الشاهد الثاني'))])]),
                 const SizedBox(height: 24),
-                _buildSectionCard(
-                  title: 'التكاليف والرسوم (مطابقة للصورة 9)',
-                  icon: Icons.account_balance_wallet_rounded,
-                  children: [
-                    _buildTextField(_principalController, 'قيمة السيارة الأساسية *', isNumber: true, prefix: 'ر.س'),
-                    Row(
-                      children: [
-                        Expanded(child: _buildTextField(_moroorFeesController, 'نقل ملكية', isNumber: true)),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildTextField(_tammFeesController, 'رسوم تم', isNumber: true)),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Expanded(child: _buildTextField(_insuranceFeesController, 'تأمين', isNumber: true)),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildTextField(_vatController, 'الضريبة (VAT)', isNumber: true)),
-                      ],
-                    ),
-                  ],
-                ),
-
-                if (_contractType == 'installments') ...[
-                  const SizedBox(height: 24),
-                  _buildSectionCard(
-                    title: 'شروط الأقساط',
-                    icon: Icons.calendar_month_rounded,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: _buildTextField(_profitRateController, 'نسبة الربح %', isNumber: true)),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildTextField(_durationController, 'المدة (أشهر)', isNumber: true)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-
+                _buildSectionCard(title: 'التكاليف والرسوم', icon: Icons.account_balance_wallet_rounded, children: [_buildTextField(_principalController, 'قيمة السيارة الأساسية *', isNumber: true, prefix: 'ر.س'), Row(children: [Expanded(child: _buildTextField(_moroorFeesController, 'نقل ملكية', isNumber: true)), const SizedBox(width: 12), Expanded(child: _buildTextField(_tammFeesController, 'رسوم تم', isNumber: true))]), Row(children: [Expanded(child: _buildTextField(_insuranceFeesController, 'تأمين', isNumber: true)), const SizedBox(width: 12), Expanded(child: _buildTextField(_vatController, 'الضريبة (VAT)', isNumber: true))])]),
+                if (_contractType == 'installments') ...[const SizedBox(height: 24), _buildSectionCard(title: 'شروط الأقساط', icon: Icons.calendar_month_rounded, children: [Row(children: [Expanded(child: _buildTextField(_profitRateController, 'نسبة الربح %', isNumber: true)), const SizedBox(width: 16), Expanded(child: _buildTextField(_durationController, 'المدة (أشهر)', isNumber: true))])])],
                 const SizedBox(height: 32),
                 _buildSummaryPanel(),
                 const SizedBox(height: 32),
-                
                 SizedBox(
                   width: double.infinity,
                   height: 60,
                   child: ElevatedButton.icon(
-                    onPressed: _submit,
-                    icon: const Icon(Icons.save_rounded),
-                    label: const Text('حفظ واصدار الوثيقة للطباعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    onPressed: _isLoading ? null : _submit,
+                    icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save_rounded),
+                    label: Text(_isLoading ? 'جاري الحفظ...' : 'حفظ واصدار الوثيقة للطباعة', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D1B3E), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   ),
                 ),
