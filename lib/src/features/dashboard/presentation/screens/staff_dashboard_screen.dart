@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
+import '../../../../core/utils/app_theme.dart';
 import '../../../authentication/presentation/auth_controller.dart';
-import '../../../core/utils/app_theme.dart';
 import '../dashboard_controller.dart';
 
 class StaffDashboardScreen extends ConsumerWidget {
@@ -43,7 +43,7 @@ class StaffDashboardScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('نظرة عامة على الأداء', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+      const  Text('نظرة عامة على الأداء', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
         const SizedBox(height: 4),
         Text('مرحباً بك مجدداً، $name. إليك ملخص العمليات اليوم.', style: TextStyle(color: AppColors.textGrey, fontSize: 14)),
       ],
@@ -63,7 +63,7 @@ class StaffDashboardScreen extends ConsumerWidget {
           mainAxisSpacing: 20,
           children: [
             _StatCard('إجمالي العملاء', stats['total_customers'], Icons.people_alt_rounded, Colors.indigo),
-            _StatCard('السيارات المتاحة', stats['available_cars'], Icons.directions_car_filled_rounded, Colors.emerald),
+            _StatCard('السيارات المتاحة', stats['available_cars'], Icons.directions_car_filled_rounded, Colors.yellow),
             _StatCard('العقود النشطة', stats['active_contracts'], Icons.assignment_turned_in_rounded, Colors.orange),
             _StatCard('الأقساط المستحقة', f.format(stats['total_due_installments'] ?? 0), Icons.payments_rounded, Colors.blue),
             _StatCard('أرصدة المستثمرين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
@@ -82,15 +82,15 @@ class StaffDashboardScreen extends ConsumerWidget {
       children: [
         Expanded(
           flex: isCompact ? 0 : 3,
-          child: _AppCard(
+          child: const _AppCard(
             title: 'إحصائيات المبيعات والإيرادات',
             height: 400,
             child: Center(child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.bar_chart_rounded, size: 80, color: AppColors.bgGrey),
-                const SizedBox(height: 16),
-                const Text('الرسم البياني سيكون متاحاً في المرحلة 18', style: TextStyle(color: AppColors.textGrey)),
+                SizedBox(height: 16),
+                Text('الرسم البياني سيكون متاحاً في المرحلة 18', style: TextStyle(color: AppColors.textGrey)),
               ],
             )),
           ),
@@ -144,7 +144,7 @@ class StaffDashboardScreen extends ConsumerWidget {
         if (isCompact) const SizedBox(height: 24),
         Expanded(
           flex: isCompact ? 0 : 2,
-          child: _AppCard(
+          child: const _AppCard(
             title: 'إجراءات سريعة',
             child: Wrap(
               spacing: 12,
