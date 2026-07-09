@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:car_system_management/src/core/utils/app_theme.dart';
 import '../auth_controller.dart';
 import '../../domain/user_role.dart';
+import '../widgets/brand_logo.dart'; // استيراد اللوجو الجديد
 
 class PortalSelectionScreen extends ConsumerWidget {
   const PortalSelectionScreen({super.key});
@@ -11,7 +12,7 @@ class PortalSelectionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    
+
     if (user != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (user.role == UserRole.investor) {
@@ -26,30 +27,14 @@ class PortalSelectionScreen extends ConsumerWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // خلفية متدرجة مع أشكال جمالية
+          // خلفية كحلية ملكية عميقة
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
+                colors: [Color(0xFF040B1A), Color(0xFF0D1B3E)],
               ),
-            ),
-          ),
-          Positioned(
-            top: -100,
-            right: -100,
-            child: CircleAvatar(
-              radius: 200,
-              backgroundColor: AppColors.primaryNavy.withOpacity(0.03),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            left: -50,
-            child: CircleAvatar(
-              radius: 150,
-              backgroundColor: AppColors.accentGold.withOpacity(0.03),
             ),
           ),
           
@@ -62,105 +47,64 @@ class PortalSelectionScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // شعار الشركة بتصميم أرقى
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.directions_car_filled,
-                          size: 60,
-                          color: AppColors.primaryNavy,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      const Text(
-                        'نظام إدارة تمويل السيارات',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primaryNavy,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'مرحباً بك، يرجى اختيار بوابة الدخول المناسبة',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.blueGrey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 60),
-                      
-                      // الكروت
+                      // اللوجو الفخم الموحد
+                      const BrandLogo(scale: 1.1),
+                      const SizedBox(height: 80),
+
+                      // كروت الدخول بتصميم زجاجي فاخر
                       ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 900),
+                        constraints: const BoxConstraints(maxWidth: 950),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            if (constraints.maxWidth > 700) {
-                              return Row(
-                                children: [
-                                  Expanded(child: _buildStaffCard(context)),
-                                  const SizedBox(width: 32),
-                                  Expanded(child: _buildInvestorCard(context)),
-                                ],
-                              );
-                            } else {
-                              return Column(
-                                children: [
-                                  _buildStaffCard(context),
-                                  const SizedBox(height: 24),
-                                  _buildInvestorCard(context),
-                                ],
-                              );
-                            }
+                            bool isDesktop = constraints.maxWidth > 750;
+                            return Flex(
+                              direction: isDesktop ? Axis.horizontal : Axis.vertical,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildExpandedCard(
+                                  isDesktop,
+                                  _PortalCard(
+                                    title: 'بوابة الموظفين',
+                                    description: 'إدارة العمليات، الحسابات، والتقارير المالية للشركة',
+                                    icon: Icons.admin_panel_settings_outlined,
+                                    mainColor: Colors.white,
+                                    onTap: () => context.push('/auth/staff/login'),
+                                  ),
+                                ),
+                                SizedBox(width: isDesktop ? 32 : 0, height: isDesktop ? 0 : 24),
+                                _buildExpandedCard(
+                                  isDesktop,
+                                  _PortalCard(
+                                    title: 'بوابة المستثمرين',
+                                    description: 'متابعة المحفظة الاستثمارية، الأرباح، وعقود التمويل',
+                                    icon: Icons.account_balance_wallet_outlined,
+                                    mainColor: AppColors.accentGold,
+                                    onTap: () => context.push('/auth/investor/login'),
+                                  ),
+                                ),
+                              ],
+                            );
                           },
                         ),
                       ),
-                      
-                      const SizedBox(height: 60),
-                      
-                      // رابط التسجيل بتصميم مودرن
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'ليس لديك حساب مستثمر؟',
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                            TextButton(
-                              onPressed: () => context.push('/auth/investor/register'),
-                              style: TextButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
+
+                      const SizedBox(height: 80),
+
+                      // رابط التسجيل
+                      TextButton(
+                        onPressed: () => context.push('/auth/investor/register'),
+                        style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(fontFamily: 'Cairo', fontSize: 16),
+                            children: [
+                              TextSpan(text: 'ليس لديك حساب مستثمر؟ ', style: TextStyle(color: Colors.white.withOpacity(0.5))),
+                              const TextSpan(
+                                text: 'سجل الآن',
+                                style: TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold),
                               ),
-                              child: const Text(
-                                'سجل الآن',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.accentGold,
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -174,24 +118,8 @@ class PortalSelectionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStaffCard(BuildContext context) {
-    return _PortalCard(
-      title: 'بوابة الموظفين',
-      description: 'إدارة العمليات، المحاسبة، والتقارير الرقابية',
-      icon: Icons.admin_panel_settings_rounded,
-      mainColor: AppColors.primaryNavy,
-      onTap: () => context.push('/auth/staff/login'),
-    );
-  }
-
-  Widget _buildInvestorCard(BuildContext context) {
-    return _PortalCard(
-      title: 'بوابة المستثمرين',
-      description: 'متابعة أرباحك، استثماراتك، وعقود التمويل القائمة',
-      icon: Icons.account_balance_wallet_rounded,
-      mainColor: AppColors.accentGold,
-      onTap: () => context.push('/auth/investor/login'),
-    );
+  Widget _buildExpandedCard(bool isDesktop, Widget card) {
+    return isDesktop ? Expanded(child: card) : SizedBox(width: double.infinity, child: card);
   }
 }
 
@@ -224,27 +152,25 @@ class _PortalCardState extends State<_PortalCard> {
       onExit: (_) => setState(() => isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
         transform: Matrix4.identity()..translate(0.0, isHovered ? -10.0 : 0.0),
         child: GestureDetector(
           onTap: widget.onTap,
           child: Container(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(40),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              color: Colors.white.withOpacity(isHovered ? 0.08 : 0.04),
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isHovered ? widget.mainColor.withOpacity(0.5) : Colors.transparent,
-                width: 2,
+                color: isHovered ? widget.mainColor.withOpacity(0.6) : Colors.white.withOpacity(0.1),
+                width: 1.5,
               ),
               boxShadow: [
-                BoxShadow(
-                  color: isHovered 
-                      ? widget.mainColor.withOpacity(0.15) 
-                      : Colors.black.withOpacity(0.04),
-                  blurRadius: 30,
-                  offset: const Offset(0, 15),
-                ),
+                if (isHovered)
+                  BoxShadow(
+                    color: widget.mainColor.withOpacity(0.1),
+                    blurRadius: 40,
+                    offset: const Offset(0, 20),
+                  ),
               ],
             ),
             child: Column(
@@ -252,33 +178,18 @@ class _PortalCardState extends State<_PortalCard> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [widget.mainColor, widget.mainColor.withOpacity(0.7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.mainColor.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    color: widget.mainColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    widget.icon,
-                    size: 40,
-                    color: Colors.white,
-                  ),
+                  child: Icon(widget.icon, size: 44, color: widget.mainColor),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
                 Text(
                   widget.title,
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primaryNavy,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -286,15 +197,23 @@ class _PortalCardState extends State<_PortalCard> {
                   widget.description,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.blueGrey.shade400,
-                    height: 1.6,
+                    fontSize: 15,
+                    color: Colors.white.withOpacity(0.5),
+                    height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 24),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  color: isHovered ? widget.mainColor : Colors.grey.shade300,
+                const SizedBox(height: 32),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: isHovered ? 1.0 : 0.0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('دخول', style: TextStyle(color: widget.mainColor, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      Icon(Icons.arrow_forward_rounded, size: 18, color: widget.mainColor),
+                    ],
+                  ),
                 ),
               ],
             ),
