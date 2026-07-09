@@ -23,8 +23,7 @@ class AppTheme {
         surface: AppColors.surfaceWhite,
         background: AppColors.bgGrey,
       ),
-      // الخط العربي الافتراضي (يفضل إضافة Cairo في pubspec.yaml)
-      fontFamily: 'Cairo', 
+      fontFamily: 'Cairo',
       scaffoldBackgroundColor: AppColors.bgGrey,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surfaceWhite,
@@ -37,21 +36,44 @@ class AppTheme {
           fontWeight: FontWeight.bold,
         ),
       ),
-      cardTheme: CardTheme(
-        color: AppColors.surfaceWhite,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFEEEEEE)),
-        ),
-      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryNavy,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(double.infinity, 56), // طول مريح للضغط
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
+          elevation: 2, // إضافة ظل عشان تحس إنه زرار حقيقي
+          shadowColor: AppColors.primaryNavy.withOpacity(0.5),
+        ).copyWith(
+          // إضافة تأثير "النبضة" لما تضغط
+          overlayColor: WidgetStateProperty.resolveWith<Color?>(
+                (states) {
+              if (states.contains(WidgetState.pressed)) {
+                return Colors.white.withOpacity(0.15);
+              }
+              return null;
+            },
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryNavy, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.errorRed),
         ),
       ),
     );
