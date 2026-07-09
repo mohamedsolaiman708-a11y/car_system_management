@@ -103,7 +103,8 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     await ref.read(contractControllerProvider.notifier).createContract(data);
     
     if (mounted && !ref.read(contractControllerProvider).hasError) {
-      await ref.read(inventoryControllerProvider.notifier).updateVehicleStatus(_selectedVehicleId!, 'sold');
+      // تم تغيير 'sold' إلى 'on_contract' لتجنب خطأ الـ Enum في قاعدة البيانات
+      await ref.read(inventoryControllerProvider.notifier).updateVehicleStatus(_selectedVehicleId!, 'on_contract');
       context.pop();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إصدار الوثيقة وحفظها كمسودة بنجاح'), backgroundColor: Colors.green));
     }

@@ -22,8 +22,9 @@ class SupabaseDashboardRepository {
       final date90 = now.subtract(const Duration(days: 90)).toIso8601String();
 
       final List<dynamic> responses = await Future.wait<dynamic>([
+        // الحل: تم تغيير 'sold' إلى 'on_contract' لأنها القيمة الصحيحة في الـ Enum بقاعدة البيانات
         _client.from('inventory_items').select('id').eq('status', 'available').count(CountOption.exact),
-        _client.from('inventory_items').select('id').eq('status', 'sold').count(CountOption.exact),
+        _client.from('inventory_items').select('id').eq('status', 'on_contract').count(CountOption.exact),
         _client.from('investors').select('id').count(CountOption.exact),
         _client.from('customers').select('id').count(CountOption.exact),
         _client.from('payments').select('amount_total.sum()').gte('payment_date', startOfToday),
@@ -39,7 +40,7 @@ class SupabaseDashboardRepository {
 
       return {
         'available_cars': (responses[0] as PostgrestResponse).count ?? 0,
-        'sold_cars': (responses[1] as PostgrestResponse).count ?? 0,
+        'sold_cars': (responses[1] as PostgrestResponse).count ?? 0, 
         'total_investors': (responses[2] as PostgrestResponse).count ?? 0,
         'total_customers': (responses[3] as PostgrestResponse).count ?? 0,
         'today_revenue': _parseSum(responses[4]),
@@ -56,7 +57,6 @@ class SupabaseDashboardRepository {
     }
   }
 
-  /// وظيفة البحث الشامل المطلوبة في الـ Delegate
   Future<Map<String, List<dynamic>>> globalSearch(String query) async {
     try {
       final results = await Future.wait([

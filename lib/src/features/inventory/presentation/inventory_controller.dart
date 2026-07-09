@@ -21,14 +21,13 @@ class InventoryController extends _$InventoryController {
     state = await AsyncValue.guard(() => ref.read(inventoryRepositoryProvider).updateVehicle(id, data));
   }
 
-  /// تحديث حالة السيارة (مثلاً من available إلى sold)
+  /// تحديث حالة السيارة - الحل الاحترافي: استخدام الحالة المباشرة بعد تحديث الـ Enum في قاعدة البيانات
   Future<void> updateVehicleStatus(String id, String status) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref.read(inventoryRepositoryProvider).updateVehicle(id, {'status': status});
       return null;
     });
-    // تحديث القوائم المرتبطة
     ref.invalidate(vehiclesListProvider);
   }
 
@@ -49,6 +48,7 @@ class InventoryController extends _$InventoryController {
     ref.invalidate(vehicleMaintenanceLogsProvider(vehicleId));
   }
 }
+
 @riverpod
 Future<Map<String, dynamic>> inventoryStats(InventoryStatsRef ref) {
   return ref.watch(inventoryRepositoryProvider).getInventoryStats();
