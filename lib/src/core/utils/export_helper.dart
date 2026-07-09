@@ -1,8 +1,7 @@
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+// لا تستورد dart:io هنا لأنه يكسر الويب
 
-/// مساعد التصدير لتحويل البيانات إلى CSV (كبداية سريعة ومتوافقة مع Excel)
 class ExportHelper {
   static Future<void> exportToCsv({
     required String fileName,
@@ -15,17 +14,14 @@ class ExportHelper {
       csvData += row.map((e) => '"$e"').join(',') + '\n';
     }
 
-    // إضافة BOM لضمان دعم اللغة العربية في Excel
-    final List<int> bytes = [0xEF, 0xBB, 0xBF] + csvData.codeUnits;
-
-    final directory = await getTemporaryDirectory();
-    final file = File('${directory.path}/$fileName.csv');
-    
-    await file.writeAsBytes(bytes);
-    
-    // مشاركة الملف أو فتحه
-    await Share.shareXFiles([XFile(file.path)], text: 'تصدير بيانات $fileName');
+    if (kIsWeb) {
+      // منطق التصدير للويب (تنزيل الملف في المتصفح)
+      // حالياً سنعرض رسالة، ويمكن تطويرها لاحقاً بمكتبة dart:html
+      print("تصدير الويب قيد التطوير: $fileName");
+    } else {
+      // منطق الموبايل (Share)
+      // هنا سنحتاج لاستخدام مكتبة خارجية بديلة لـ dart:io إذا أردنا حفظ الملف
+      await Share.share(csvData, subject: 'تصدير بيانات $fileName');
+    }
   }
-
-  /// يمكن لاحقاً إضافة exportToPdf و exportToExcel هنا باستخدام مكتبات متخصصة
 }

@@ -30,11 +30,11 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final success = await ref.read(authControllerProvider.notifier).login(
-          _emailController.text,
-          _passwordController.text,
-        );
+      _emailController.text,
+      _passwordController.text,
+    );
 
-    // If login is successful, GoRouter's redirect logic in app_router.dart 
+    // If login is successful, GoRouter's redirect logic in app_router.dart
     // will automatically handle the navigation based on the user's status.
     if (success && mounted) {
       // Navigation is reactive
@@ -75,7 +75,7 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Password Field
               TextFormField(
                 controller: _passwordController,
@@ -95,7 +95,7 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
                   return null;
                 },
               ),
-              
+
               // Remember Me & Forgot Password
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -116,7 +116,7 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Error Message
               if (authState.hasError)
                 Padding(
@@ -127,7 +127,7 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                
+
               // Login Button
               ElevatedButton(
                 onPressed: authState.isLoading ? null : _submit,
@@ -141,17 +141,17 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
                 ),
                 child: authState.isLoading
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
                     : const Text('تسجيل الدخول', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 32),
-              
+
               // Divider
               Row(
                 children: [
@@ -164,7 +164,7 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-              
+
               // Create Account Section
               const Text(
                 'ليس لديك حساب؟',
@@ -184,7 +184,7 @@ class _InvestorLoginScreenState extends ConsumerState<InvestorLoginScreen> {
                 child: const Text('إنشاء حساب مستثمر جديد', style: TextStyle(color: Color(0xFF1B3A5B))),
               ),
               const SizedBox(height: 16),
-              
+
               // Back Button
               TextButton.icon(
                 onPressed: () => context.go('/portal-selection'),

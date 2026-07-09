@@ -28,9 +28,9 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final success = await ref.read(authControllerProvider.notifier).login(
-          _emailController.text,
-          _passwordController.text,
-        );
+      _emailController.text,
+      _passwordController.text,
+    );
 
     if (success && mounted) {
       context.go('/dashboard');
@@ -59,7 +59,7 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (val) =>
-                  (val == null || val.isEmpty) ? l10n.errorFieldRequired : null,
+              (val == null || val.isEmpty) ? l10n.errorFieldRequired : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -71,7 +71,7 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
               ),
               obscureText: true,
               validator: (val) =>
-                  (val == null || val.isEmpty) ? l10n.errorFieldRequired : null,
+              (val == null || val.isEmpty) ? l10n.errorFieldRequired : null,
             ),
             const SizedBox(height: 24),
             if (authState.hasError)
@@ -95,13 +95,13 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
               ),
               child: authState.isLoading
                   ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
                   : Text(l10n.login),
             ),
             const SizedBox(height: 16),
