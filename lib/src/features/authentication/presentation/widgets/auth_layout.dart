@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:car_system_management/src/core/utils/app_theme.dart';
-import '../screens/portal_selection_screen.dart';
-import 'brand_logo.dart'; // لاستخدام الـ BrandLogo
+import 'brand_logo.dart'; 
 
 class AuthLayout extends StatelessWidget {
   final String title;
@@ -20,7 +19,7 @@ class AuthLayout extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // خلفية كحلية ملكية متناسقة مع بوابة الدخول
+          // خلفية كحلية ملكية عميقة
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -34,32 +33,32 @@ class AuthLayout extends StatelessWidget {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 500),
+                  constraints: const BoxConstraints(maxWidth: 460), // عرض ملموم أكثر
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // اللوجو الفخم الموحد للنظام
-                      const BrandLogo(),
-                      const SizedBox(height: 48),
+                      // اللوجو بحجم ملموم واحترافي
+                      const BrandLogo(scale: 0.8),
+                      const SizedBox(height: 24), // تقليل المسافة من 48 لـ 24
 
-                      // كرت البيانات بتصميم زجاجي احترافي
+                      // كرت البيانات بتصميم زجاجي رشيق
                       Container(
-                        padding: const EdgeInsets.all(32),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24), // تقليل الـ Padding الداخلي
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: Colors.white.withOpacity(0.1),
-                            width: 1.5,
+                            width: 1.2,
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.2),
-                              blurRadius: 40,
-                              offset: const Offset(0, 20),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
                             ),
                           ],
                         ),
@@ -69,7 +68,7 @@ class AuthLayout extends StatelessWidget {
                             Text(
                               title,
                               style: const TextStyle(
-                                fontSize: 24,
+                                fontSize: 22, // تصغير العنوان
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 fontFamily: 'Cairo',
@@ -77,18 +76,19 @@ class AuthLayout extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             if (subtitle != null) ...[
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Text(
                                 subtitle!,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.5),
-                                  fontSize: 14,
+                                  fontSize: 13,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
                             ],
-                            const SizedBox(height: 32),
-                            // تغليف المدخلات لتظهر بشكل أفضل فوق الخلفية الغامقة
+                            const SizedBox(height: 24), // مسافة أقل قبل الفورمة
+                            
+                            // تغليف المدخلات بالثيم المودرن
                             Theme(
                               data: Theme.of(context).copyWith(
                                 inputDecorationTheme: _buildDarkInputTheme(),
@@ -113,21 +113,22 @@ class AuthLayout extends StatelessWidget {
     return InputDecorationTheme(
       filled: true,
       fillColor: Colors.white.withOpacity(0.05),
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-      labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
+      labelStyle: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
       prefixIconColor: AppColors.accentGold,
       suffixIconColor: AppColors.accentGold,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // حقول ملمومة أكثر
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: AppColors.accentGold, width: 2),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.accentGold, width: 1.5),
       ),
     );
   }
