@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../domain/vehicle.dart';
-import '../data/supabase_inventory_repository.dart';
+import 'package:car_system_management/src/features/inventory/domain/vehicle.dart';
+import 'package:car_system_management/src/features/inventory/data/supabase_inventory_repository.dart';
 
 part 'inventory_controller.g.dart';
 
@@ -21,6 +21,17 @@ class InventoryController extends _$InventoryController {
     state = await AsyncValue.guard(() => ref.read(inventoryRepositoryProvider).updateVehicle(id, data));
   }
 
+  /// تحديث حالة السيارة (مثلاً من available إلى sold)
+  Future<void> updateVehicleStatus(String id, String status) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(inventoryRepositoryProvider).updateVehicle(id, {'status': status});
+      return null;
+    });
+    // تحديث القوائم المرتبطة
+    ref.invalidate(vehiclesListProvider);
+  }
+
   Future<void> deleteVehicle(String id) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => ref.read(inventoryRepositoryProvider).deleteVehicle(id));
@@ -37,6 +48,15 @@ class InventoryController extends _$InventoryController {
     );
     ref.invalidate(vehicleMaintenanceLogsProvider(vehicleId));
   }
+}
+@riverpod
+Future<Map<String, dynamic>> inventoryStats(InventoryStatsRef ref) {
+  return ref.watch(inventoryRepositoryProvider).getInventoryStats();
+}
+
+@riverpod
+Future<List<Map<String, dynamic>>> vehicleMaintenanceLogs(VehicleMaintenanceLogsRef ref, String vehicleId) {
+  return ref.watch(inventoryRepositoryProvider).getMaintenanceLogs(vehicleId);
 }
 
 @riverpod
@@ -56,14 +76,4 @@ Future<List<Vehicle>> vehiclesList(
 @riverpod
 Future<Vehicle?> vehicleDetails(VehicleDetailsRef ref, String id) {
   return ref.watch(inventoryRepositoryProvider).getVehicleById(id);
-}
-
-@riverpod
-Future<Map<String, dynamic>> inventoryStats(InventoryStatsRef ref) {
-  return ref.watch(inventoryRepositoryProvider).getInventoryStats();
-}
-
-@riverpod
-Future<List<Map<String, dynamic>>> vehicleMaintenanceLogs(VehicleMaintenanceLogsRef ref, String vehicleId) {
-  return ref.watch(inventoryRepositoryProvider).getMaintenanceLogs(vehicleId);
 }

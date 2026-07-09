@@ -28,4 +28,13 @@ abstract class InvestorDataSource {
 
   // Profit Distribution
   Future<void> distributeProfit(String investorId, double amount, String description);
+
+  // Withdrawal Requests
+  Future<void> requestWithdrawal(double amount, String bankDetails);
+  Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? investorId, String? status});
+  Future<void> approveWithdrawalRequest(String requestId);
+  Future<void> rejectWithdrawalRequest(String requestId, String reason);
+
+  // --- Projections (New) ---
+  Future<List<Map<String, dynamic>>> getInvestorProjections(String investorId);
 }

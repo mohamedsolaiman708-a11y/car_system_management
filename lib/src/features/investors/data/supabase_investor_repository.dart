@@ -121,6 +121,31 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> distributeProfit(String investorId, double amount, String description) async {
     await _dataSource.distributeProfit(investorId, amount, description);
   }
+
+  @override
+  Future<void> requestWithdrawal(double amount, String bankDetails) async {
+    await _dataSource.requestWithdrawal(amount, bankDetails);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? investorId, String? status}) async {
+    return await _dataSource.getWithdrawalRequests(investorId: investorId, status: status);
+  }
+
+  @override
+  Future<void> approveWithdrawalRequest(String requestId) async {
+    await _dataSource.approveWithdrawalRequest(requestId);
+  }
+
+  @override
+  Future<void> rejectWithdrawalRequest(String requestId, String reason) async {
+    await _dataSource.rejectWithdrawalRequest(requestId, reason);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getInvestorProjections(String investorId) async {
+    return await _dataSource.getInvestorProjections(investorId);
+  }
 }
 
 @Riverpod(keepAlive: true)

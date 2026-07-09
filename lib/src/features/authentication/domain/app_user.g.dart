@@ -10,6 +10,7 @@ _$AppUserImpl _$$AppUserImplFromJson(Map<String, dynamic> json) =>
     _$AppUserImpl(
       id: json['id'] as String,
       fullName: json['full_name'] as String,
+      email: json['email'] as String?,
       role: $enumDecode(_$UserRoleEnumMap, json['role']),
       isActive: json['is_active'] as bool,
       status: json['status'] as String? ?? 'pending',
@@ -21,6 +22,7 @@ Map<String, dynamic> _$$AppUserImplToJson(_$AppUserImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'full_name': instance.fullName,
+      'email': instance.email,
       'role': _$UserRoleEnumMap[instance.role]!,
       'is_active': instance.isActive,
       'status': instance.status,

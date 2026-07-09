@@ -1,5 +1,5 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'dart:developer' as developer;
 import '../../../core/providers/supabase_provider.dart';
 
@@ -10,54 +10,60 @@ class SupabaseDashboardRepository {
 
   SupabaseDashboardRepository(this._client);
 
+  /// جلب الإحصائيات المتقدمة للوحة التحكم
   Future<Map<String, dynamic>> getStaffStats() async {
     try {
+      final now = DateTime.now();
+      final todayStr = now.toIso8601String().split('T')[0];
+      final startOfToday = '${todayStr}T00:00:00Z';
+      
+      final date30 = now.subtract(const Duration(days: 30)).toIso8601String();
+      final date60 = now.subtract(const Duration(days: 60)).toIso8601String();
+      final date90 = now.subtract(const Duration(days: 90)).toIso8601String();
+
       final List<dynamic> responses = await Future.wait<dynamic>([
+        _client.from('inventory_items').select('id').eq('status', 'available').count(CountOption.exact),
+        _client.from('inventory_items').select('id').eq('status', 'sold').count(CountOption.exact),
         _client.from('investors').select('id').count(CountOption.exact),
-        _client.from('financing_contracts').select('id').eq('status', 'active').count(CountOption.exact),
-        _client.from('payments').select('amount_total.sum()'),
-        _client.from('profiles').select('id').eq('is_active', false).count(CountOption.exact),
-        _client.from('investors').select('deployed_capital.sum()'),
         _client.from('customers').select('id').count(CountOption.exact),
+        _client.from('payments').select('amount_total.sum()').gte('payment_date', startOfToday),
+        _client.from('financing_contracts').select('id').eq('status', 'active').count(CountOption.exact),
+        // المتأخرات
+        _client.from('installments').select('expected_amount.sum()').eq('status', 'unpaid').lt('due_date', now.toIso8601String()).gt('due_date', date30),
+        _client.from('installments').select('expected_amount.sum()').eq('status', 'unpaid').lt('due_date', date30).gt('due_date', date60),
+        _client.from('installments').select('expected_amount.sum()').eq('status', 'unpaid').lt('due_date', date60).gt('due_date', date90),
+        _client.from('installments').select('expected_amount.sum()').eq('status', 'unpaid').lt('due_date', date90),
+        // العقود الأخيرة
+        _client.from('financing_contracts').select('contract_no, status, total_contract_value, customers(full_name)').order('created_at', ascending: false).limit(6),
       ]);
 
-      final totalInvestorsRes = responses[0] as PostgrestResponse;
-      final activeContractsRes = responses[1] as PostgrestResponse;
-      final totalRevenueData = responses[2];
-      final pendingApprovalsRes = responses[3] as PostgrestResponse;
-      final totalDeployedData = responses[4];
-      final totalCustomersRes = responses[5] as PostgrestResponse;
-
       return {
-        'total_investors': totalInvestorsRes.count ?? 0,
-        'active_contracts': activeContractsRes.count ?? 0,
-        'total_revenue': _parseSum(totalRevenueData),
-        'pending_approvals': pendingApprovalsRes.count ?? 0,
-        'total_deployed_capital': _parseSum(totalDeployedData),
-        'total_customers': totalCustomersRes.count ?? 0,
+        'available_cars': (responses[0] as PostgrestResponse).count ?? 0,
+        'sold_cars': (responses[1] as PostgrestResponse).count ?? 0,
+        'total_investors': (responses[2] as PostgrestResponse).count ?? 0,
+        'total_customers': (responses[3] as PostgrestResponse).count ?? 0,
+        'today_revenue': _parseSum(responses[4]),
+        'active_contracts': (responses[5] as PostgrestResponse).count ?? 0,
+        'overdue_under_30': _parseSum(responses[6]),
+        'overdue_30_60': _parseSum(responses[7]),
+        'overdue_60_90': _parseSum(responses[8]),
+        'overdue_over_90': _parseSum(responses[9]),
+        'recent_contracts': responses[10] as List,
       };
-    } catch (e, stackTrace) {
-      developer.log('Error fetching dashboard stats', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      developer.log('Dashboard Stats Error', error: e);
       rethrow;
     }
   }
 
-  /// وظيفة البحث الشامل (Phase 15) - محدثة لتشمل الموظفين والمدفوعات
+  /// وظيفة البحث الشامل المطلوبة في الـ Delegate
   Future<Map<String, List<dynamic>>> globalSearch(String query) async {
     try {
       final results = await Future.wait([
-        // 1. البحث في العملاء
         _client.from('customers').select('id, full_name, national_id').or('full_name.ilike.%$query%,national_id.ilike.%$query%').limit(5),
-        // 2. البحث في السيارات
         _client.from('inventory_items').select('id, make, model, license_plate, vin').or('make.ilike.%$query%,model.ilike.%$query%,license_plate.ilike.%$query%,vin.ilike.%$query%').limit(5),
-        // 3. البحث في العقود
         _client.from('financing_contracts').select('id, contract_no').ilike('contract_no', '%$query%').limit(5),
-        // 4. البحث في المستثمرين
         _client.from('investors').select('id, full_name').ilike('full_name', '%$query%').limit(5),
-        // 5. البحث في الموظفين (profiles)
-        _client.from('profiles').select('id, full_name').ilike('full_name', '%$query%').limit(5),
-        // 6. البحث في المدفوعات (برقم المرجع)
-        _client.from('payments').select('id, reference_no, amount_total').ilike('reference_no', '%$query%').limit(5),
       ]);
 
       return {
@@ -65,29 +71,17 @@ class SupabaseDashboardRepository {
         'vehicles': results[1] as List,
         'contracts': results[2] as List,
         'investors': results[3] as List,
-        'staff': results[4] as List,
-        'payments': results[5] as List,
       };
     } catch (e) {
-      developer.log('Global search error', error: e);
-      return {
-        'customers': [], 
-        'vehicles': [], 
-        'contracts': [], 
-        'investors': [],
-        'staff': [],
-        'payments': []
-      };
+      return {'customers': [], 'vehicles': [], 'contracts': [], 'investors': []};
     }
   }
 
   double _parseSum(dynamic data) {
     try {
       if (data == null || data is! List || data.isEmpty) return 0.0;
-      final firstEntry = data.first as Map<String, dynamic>;
-      final sum = firstEntry['sum'];
-      if (sum == null) return 0.0;
-      return double.tryParse(sum.toString()) ?? 0.0;
+      final sum = data.first['sum'];
+      return sum != null ? double.parse(sum.toString()) : 0.0;
     } catch (e) {
       return 0.0;
     }

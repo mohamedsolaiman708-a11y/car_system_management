@@ -6,6 +6,155 @@ part of 'investor_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+String _$investorProjectionsHash() =>
+    r'2131202075c5ddc3b60953676c1eb39cf8fdc165';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+/// See also [investorProjections].
+@ProviderFor(investorProjections)
+const investorProjectionsProvider = InvestorProjectionsFamily();
+
+/// See also [investorProjections].
+class InvestorProjectionsFamily
+    extends Family<AsyncValue<List<Map<String, dynamic>>>> {
+  /// See also [investorProjections].
+  const InvestorProjectionsFamily();
+
+  /// See also [investorProjections].
+  InvestorProjectionsProvider call(String investorId) {
+    return InvestorProjectionsProvider(investorId);
+  }
+
+  @override
+  InvestorProjectionsProvider getProviderOverride(
+    covariant InvestorProjectionsProvider provider,
+  ) {
+    return call(provider.investorId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'investorProjectionsProvider';
+}
+
+/// See also [investorProjections].
+class InvestorProjectionsProvider
+    extends AutoDisposeFutureProvider<List<Map<String, dynamic>>> {
+  /// See also [investorProjections].
+  InvestorProjectionsProvider(String investorId)
+    : this._internal(
+        (ref) => investorProjections(ref as InvestorProjectionsRef, investorId),
+        from: investorProjectionsProvider,
+        name: r'investorProjectionsProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$investorProjectionsHash,
+        dependencies: InvestorProjectionsFamily._dependencies,
+        allTransitiveDependencies:
+            InvestorProjectionsFamily._allTransitiveDependencies,
+        investorId: investorId,
+      );
+
+  InvestorProjectionsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.investorId,
+  }) : super.internal();
+
+  final String investorId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Map<String, dynamic>>> Function(
+      InvestorProjectionsRef provider,
+    )
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: InvestorProjectionsProvider._internal(
+        (ref) => create(ref as InvestorProjectionsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        investorId: investorId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Map<String, dynamic>>> createElement() {
+    return _InvestorProjectionsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InvestorProjectionsProvider &&
+        other.investorId == investorId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, investorId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin InvestorProjectionsRef
+    on AutoDisposeFutureProviderRef<List<Map<String, dynamic>>> {
+  /// The parameter `investorId` of this provider.
+  String get investorId;
+}
+
+class _InvestorProjectionsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Map<String, dynamic>>>
+    with InvestorProjectionsRef {
+  _InvestorProjectionsProviderElement(super.provider);
+
+  @override
+  String get investorId => (origin as InvestorProjectionsProvider).investorId;
+}
+
 String _$investorListControllerHash() =>
     r'9301c3c38f7bb51b4d1a0656a783c737dcd9d891';
 
@@ -28,27 +177,6 @@ final investorListControllerProvider =
 typedef _$InvestorListController = AutoDisposeAsyncNotifier<List<Investor>>;
 String _$investorDetailsControllerHash() =>
     r'2b1f8d20ee6e7d1729d2944bf810bc0a8796e7b4';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
 
 abstract class _$InvestorDetailsController
     extends BuildlessAutoDisposeAsyncNotifier<Investor?> {
@@ -662,6 +790,182 @@ class _InvestorDocumentsControllerProviderElement
   @override
   String get investorId =>
       (origin as InvestorDocumentsControllerProvider).investorId;
+}
+
+String _$withdrawalRequestsControllerHash() =>
+    r'717baa369956b15bbbaf15d5eb3de792fe478ae1';
+
+abstract class _$WithdrawalRequestsController
+    extends BuildlessAutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
+  late final String? investorId;
+  late final String? status;
+
+  FutureOr<List<Map<String, dynamic>>> build({
+    String? investorId,
+    String? status,
+  });
+}
+
+/// See also [WithdrawalRequestsController].
+@ProviderFor(WithdrawalRequestsController)
+const withdrawalRequestsControllerProvider =
+    WithdrawalRequestsControllerFamily();
+
+/// See also [WithdrawalRequestsController].
+class WithdrawalRequestsControllerFamily
+    extends Family<AsyncValue<List<Map<String, dynamic>>>> {
+  /// See also [WithdrawalRequestsController].
+  const WithdrawalRequestsControllerFamily();
+
+  /// See also [WithdrawalRequestsController].
+  WithdrawalRequestsControllerProvider call({
+    String? investorId,
+    String? status,
+  }) {
+    return WithdrawalRequestsControllerProvider(
+      investorId: investorId,
+      status: status,
+    );
+  }
+
+  @override
+  WithdrawalRequestsControllerProvider getProviderOverride(
+    covariant WithdrawalRequestsControllerProvider provider,
+  ) {
+    return call(investorId: provider.investorId, status: provider.status);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'withdrawalRequestsControllerProvider';
+}
+
+/// See also [WithdrawalRequestsController].
+class WithdrawalRequestsControllerProvider
+    extends
+        AutoDisposeAsyncNotifierProviderImpl<
+          WithdrawalRequestsController,
+          List<Map<String, dynamic>>
+        > {
+  /// See also [WithdrawalRequestsController].
+  WithdrawalRequestsControllerProvider({String? investorId, String? status})
+    : this._internal(
+        () => WithdrawalRequestsController()
+          ..investorId = investorId
+          ..status = status,
+        from: withdrawalRequestsControllerProvider,
+        name: r'withdrawalRequestsControllerProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$withdrawalRequestsControllerHash,
+        dependencies: WithdrawalRequestsControllerFamily._dependencies,
+        allTransitiveDependencies:
+            WithdrawalRequestsControllerFamily._allTransitiveDependencies,
+        investorId: investorId,
+        status: status,
+      );
+
+  WithdrawalRequestsControllerProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.investorId,
+    required this.status,
+  }) : super.internal();
+
+  final String? investorId;
+  final String? status;
+
+  @override
+  FutureOr<List<Map<String, dynamic>>> runNotifierBuild(
+    covariant WithdrawalRequestsController notifier,
+  ) {
+    return notifier.build(investorId: investorId, status: status);
+  }
+
+  @override
+  Override overrideWith(WithdrawalRequestsController Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: WithdrawalRequestsControllerProvider._internal(
+        () => create()
+          ..investorId = investorId
+          ..status = status,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        investorId: investorId,
+        status: status,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeAsyncNotifierProviderElement<
+    WithdrawalRequestsController,
+    List<Map<String, dynamic>>
+  >
+  createElement() {
+    return _WithdrawalRequestsControllerProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WithdrawalRequestsControllerProvider &&
+        other.investorId == investorId &&
+        other.status == status;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, investorId.hashCode);
+    hash = _SystemHash.combine(hash, status.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin WithdrawalRequestsControllerRef
+    on AutoDisposeAsyncNotifierProviderRef<List<Map<String, dynamic>>> {
+  /// The parameter `investorId` of this provider.
+  String? get investorId;
+
+  /// The parameter `status` of this provider.
+  String? get status;
+}
+
+class _WithdrawalRequestsControllerProviderElement
+    extends
+        AutoDisposeAsyncNotifierProviderElement<
+          WithdrawalRequestsController,
+          List<Map<String, dynamic>>
+        >
+    with WithdrawalRequestsControllerRef {
+  _WithdrawalRequestsControllerProviderElement(super.provider);
+
+  @override
+  String? get investorId =>
+      (origin as WithdrawalRequestsControllerProvider).investorId;
+  @override
+  String? get status => (origin as WithdrawalRequestsControllerProvider).status;
 }
 
 // ignore_for_file: type=lint

@@ -29,4 +29,7 @@ abstract class ReportRepository {
   });
 
   Future<List<Map<String, dynamic>>> getContractsSummary();
+
+  /// جلب ميزان المراجعة (محاسبي)
+  Future<List<Map<String, dynamic>>> getTrialBalance();
 }

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:go_router/go_router.dart';
+import '../../domain/customer.dart';
 import '../crm_controller.dart';
-import '../domain/customer.dart';
-import '../widgets/document_manager_widget.dart';
+import '../../../documents/presentation/widgets/universal_document_manager.dart';
 
 class CustomerDetailsScreen extends ConsumerWidget {
   final String id;
@@ -54,7 +54,7 @@ class CustomerDetailsScreen extends ConsumerWidget {
                         _OverviewTab(customer: customer),
                         _ContractsTab(customerId: id),
                         _PaymentsTab(customerId: id),
-                        DocumentManagerWidget(customerId: id), // Integrated Document Manager
+                        UniversalDocumentManager(customerId: id), // Updated to Universal Manager
                         _TimelineTab(customerId: id),
                       ],
                     ),
@@ -146,7 +146,6 @@ class CustomerDetailsScreen extends ConsumerWidget {
   }
 }
 
-// ... rest of the helper tabs remain the same as previous implementations
 class _OverviewTab extends ConsumerWidget {
   final Customer customer;
   const _OverviewTab({required this.customer});

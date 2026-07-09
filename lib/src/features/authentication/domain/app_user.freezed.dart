@@ -24,6 +24,8 @@ mixin _$AppUser {
   String get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'full_name')
   String get fullName => throw _privateConstructorUsedError;
+  String? get email =>
+      throw _privateConstructorUsedError; // أضفنا البريد الإلكتروني للمراسلات وتغيير كلمة المرور
   UserRole get role => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_active')
   bool get isActive => throw _privateConstructorUsedError;
@@ -51,6 +53,7 @@ abstract class $AppUserCopyWith<$Res> {
   $Res call({
     String id,
     @JsonKey(name: 'full_name') String fullName,
+    String? email,
     UserRole role,
     @JsonKey(name: 'is_active') bool isActive,
     String status,
@@ -76,6 +79,7 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
   $Res call({
     Object? id = null,
     Object? fullName = null,
+    Object? email = freezed,
     Object? role = null,
     Object? isActive = null,
     Object? status = null,
@@ -92,6 +96,10 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
                 ? _value.fullName
                 : fullName // ignore: cast_nullable_to_non_nullable
                       as String,
+            email: freezed == email
+                ? _value.email
+                : email // ignore: cast_nullable_to_non_nullable
+                      as String?,
             role: null == role
                 ? _value.role
                 : role // ignore: cast_nullable_to_non_nullable
@@ -129,6 +137,7 @@ abstract class _$$AppUserImplCopyWith<$Res> implements $AppUserCopyWith<$Res> {
   $Res call({
     String id,
     @JsonKey(name: 'full_name') String fullName,
+    String? email,
     UserRole role,
     @JsonKey(name: 'is_active') bool isActive,
     String status,
@@ -153,6 +162,7 @@ class __$$AppUserImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? fullName = null,
+    Object? email = freezed,
     Object? role = null,
     Object? isActive = null,
     Object? status = null,
@@ -169,6 +179,10 @@ class __$$AppUserImplCopyWithImpl<$Res>
             ? _value.fullName
             : fullName // ignore: cast_nullable_to_non_nullable
                   as String,
+        email: freezed == email
+            ? _value.email
+            : email // ignore: cast_nullable_to_non_nullable
+                  as String?,
         role: null == role
             ? _value.role
             : role // ignore: cast_nullable_to_non_nullable
@@ -200,6 +214,7 @@ class _$AppUserImpl implements _AppUser {
   const _$AppUserImpl({
     required this.id,
     @JsonKey(name: 'full_name') required this.fullName,
+    this.email,
     required this.role,
     @JsonKey(name: 'is_active') required this.isActive,
     this.status = 'pending',
@@ -215,6 +230,9 @@ class _$AppUserImpl implements _AppUser {
   @override
   @JsonKey(name: 'full_name')
   final String fullName;
+  @override
+  final String? email;
+  // أضفنا البريد الإلكتروني للمراسلات وتغيير كلمة المرور
   @override
   final UserRole role;
   @override
@@ -233,7 +251,7 @@ class _$AppUserImpl implements _AppUser {
 
   @override
   String toString() {
-    return 'AppUser(id: $id, fullName: $fullName, role: $role, isActive: $isActive, status: $status, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'AppUser(id: $id, fullName: $fullName, email: $email, role: $role, isActive: $isActive, status: $status, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -244,6 +262,7 @@ class _$AppUserImpl implements _AppUser {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.fullName, fullName) ||
                 other.fullName == fullName) &&
+            (identical(other.email, email) || other.email == email) &&
             (identical(other.role, role) || other.role == role) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
@@ -260,6 +279,7 @@ class _$AppUserImpl implements _AppUser {
     runtimeType,
     id,
     fullName,
+    email,
     role,
     isActive,
     status,
@@ -285,6 +305,7 @@ abstract class _AppUser implements AppUser {
   const factory _AppUser({
     required final String id,
     @JsonKey(name: 'full_name') required final String fullName,
+    final String? email,
     required final UserRole role,
     @JsonKey(name: 'is_active') required final bool isActive,
     final String status,
@@ -299,6 +320,8 @@ abstract class _AppUser implements AppUser {
   @override
   @JsonKey(name: 'full_name')
   String get fullName;
+  @override
+  String? get email; // أضفنا البريد الإلكتروني للمراسلات وتغيير كلمة المرور
   @override
   UserRole get role;
   @override

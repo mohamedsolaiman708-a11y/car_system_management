@@ -25,10 +25,19 @@ dependencies:
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1
   
-  # UI
+  # UI & Media
   flutter_hooks: ^0.20.4
   hooks_riverpod: ^2.4.9
   google_fonts: ^6.1.0
+  file_picker: ^8.0.0
+  url_launcher: ^6.2.5
+  
+  # Export Center (Phase 19)
+  pdf: ^3.10.8
+  excel: ^4.0.2
+  path_provider: ^2.1.2
+  printing: ^5.11.1
+  share_plus: ^12.0.2
 
 dev_dependencies:
   flutter_test:

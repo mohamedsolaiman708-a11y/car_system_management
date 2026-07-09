@@ -13,13 +13,13 @@ enum UserRole {
   String get label {
     switch (this) {
       case UserRole.admin:
-        return 'Admin';
+        return 'مدير نظام';
       case UserRole.manager:
-        return 'Manager';
+        return 'مدير عمليات';
       case UserRole.accountant:
-        return 'Accountant';
+        return 'محاسب';
       case UserRole.investor:
-        return 'Investor';
+        return 'مستثمر';
     }
   }
 }

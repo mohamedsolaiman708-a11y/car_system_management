@@ -1,9 +1,9 @@
 -- ############################################################################
 -- PHASE 3.5: FINANCING CONTRACT SERVICE LOGIC
+-- VERSION: 1.1.0 (Disaster Recovery Hardened)
 -- ############################################################################
 
--- 1. تحديث الحسابات المحاسبية اللازمة لعقود التمويل
--- ############################################################################
+-- 1. تحديث الحسابات المحاسبية اللازمة
 INSERT INTO public.accounts (code, name, type, is_reconcilable)
 VALUES 
 ('1020', 'Contracts Receivable', 'asset', true),
@@ -11,24 +11,7 @@ VALUES
 ('4010', 'Unearned Finance Profit', 'liability', false)
 ON CONFLICT (code) DO NOTHING;
 
--- 2. تحديث الـ Trigger الخاص بالمخزون لدعم حالة الحجز (Reserved)
--- ############################################################################
-CREATE OR REPLACE FUNCTION public.sync_inventory_asset_v2()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF (NEW.status = 'active') THEN
-        UPDATE public.inventory_items SET status = 'on_contract' WHERE id = NEW.inventory_item_id;
-    ELSIF (NEW.status = 'pending_funding') THEN
-        UPDATE public.inventory_items SET status = 'available' WHERE id = NEW.inventory_item_id; -- يمكن تغييرها لـ reserved مستقبلاً
-    ELSIF (NEW.status IN ('closed', 'defaulted')) THEN
-        UPDATE public.inventory_items SET status = 'available' WHERE id = NEW.inventory_item_id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- 3. وظيفة تخصيص تمويل للعقد (Allocate Funding)
--- ############################################################################
+-- 2. وظيفة تخصيص تمويل للعقد (Allocate Funding)
 CREATE OR REPLACE FUNCTION public.allocate_contract_funding(
     p_contract_id UUID,
     p_investor_id UUID,
@@ -38,6 +21,11 @@ RETURNS VOID AS $$
 DECLARE
     v_available DECIMAL(15,2);
 BEGIN
+    -- [A] Disaster Recovery Guard
+    IF public.is_financial_system_frozen() THEN
+        RAISE EXCEPTION 'CRITICAL: Financial operations are currently frozen.';
+    END IF;
+
     -- التحقق من السيولة
     SELECT available_balance INTO v_available FROM public.investors WHERE id = p_investor_id;
     IF v_available < p_amount THEN
@@ -48,14 +36,13 @@ BEGIN
     INSERT INTO public.contract_funding (contract_id, investor_id, amount_allocated)
     VALUES (p_contract_id, p_investor_id, p_amount);
 
-    -- تسجيل حركة مالية للمستثمر (ستقوم الـ Trigger tr_investor_ledger بنقل المبلغ من المتاح إلى المستثمر)
+    -- تسجيل حركة مالية للمستثمر
     INSERT INTO public.investor_transactions (investor_id, amount, type, reference_id, description)
     VALUES (p_investor_id, p_amount, 'contract_allocation', p_contract_id, 'Funding for contract: ' || p_contract_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4. الوظيفة الكبرى: تفعيل العقد (Activate Contract)
--- ############################################################################
+-- 3. تفعيل العقد (Activate Contract)
 CREATE OR REPLACE FUNCTION public.activate_financing_contract(
     p_contract_id UUID
 )
@@ -70,6 +57,11 @@ DECLARE
     v_journal_id UUID;
     v_i INTEGER;
 BEGIN
+    -- [A] Disaster Recovery Guard
+    IF public.is_financial_system_frozen() THEN
+        RAISE EXCEPTION 'CRITICAL: Financial operations are currently frozen.';
+    END IF;
+
     -- 1. جلب بيانات العقد
     SELECT * INTO v_contract FROM public.financing_contracts WHERE id = p_contract_id;
     IF v_contract.status != 'draft' AND v_contract.status != 'pending_funding' THEN
@@ -88,7 +80,7 @@ BEGIN
     SELECT id INTO v_fiscal_id FROM public.fiscal_periods WHERE is_closed = false AND CURRENT_DATE BETWEEN start_date AND end_date LIMIT 1;
     IF v_fiscal_id IS NULL THEN RAISE EXCEPTION 'No open fiscal period'; END IF;
 
-    -- 4. حساب مبالغ الأقساط (تبسيط: قسط متساوي)
+    -- 4. حساب مبالغ الأقساط
     v_installment_amount := v_contract.total_contract_value / v_contract.duration_months;
     v_principal_per_inst := v_contract.principal_amount / v_contract.duration_months;
     v_profit_per_inst := (v_contract.total_contract_value - v_contract.principal_amount) / v_contract.duration_months;
@@ -116,7 +108,7 @@ BEGIN
 
     -- دائن: التزامات للمستثمرين (أصل المبلغ)
     INSERT INTO public.journal_entry_lines (journal_entry_id, account_id, debit, credit)
-    VALUES (v_journal_id, (SELECT id FROM public.accounts WHERE code = '2020'), v_contract.principal_amount, v_contract.principal_amount);
+    VALUES (v_journal_id, (SELECT id FROM public.accounts WHERE code = '2020'), 0, v_contract.principal_amount);
 
     -- دائن: أرباح مؤجلة (إجمالي الربح)
     INSERT INTO public.journal_entry_lines (journal_entry_id, account_id, debit, credit)

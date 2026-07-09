@@ -4,6 +4,7 @@ import '../investor_controller.dart';
 import '../widgets/add_transaction_dialog.dart';
 import '../../domain/investor_transaction_type.dart';
 import 'package:intl/intl.dart' as intl;
+import '../../../documents/presentation/widgets/universal_document_manager.dart';
 
 class InvestorDetailsScreen extends ConsumerWidget {
   final String id;
@@ -18,7 +19,7 @@ class InvestorDetailsScreen extends ConsumerWidget {
         if (investor == null) return const Scaffold(body: Center(child: Text('المستثمر غير موجود')));
 
         return DefaultTabController(
-          length: 3,
+          length: 5, // تم زيادة العدد لـ 5 تبويبات
           child: Scaffold(
             appBar: AppBar(
               title: Text(investor.fullName),
@@ -29,14 +30,18 @@ class InvestorDetailsScreen extends ConsumerWidget {
                     ref.invalidate(investorDetailsControllerProvider(id));
                     ref.invalidate(investorTransactionsControllerProvider(id));
                     ref.invalidate(investorFundedContractsControllerProvider(id));
-                    ref.invalidate(investorDocumentsControllerProvider(id));
+                    ref.invalidate(investorProjectionsProvider(id));
+                    ref.invalidate(withdrawalRequestsControllerProvider(investorId: id));
                   },
                 ),
               ],
               bottom: const TabBar(
+                isScrollable: true,
                 tabs: [
                   Tab(text: 'العمليات المالية'),
                   Tab(text: 'العقود الممولة'),
+                  Tab(text: 'طلبات السحب'),
+                  Tab(text: 'التوقعات الماليّة'),
                   Tab(text: 'المستندات'),
                 ],
               ),
@@ -45,7 +50,9 @@ class InvestorDetailsScreen extends ConsumerWidget {
               children: [
                 _FinancialTab(investor: investor),
                 _ContractsTab(investorId: investor.id),
-                _DocumentsTab(investorId: investor.id),
+                _WithdrawalRequestsTab(investorId: investor.id),
+                _ProjectionsTab(investorId: investor.id),
+                UniversalDocumentManager(investorId: investor.id),
               ],
             ),
           ),
@@ -110,35 +117,29 @@ class _FinancialTab extends ConsumerWidget {
   }
 
   Widget _buildSummaryCard(BuildContext context, investor) {
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
     return Card(
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('الرصيد المتاح', investor.availableBalance, Colors.green),
-                _buildStatItem('رأس المال المستثمر', investor.deployedCapital, Colors.blue),
-                _buildStatItem('إجمالي الأرباح', investor.totalProfitEarned, Colors.orange),
-              ],
-            ),
+            _buildStatItem('الرصيد المتاح', investor.availableBalance, Colors.green, f),
+            _buildStatItem('رأس المال الموظف', investor.deployedCapital, Colors.blue, f),
+            _buildStatItem('إجمالي الأرباح', investor.totalProfitEarned, Colors.orange, f),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, double value, Color color) {
+  Widget _buildStatItem(String label, double value, Color color, intl.NumberFormat f) {
     return Column(
       children: [
         Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 4),
-        Text(
-          '${intl.NumberFormat.currency(symbol: '', decimalDigits: 2).format(value)} ر.س',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
-        ),
+        Text('${f.format(value)} ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
       ],
     );
   }
@@ -191,16 +192,9 @@ class _FinancialTab extends ConsumerWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(labelText: 'المبلغ', suffixText: 'ر.س'),
-                keyboardType: TextInputType.number,
-              ),
+              TextField(controller: amountController, decoration: const InputDecoration(labelText: 'المبلغ', suffixText: 'ر.س'), keyboardType: TextInputType.number),
               const SizedBox(height: 8),
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(labelText: 'الوصف / ملاحظات'),
-              ),
+              TextField(controller: descController, decoration: const InputDecoration(labelText: 'الوصف / ملاحظات')),
             ],
           ),
           actions: [
@@ -209,11 +203,7 @@ class _FinancialTab extends ConsumerWidget {
               onPressed: () async {
                 final amount = double.tryParse(amountController.text);
                 if (amount != null && amount > 0) {
-                  await ref.read(investorTransactionsControllerProvider(investorId).notifier).distributeProfit(
-                    investorId: investorId,
-                    amount: amount,
-                    description: descController.text,
-                  );
+                  await ref.read(investorTransactionsControllerProvider(investorId).notifier).distributeProfit(investorId: investorId, amount: amount, description: descController.text);
                   if (context.mounted) Navigator.pop(context);
                 }
               },
@@ -233,137 +223,114 @@ class _ContractsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final contractsAsync = ref.watch(investorFundedContractsControllerProvider(investorId));
-
     return contractsAsync.when(
-      data: (contracts) {
-        if (contracts.isEmpty) return const Center(child: Text('لا توجد عقود ممولة حالياً'));
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: contracts.length,
-          itemBuilder: (context, index) {
-            final item = contracts[index];
-            final contract = item['financing_contracts'];
-            return Card(
-              child: ListTile(
-                title: Text('عقد رقم: ${contract['contract_no'] ?? contract['id'].toString().substring(0, 8)}'),
-                subtitle: Text('العميل: ${contract['customers']?['full_name'] ?? 'غير معروف'}'),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'المبلغ الممول: ${item['amount_allocated']} ر.س',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                    ),
-                    Text(
-                      'الحالة: ${contract['status']}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
+      data: (contracts) => contracts.isEmpty 
+        ? const Center(child: Text('لا توجد عقود ممولة حالياً'))
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: contracts.length,
+            itemBuilder: (context, index) {
+              final item = contracts[index];
+              final contract = item['financing_contracts'];
+              return Card(
+                child: ListTile(
+                  title: Text('عقد رقم: ${contract['contract_no']}'),
+                  subtitle: Text('المبلغ الممول: ${item['amount_allocated']} ر.س'),
+                  trailing: Text(contract['status'], style: const TextStyle(fontSize: 12)),
                 ),
-            ));
-          },
-        );
-      },
+              );
+            },
+          ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) => Center(child: Text('خطأ: $err')),
     );
   }
 }
 
-class _DocumentsTab extends ConsumerWidget {
+class _WithdrawalRequestsTab extends ConsumerWidget {
   final String investorId;
-  const _DocumentsTab({required this.investorId});
+  const _WithdrawalRequestsTab({required this.investorId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final docsAsync = ref.watch(investorDocumentsControllerProvider(investorId));
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton.icon(
-            onPressed: () => _showUploadDialog(context, ref),
-            icon: const Icon(Icons.upload_file),
-            label: const Text('رفع مستند جديد'),
-          ),
-        ),
-        Expanded(
-          child: docsAsync.when(
-            data: (docs) {
-              if (docs.isEmpty) return const Center(child: Text('لا توجد مستندات'));
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: docs.length,
-                itemBuilder: (context, index) {
-                  final doc = docs[index];
-                  return Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.description, color: Colors.blue),
-                      title: Text(doc.name),
-                      subtitle: Text(intl.DateFormat('yyyy/MM/dd').format(doc.createdAt)),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => ref.read(investorDocumentsControllerProvider(investorId).notifier).deleteDocument(doc.id),
-                      ),
-                      onTap: () {
-                        // Open URL
-                      },
-                    ),
-                  );
-                },
+    final requestsAsync = ref.watch(withdrawalRequestsControllerProvider(investorId: investorId));
+    return requestsAsync.when(
+      data: (requests) => requests.isEmpty 
+        ? const Center(child: Text('لا توجد طلبات سحب لهذا المستثمر'))
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            itemBuilder: (context, index) {
+              final req = requests[index];
+              final isPending = req['status'] == 'pending';
+              return Card(
+                child: ListTile(
+                  title: Text('طلب سحب مبلغ: ${req['amount']} ر.س'),
+                  subtitle: Text('الحالة: ${req['status']} | التاريخ: ${req['created_at'].toString().split('T')[0]}'),
+                  trailing: isPending ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => ref.read(withdrawalRequestsControllerProvider(investorId: investorId).notifier).approveRequest(req['id'])),
+                      IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () => _showRejectDialog(context, ref, req['id'])),
+                    ],
+                  ) : null,
+                ),
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text('Error: $err')),
           ),
-        ),
-      ],
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('خطأ: $err')),
     );
   }
 
-  void _showUploadDialog(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    final urlController = TextEditingController(); // Simulation: in real app use file picker
-
+  void _showRejectDialog(BuildContext context, WidgetRef ref, String requestId) {
+    final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('رفع مستند'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'اسم المستند (مثلاً: الهوية الوطنية)'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: urlController,
-                decoration: const InputDecoration(labelText: 'رابط الملف (محاكاة)'),
-              ),
-            ],
-          ),
+          title: const Text('رفض طلب السحب'),
+          content: TextField(controller: controller, decoration: const InputDecoration(labelText: 'سبب الرفض')),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.isNotEmpty) {
-                  await ref.read(investorDocumentsControllerProvider(investorId).notifier).uploadDocument(
-                    nameController.text,
-                    urlController.text.isEmpty ? 'https://example.com/file.pdf' : urlController.text,
-                  );
-                  if (context.mounted) Navigator.pop(context);
-                }
-              },
-              child: const Text('رفع'),
-            ),
+            ElevatedButton(onPressed: () {
+              ref.read(withdrawalRequestsControllerProvider(investorId: investorId).notifier).rejectRequest(requestId, controller.text);
+              Navigator.pop(context);
+            }, child: const Text('تأكيد الرفض')),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProjectionsTab extends ConsumerWidget {
+  final String investorId;
+  const _ProjectionsTab({required this.investorId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectionsAsync = ref.watch(investorProjectionsProvider(investorId));
+    return projectionsAsync.when(
+      data: (list) => list.isEmpty 
+        ? const Center(child: Text('لا توجد تدفقات متوقعة حالياً'))
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final item = list[index];
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.event_available, color: Colors.blue),
+                  title: Text('استحقاق تاريخ: ${item['due_date']}'),
+                  trailing: Text('${item['total_expected']} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                ),
+              );
+            },
+          ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('خطأ: $err')),
     );
   }
 }

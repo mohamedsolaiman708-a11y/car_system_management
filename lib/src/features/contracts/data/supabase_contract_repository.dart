@@ -48,6 +48,7 @@ class SupabaseContractRepository implements ContractRepository {
 
   @override
   Future<Contract> createContract(Map<String, dynamic> data) async {
+    // إرسال كافة البيانات الجديدة (الكفلاء، الرسوم، الشهود)
     final response = await _client.from('financing_contracts').insert(data).select().single();
     
     // Audit Log
@@ -72,8 +73,32 @@ class SupabaseContractRepository implements ContractRepository {
 
   @override
   Future<void> activateContract(String id) async {
-    // This calls the RPC function 'activate_financing_contract' defined in your SQL schema
     await _client.rpc('activate_financing_contract', params: {'p_contract_id': id});
+  }
+
+  @override
+  Future<void> processPayment({
+    required String contractId,
+    required double amount,
+    required String method,
+    String? reference,
+    String? idempotencyKey,
+  }) async {
+    await _client.rpc('process_contract_payment', params: {
+      'p_contract_id': contractId,
+      'p_amount': amount,
+      'p_payment_method': method,
+      'p_reference_no': reference,
+      'p_idempotency_key': idempotencyKey,
+    });
+  }
+
+  @override
+  Future<void> reversePayment(String paymentId, String reason) async {
+    await _client.rpc('reverse_contract_payment', params: {
+      'p_payment_id': paymentId,
+      'p_reason': reason,
+    });
   }
 
   @override
@@ -85,16 +110,11 @@ class SupabaseContractRepository implements ContractRepository {
       _client.from('financing_contracts').select('id').eq('status', 'defaulted').count(CountOption.exact),
     ]);
 
-    final totalRes = responses[0] as PostgrestResponse;
-    final activeRes = responses[1] as PostgrestResponse;
-    final draftRes = responses[2] as PostgrestResponse;
-    final defaultedRes = responses[3] as PostgrestResponse;
-
     return {
-      'total': totalRes.count ?? 0,
-      'active': activeRes.count ?? 0,
-      'draft': draftRes.count ?? 0,
-      'defaulted': defaultedRes.count ?? 0,
+      'total': (responses[0] as PostgrestResponse).count ?? 0,
+      'active': (responses[1] as PostgrestResponse).count ?? 0,
+      'draft': (responses[2] as PostgrestResponse).count ?? 0,
+      'defaulted': (responses[3] as PostgrestResponse).count ?? 0,
     };
   }
 
@@ -127,6 +147,16 @@ class SupabaseContractRepository implements ContractRepository {
         .select()
         .eq('contract_id', contractId)
         .order('created_at', ascending: false);
+    
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getContractFunding(String contractId) async {
+    final response = await _client
+        .from('contract_funding')
+        .select('*, investors(full_name)')
+        .eq('contract_id', contractId);
     
     return List<Map<String, dynamic>>.from(response as List);
   }

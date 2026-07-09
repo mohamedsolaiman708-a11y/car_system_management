@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import '../../../../core/services/export_service.dart';
 import '../crm_controller.dart';
+import 'package:intl/intl.dart' as intl;
 
 class CustomersScreen extends ConsumerStatefulWidget {
   const CustomersScreen({super.key});
@@ -12,134 +13,103 @@ class CustomersScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomersScreenState extends ConsumerState<CustomersScreen> {
-  String _searchQuery = '';
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
-    final customersAsync = ref.watch(customersListProvider(searchQuery: _searchQuery));
+    final customersAsync = ref.watch(customersListProvider(searchQuery: searchQuery));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('إدارة العملاء (CRM)'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(customersListProvider),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'بحث باسم العميل، رقم الهوية، أو رقم الهاتف...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('إدارة العملاء'),
+          actions: [
+            _buildExportButton(ref),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => ref.invalidate(customersListProvider),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            _buildSearchBar(),
+            Expanded(
+              child: customersAsync.when(
+                data: (customers) => ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: customers.length,
+                  itemBuilder: (context, index) {
+                    final customer = customers[index];
+                    return Card(
+                      child: ListTile(
+                        leading: const CircleAvatar(child: Icon(Icons.person)),
+                        title: Text(customer.fullName),
+                        subtitle: Text('الهوية: ${customer.nationalId} | الهاتف: ${customer.phone}'),
+                        trailing: const Icon(Icons.chevron_left),
+                        onTap: () => context.push('/crm/customers/${customer.id}'),
+                      ),
+                    );
+                  },
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('خطأ: $err')),
               ),
-              onChanged: (value) => setState(() => _searchQuery = value),
             ),
-          ),
-          Expanded(
-            child: customersAsync.when(
-              data: (customers) {
-                if (customers.isEmpty) {
-                  return const Center(child: Text('لا يوجد عملاء مضافين حالياً'));
-                }
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SingleChildScrollView(
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('الاسم الكامل')),
-                        DataColumn(label: Text('رقم الهوية')),
-                        DataColumn(label: Text('رقم الهاتف')),
-                        DataColumn(label: Text('العنوان')),
-                        DataColumn(label: Text('تقييم المخاطر')),
-                        DataColumn(label: Text('تاريخ الإضافة')),
-                        DataColumn(label: Text('الإجراءات')),
-                      ],
-                      rows: customers.map((customer) {
-                        return DataRow(cells: [
-                          DataCell(Text(customer.fullName)),
-                          DataCell(Text(customer.nationalId)),
-                          DataCell(Text(customer.phone)),
-                          DataCell(Text(customer.address ?? '-')),
-                          DataCell(
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _getRiskColor(customer.riskRating).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: _getRiskColor(customer.riskRating).withOpacity(0.5)),
-                              ),
-                              child: Text(
-                                _getRiskLabel(customer.riskRating),
-                                style: TextStyle(
-                                  color: _getRiskColor(customer.riskRating),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          DataCell(Text(DateFormat('yyyy/MM/dd').format(customer.createdAt))),
-                          DataCell(
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.visibility, color: Colors.blue),
-                                  onPressed: () => context.go('/crm/customers/${customer.id}'),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.orange),
-                                  onPressed: () => context.go('/crm/customers/${customer.id}/edit'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ]);
-                      }).toList(),
-                    ),
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/crm/customers/new'),
-        label: const Text('إضافة عميل جديد'),
-        icon: const Icon(Icons.person_add),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => context.push('/crm/customers/new'),
+          label: const Text('عميل جديد'),
+          icon: const Icon(Icons.person_add_alt_1),
+        ),
       ),
     );
   }
 
-  Color _getRiskColor(String risk) {
-    switch (risk) {
-      case 'low':
-        return Colors.green;
-      case 'high':
-        return Colors.red;
-      case 'medium':
-      default:
-        return Colors.orange;
-    }
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        onChanged: (val) => setState(() => searchQuery = val),
+        decoration: InputDecoration(
+          hintText: 'بحث باسم العميل، الهوية، أو رقم الهاتف...',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
   }
 
-  String _getRiskLabel(String risk) {
-    switch (risk) {
-      case 'low':
-        return 'منخفضة';
-      case 'high':
-        return 'عالية';
-      case 'medium':
-      default:
-        return 'متوسطة';
+  Widget _buildExportButton(WidgetRef ref) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.download_rounded),
+      onSelected: (val) => _handleExport(val, ref),
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'pdf', child: Text('تصدير كـ PDF')),
+        const PopupMenuItem(value: 'excel', child: Text('تصدير كـ Excel')),
+      ],
+    );
+  }
+
+  Future<void> _handleExport(String format, WidgetRef ref) async {
+    final customers = ref.read(customersListProvider(searchQuery: searchQuery)).value ?? [];
+    if (customers.isEmpty) return;
+
+    final exportService = ref.read(exportServiceProvider);
+    final columns = ['الاسم الكامل', 'رقم الهوية', 'الهاتف', 'المخاطر'];
+    final rows = customers.map((c) => [
+      c.fullName,
+      c.nationalId,
+      c.phone,
+      c.riskRating,
+    ]).toList();
+
+    if (format == 'pdf') {
+      await exportService.exportToPdf(title: 'قائمة العملاء', columns: columns, rows: rows);
+    } else {
+      await exportService.exportToExcel(fileName: 'قائمة_العملاء', columns: columns, rows: rows);
     }
   }
 }

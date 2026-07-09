@@ -13,6 +13,7 @@ import '../../features/authentication/presentation/screens/email_verification_sc
 import '../../features/authentication/presentation/screens/pending_approval_screen.dart';
 import '../../features/authentication/presentation/screens/account_rejected_screen.dart';
 import '../../features/authentication/presentation/screens/session_expired_screen.dart';
+import '../../features/authentication/presentation/screens/staff_management_screen.dart';
 import '../../features/authentication/domain/user_role.dart';
 
 // CRM Screens
@@ -43,12 +44,41 @@ import '../../features/dashboard/presentation/screens/staff_dashboard_screen.dar
 // Global Search
 import '../../features/search/presentation/screens/search_screen.dart';
 
+// Settings & Maintenance
+import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/maintenance_screen.dart';
+import '../../features/settings/presentation/settings_controller.dart';
+
+// Audit Logs
+import '../../features/audit/presentation/screens/audit_logs_screen.dart';
+import '../../features/audit/presentation/screens/disaster_recovery_screen.dart';
+
+// Reports
+import '../../features/reports/presentation/screens/reports_screen.dart';
+
+// Background Jobs
+import '../../features/jobs/presentation/screens/jobs_screen.dart';
+
+// Backup & Restore
+import '../../features/backup/presentation/screens/backup_screen.dart';
+
+// Help Center
+import '../../features/help/presentation/screens/help_center_screen.dart';
+
+// Notifications
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
+
+// Accounting
+import '../../features/accounting/presentation/screens/accounts_screen.dart';
+import '../../features/accounting/presentation/screens/journal_entries_screen.dart';
+
 part 'app_router.g.dart';
 
 @riverpod
 GoRouter goRouter(GoRouterRef ref) {
   final authState = ref.watch(authStateProvider);
   final user = authState.valueOrNull;
+  final maintenanceModeAsync = ref.watch(isMaintenanceModeProvider);
 
   return GoRouter(
     initialLocation: '/',
@@ -56,9 +86,19 @@ GoRouter goRouter(GoRouterRef ref) {
       final isLoggedIn = user != null;
       final path = state.matchedLocation;
 
+      // 1. Check Maintenance Mode (Admins bypass it)
+      if (maintenanceModeAsync.value == true && path != '/maintenance') {
+        if (isLoggedIn && user.role != UserRole.admin) {
+          return '/maintenance';
+        } else if (!isLoggedIn) {
+          return '/maintenance';
+        }
+      }
+
       if (!isLoggedIn) {
         if (path == '/' || 
             path == '/portal-selection' || 
+            path == '/maintenance' ||
             path.startsWith('/auth')) {
           return null;
         }
@@ -83,6 +123,10 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(
         path: '/',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/maintenance',
+        builder: (context, state) => const MaintenanceScreen(),
       ),
       GoRoute(
         path: '/portal-selection',
@@ -133,6 +177,16 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(
         path: '/search',
         builder: (context, state) => const GlobalSearchScreen(),
+      ),
+
+      GoRoute(
+        path: '/reports',
+        builder: (context, state) => const ReportsScreen(),
+      ),
+
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
 
       // CRM Module
@@ -205,7 +259,7 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
 
-      // Investor Management (Staff Side)
+      // Investor Management
       GoRoute(
         path: '/investors',
         builder: (context, state) => const InvestorsScreen(),
@@ -222,6 +276,52 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(
         path: '/investor-portal',
         builder: (context, state) => const InvestorDashboardScreen(),
+      ),
+
+      // Accounting Module
+      GoRoute(
+        path: '/accounting',
+        builder: (context, state) => const AccountsScreen(),
+        routes: [
+          GoRoute(
+            path: 'accounts',
+            builder: (context, state) => const AccountsScreen(),
+          ),
+          GoRoute(
+            path: 'journal',
+            builder: (context, state) => const JournalEntriesScreen(),
+          ),
+        ],
+      ),
+
+      // Admin & System Features
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/staff-management',
+        builder: (context, state) => const StaffManagementScreen(),
+      ),
+      GoRoute(
+        path: '/audit-logs',
+        builder: (context, state) => const AuditLogsScreen(),
+      ),
+      GoRoute(
+        path: '/background-jobs',
+        builder: (context, state) => const BackgroundJobsScreen(),
+      ),
+      GoRoute(
+        path: '/backups',
+        builder: (context, state) => const BackupScreen(),
+      ),
+      GoRoute(
+        path: '/disaster-recovery',
+        builder: (context, state) => const DisasterRecoveryScreen(),
+      ),
+      GoRoute(
+        path: '/help-center',
+        builder: (context, state) => const HelpCenterScreen(),
       ),
     ],
   );

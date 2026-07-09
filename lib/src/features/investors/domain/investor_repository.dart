@@ -25,4 +25,13 @@ abstract class InvestorRepository {
   Future<void> uploadInvestorDocument(String investorId, String name, String url);
   Future<void> deleteDocument(String documentId);
   Future<void> distributeProfit(String investorId, double amount, String description);
+
+  // --- Withdrawal Requests ---
+  Future<void> requestWithdrawal(double amount, String bankDetails);
+  Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? investorId, String? status});
+  Future<void> approveWithdrawalRequest(String requestId);
+  Future<void> rejectWithdrawalRequest(String requestId, String reason);
+
+  // --- Projections ---
+  Future<List<Map<String, dynamic>>> getInvestorProjections(String investorId);
 }

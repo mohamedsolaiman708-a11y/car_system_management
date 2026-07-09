@@ -15,13 +15,24 @@ class Contract with _$Contract {
     @JsonKey(name: 'total_contract_value') required double totalContractValue,
     @JsonKey(name: 'duration_months') required int durationMonths,
     @JsonKey(name: 'start_date') DateTime? startDate,
-    required String status, // draft, pending_funding, active, closed, defaulted
+    @Default('draft') String status,
     @JsonKey(name: 'created_at') required DateTime createdAt,
-    @JsonKey(name: 'updated_at') required DateTime updatedAt,
     
-    // Optional relations (for UI display)
-    @Default(null) Map<String, dynamic>? customer,
-    @Default(null) Map<String, dynamic>? vehicle,
+    // إضافات بناءً على صور العميل (الاحترافية السعودية)
+    @JsonKey(name: 'guarantor_1_name') String? guarantor1Name,
+    @JsonKey(name: 'guarantor_1_id') String? guarantor1Id,
+    @JsonKey(name: 'guarantor_1_phone') String? guarantor1Phone,
+    
+    @JsonKey(name: 'guarantor_2_name') String? guarantor2Name,
+    @JsonKey(name: 'guarantor_2_id') String? guarantor2Id,
+    
+    @JsonKey(name: 'moroor_fees') @Default(0.0) double moroorFees,
+    @JsonKey(name: 'tamm_fees') @Default(0.0) double tammFees,
+    @JsonKey(name: 'vat_amount') @Default(0.0) double vatAmount,
+    
+    // Joined data
+    Map<String, dynamic>? customer,
+    @JsonKey(name: 'inventory_items') Map<String, dynamic>? vehicle,
   }) = _Contract;
 
   factory Contract.fromJson(Map<String, dynamic> json) => _$ContractFromJson(json);

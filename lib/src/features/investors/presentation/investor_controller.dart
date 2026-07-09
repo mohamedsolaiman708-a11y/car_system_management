@@ -138,7 +138,6 @@ class PendingInvestorsController extends _$PendingInvestorsController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref.read(investorRepositoryProvider).approveInvestor(profileId);
-      // تحديث قائمة المستثمرين النشطين لأن الموافقة أنشأت سجلاً في جدول investors
       ref.invalidate(investorListControllerProvider);
       return ref.read(investorRepositoryProvider).getPendingInvestorRequests();
     });
@@ -184,4 +183,50 @@ class InvestorDocumentsController extends _$InvestorDocumentsController {
       return ref.read(investorRepositoryProvider).getInvestorDocuments(investorId);
     });
   }
+}
+
+@riverpod
+class WithdrawalRequestsController extends _$WithdrawalRequestsController {
+  @override
+  FutureOr<List<Map<String, dynamic>>> build({String? investorId, String? status}) {
+    return ref.watch(investorRepositoryProvider).getWithdrawalRequests(
+      investorId: investorId,
+      status: status,
+    );
+  }
+
+  Future<bool> requestWithdrawal(double amount, String bankDetails) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() => 
+      ref.read(investorRepositoryProvider).requestWithdrawal(amount, bankDetails)
+    );
+    return !result.hasError;
+  }
+
+  Future<void> approveRequest(String requestId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(investorRepositoryProvider).approveWithdrawalRequest(requestId);
+      return ref.read(investorRepositoryProvider).getWithdrawalRequests(
+        investorId: investorId,
+        status: status,
+      );
+    });
+  }
+
+  Future<void> rejectRequest(String requestId, String reason) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(investorRepositoryProvider).rejectWithdrawalRequest(requestId, reason);
+      return ref.read(investorRepositoryProvider).getWithdrawalRequests(
+        investorId: investorId,
+        status: status,
+      );
+    });
+  }
+}
+
+@riverpod
+Future<List<Map<String, dynamic>>> investorProjections(InvestorProjectionsRef ref, String investorId) {
+  return ref.watch(investorRepositoryProvider).getInvestorProjections(investorId);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' as intl;
 import '../investor_controller.dart';
 import '../widgets/create_investor_dialog.dart';
 
@@ -10,7 +11,7 @@ class InvestorsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 2,
+      length: 3, // زيادة عدد التبويبات لـ 3
       child: Scaffold(
         appBar: AppBar(
           title: const Text('إدارة المستثمرين'),
@@ -18,6 +19,7 @@ class InvestorsScreen extends ConsumerWidget {
             tabs: [
               Tab(text: 'المستثمرون النشطون'),
               Tab(text: 'طلبات الانضمام'),
+              Tab(text: 'طلبات السحب'), // التبويب الجديد
             ],
           ),
           actions: [
@@ -26,6 +28,7 @@ class InvestorsScreen extends ConsumerWidget {
               onPressed: () {
                 ref.invalidate(investorListControllerProvider);
                 ref.invalidate(pendingInvestorsControllerProvider);
+                ref.invalidate(withdrawalRequestsControllerProvider());
               },
             ),
           ],
@@ -34,6 +37,7 @@ class InvestorsScreen extends ConsumerWidget {
           children: [
             ActiveInvestorsList(),
             PendingInvestorsList(),
+            WithdrawalRequestsList(), // القائمة الجديدة
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
@@ -129,10 +133,7 @@ class PendingInvestorsList extends ConsumerWidget {
                   children: [
                     ElevatedButton(
                       onPressed: () => ref.read(pendingInvestorsControllerProvider.notifier).approveInvestor(request['id']),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                       child: const Text('تفعيل'),
                     ),
                     const SizedBox(width: 8),
@@ -163,18 +164,11 @@ class PendingInvestorsList extends ConsumerWidget {
           title: const Text('رفض طلب الانضمام'),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'سبب الرفض',
-              hintText: 'اكتب سبب الرفض هنا ليظهر للمستثمر...',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: 'سبب الرفض', border: OutlineInputBorder()),
             maxLines: 3,
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             ElevatedButton(
               onPressed: () {
                 if (controller.text.isNotEmpty) {
@@ -184,6 +178,80 @@ class PendingInvestorsList extends ConsumerWidget {
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
               child: const Text('تأكيد الرفض'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class WithdrawalRequestsList extends ConsumerWidget {
+  const WithdrawalRequestsList({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requestsAsync = ref.watch(withdrawalRequestsControllerProvider(status: 'pending'));
+
+    return requestsAsync.when(
+      data: (requests) {
+        if (requests.isEmpty) {
+          return const Center(child: Text('لا توجد طلبات سحب معلقة'));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: requests.length,
+          itemBuilder: (context, index) {
+            final req = requests[index];
+            final investor = req['investors'];
+            return Card(
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.money_off, color: Colors.red)),
+                title: Text(investor['full_name'] ?? 'مستثمر'),
+                subtitle: Text('المبلغ: ${req['amount']} ر.س\n${req['bank_account_details'] ?? ""}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.check_circle, color: Colors.green),
+                      onPressed: () => ref.read(withdrawalRequestsControllerProvider().notifier).approveRequest(req['id']),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.cancel, color: Colors.red),
+                      onPressed: () => _showRejectWithdrawalDialog(context, ref, req['id']),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('خطأ: $e')),
+    );
+  }
+
+  void _showRejectWithdrawalDialog(BuildContext context, WidgetRef ref, String requestId) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('رفض طلب السحب'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'سبب الرفض'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(withdrawalRequestsControllerProvider().notifier).rejectRequest(requestId, controller.text);
+                Navigator.pop(context);
+              },
+              child: const Text('رفض الطلب'),
             ),
           ],
         ),

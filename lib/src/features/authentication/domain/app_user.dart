@@ -9,6 +9,7 @@ class AppUser with _$AppUser {
   const factory AppUser({
     required String id,
     @JsonKey(name: 'full_name') required String fullName,
+    String? email, // أضفنا البريد الإلكتروني للمراسلات وتغيير كلمة المرور
     required UserRole role,
     @JsonKey(name: 'is_active') required bool isActive,
     @Default('pending') String status, // 'pending', 'approved', 'rejected', 'active'

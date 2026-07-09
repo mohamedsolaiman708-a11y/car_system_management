@@ -90,6 +90,12 @@ class SupabaseReportRepository implements ReportRepository {
     final response = await _client.rpc('get_contracts_summary_report');
     return List<Map<String, dynamic>>.from(response as List);
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> getTrialBalance() async {
+    final response = await _client.rpc('get_trial_balance');
+    return List<Map<String, dynamic>>.from(response as List);
+  }
 }
 
 @Riverpod(keepAlive: true)

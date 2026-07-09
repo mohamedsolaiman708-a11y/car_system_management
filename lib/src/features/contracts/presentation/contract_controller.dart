@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/contract.dart';
 import '../data/supabase_contract_repository.dart';
+import 'contract_timeline_controller.dart';
 
 part 'contract_controller.g.dart';
 
@@ -21,6 +22,54 @@ class ContractController extends _$ContractController {
     state = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).activateContract(id));
     ref.invalidate(contractDetailsProvider(id));
     ref.invalidate(contractInstallmentsProvider(id));
+  }
+
+  /// تنفيذ عملية تحصيل دفعة من العميل
+  Future<bool> processPayment({
+    required String contractId,
+    required double amount,
+    required String method,
+    String? reference,
+    String? idempotencyKey,
+  }) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).processPayment(
+      contractId: contractId,
+      amount: amount,
+      method: method,
+      reference: reference,
+      idempotencyKey: idempotencyKey,
+    ));
+    
+    if (!result.hasError) {
+      _refreshContractData(contractId);
+      return true;
+    }
+    state = result;
+    return false;
+  }
+
+  /// عكس (إلغاء) دفعة مالية مسجلة
+  Future<bool> reversePayment(String contractId, String paymentId, String reason) async {
+    state = const AsyncLoading();
+    // استدعاء RPC عكس الدفع في قاعدة البيانات
+    final result = await AsyncValue.guard(() => 
+      ref.read(contractRepositoryProvider).reversePayment(paymentId, reason)
+    );
+    
+    if (!result.hasError) {
+      _refreshContractData(contractId);
+      return true;
+    }
+    state = result;
+    return false;
+  }
+
+  void _refreshContractData(String contractId) {
+    ref.invalidate(contractPaymentsProvider(contractId));
+    ref.invalidate(contractInstallmentsProvider(contractId));
+    ref.invalidate(contractDetailsProvider(contractId));
+    ref.invalidate(contractTimelineProvider(contractId));
   }
 }
 
@@ -54,4 +103,9 @@ Future<List<Map<String, dynamic>>> contractInstallments(ContractInstallmentsRef 
 @riverpod
 Future<List<Map<String, dynamic>>> contractPayments(ContractPaymentsRef ref, String id) {
   return ref.watch(contractRepositoryProvider).getContractPayments(id);
+}
+
+@riverpod
+Future<List<Map<String, dynamic>>> contractFunding(ContractFundingRef ref, String id) {
+  return ref.watch(contractRepositoryProvider).getContractFunding(id);
 }

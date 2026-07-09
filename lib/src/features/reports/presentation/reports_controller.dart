@@ -34,6 +34,11 @@ Future<List<Map<String, dynamic>>> profitReport(
 }
 
 @riverpod
+Future<List<Map<String, dynamic>>> trialBalance(TrialBalanceRef ref) {
+  return ref.watch(reportRepositoryProvider).getTrialBalance();
+}
+
+@riverpod
 Future<List<Map<String, dynamic>>> cashFlowReport(
   CashFlowReportRef ref, {
   required DateTime startDate,
@@ -48,13 +53,8 @@ Future<List<Map<String, dynamic>>> cashFlowReport(
 }
 
 @riverpod
-Future<List<Map<String, dynamic>>> overdueReport(OverdueReportRef ref) {
-  return ref.watch(reportRepositoryProvider).getOverdueReport();
-}
-
-@riverpod
-Future<List<Map<String, dynamic>>> investorsPerformance(InvestorsPerformanceRef ref) {
-  return ref.watch(reportRepositoryProvider).getInvestorsPerformance();
+Future<List<Map<String, dynamic>>> contractsSummary(ContractsSummaryRef ref) {
+  return ref.watch(reportRepositoryProvider).getContractsSummary();
 }
 
 @riverpod
@@ -69,11 +69,6 @@ Future<List<Map<String, dynamic>>> collectionsReport(
         endDate: endDate,
         customerId: customerId,
       );
-}
-
-@riverpod
-Future<List<Map<String, dynamic>>> contractsSummary(ContractsSummaryRef ref) {
-  return ref.watch(reportRepositoryProvider).getContractsSummary();
 }
 
 @riverpod
