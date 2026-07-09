@@ -9,9 +9,9 @@ class GlobalSearchDelegate extends SearchDelegate {
 
   GlobalSearchDelegate(this.ref)
       : super(
-          searchFieldLabel: 'بحث في النظام...',
-          searchFieldStyle: const TextStyle(fontSize: 16),
-        );
+    searchFieldLabel: 'بحث في النظام...',
+    searchFieldStyle: const TextStyle(fontSize: 16),
+  );
 
   @override
   List<Widget>? buildActions(BuildContext context) {
@@ -55,15 +55,15 @@ class GlobalSearchDelegate extends SearchDelegate {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (!snapshot.hasData || (snapshot.data!['customers']!.isEmpty && 
-            snapshot.data!['vehicles']!.isEmpty && 
-            snapshot.data!['contracts']!.isEmpty && 
+        if (!snapshot.hasData || (snapshot.data!['customers']!.isEmpty &&
+            snapshot.data!['vehicles']!.isEmpty &&
+            snapshot.data!['contracts']!.isEmpty &&
             snapshot.data!['investors']!.isEmpty)) {
           return const Center(child: Text('لا توجد نتائج مطابقة'));
         }
 
         final data = snapshot.data!;
-        
+
         return Directionality(
           textDirection: TextDirection.rtl,
           child: ListView(

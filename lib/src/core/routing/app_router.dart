@@ -84,13 +84,13 @@ GoRouter goRouter(GoRouterRef ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      final path = state.matchedLocation;
-      
-      // إذا كنا في صفحة البداية، نعطي فرصة بسيطة للتحميل ثم نوجه
-      if (authState.isLoading && path == '/') return null;
+      // 🛑 أهم تعديل: إذا كانت البيانات لا تزال قيد التحميل، توقف تماماً ولا تقم بأي توجيه
+      // هذا يمنع طرد المستخدم أثناء عملية تسجيل الدخول
+      if (authState.isLoading) return null;
 
       final user = authState.valueOrNull;
       final isLoggedIn = user != null;
+      final path = state.matchedLocation;
 
       // 1. فحص وضع الصيانة
       if (maintenanceModeAsync.value == true && path != '/maintenance') {
@@ -98,17 +98,17 @@ GoRouter goRouter(GoRouterRef ref) {
         if (!isLoggedIn) return '/maintenance';
       }
 
-      // 2. منطق المستخدم غير المسجل
+      // 2. إذا لم يكن مسجلاً
       if (!isLoggedIn) {
         if (path == '/portal-selection' || path.startsWith('/auth') || path == '/maintenance' || path == '/') {
-          // إذا كان في Splash ('/')، حوله لصفحة اختيار البوابة فوراً
-          if (path == '/' || path == '/auth') return '/portal-selection';
+          // إذا كان في Splash، وجهه لاختيار البوابة
+          if (path == '/') return '/portal-selection';
           return null;
         }
         return '/portal-selection';
       }
 
-      // 3. منطق المستخدم المسجل (توجيه من شاشات الدخول أو Splash)
+      // 3. إذا كان مسجلاً (التوجيه التلقائي للداخل)
       if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
         if (user.role == UserRole.investor) {
           if (user.status == 'pending') return '/auth/pending';
@@ -133,7 +133,6 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/auth/pending', builder: (context, state) => const PendingApprovalScreen()),
       GoRoute(path: '/auth/rejected', builder: (context, state) => const AccountRejectedScreen()),
       GoRoute(path: '/auth/session-expired', builder: (context, state) => const SessionExpiredScreen()),
-      
       GoRoute(path: '/dashboard', builder: (context, state) => const StaffDashboardScreen()),
       GoRoute(path: '/search', builder: (context, state) => const GlobalSearchScreen()),
       GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
@@ -196,7 +195,6 @@ GoRouter goRouter(GoRouterRef ref) {
         path: '/accounting',
         builder: (context, state) => const AccountsScreen(),
         routes: [
-          GoRoute(path: 'accounts', builder: (context, state) => const AccountsScreen()),
           GoRoute(path: 'journal', builder: (context, state) => const JournalEntriesScreen()),
           GoRoute(path: 'trial-balance', builder: (context, state) => const TrialBalanceScreen()),
         ],

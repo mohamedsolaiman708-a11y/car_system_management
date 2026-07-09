@@ -82,7 +82,7 @@ class StaffDashboardScreen extends ConsumerWidget {
 
   PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref, dynamic user) {
     final now = DateTime.now();
-    final hijriDate = '17 / 11 / 1445 هـ'; 
+    final hijriDate = '17 / 11 / 1445 هـ';
     final gregorianDate = intl.DateFormat('yyyy/MM/dd').format(now);
 
     return AppBar(
@@ -363,7 +363,7 @@ class StaffDashboardScreen extends ConsumerWidget {
     String label = status;
     if (status == 'active') { color = Colors.green; label = 'مكتمل'; }
     if (status == 'pending_funding') { color = Colors.orange; label = 'قيد التنفيذ'; }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
