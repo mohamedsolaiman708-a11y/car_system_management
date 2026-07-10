@@ -136,6 +136,8 @@ class _Sidebar extends ConsumerWidget {
           orElse: () => 0,
         );
 
+    final role = user.role as UserRole;
+
     return Container(
       width: isCollapsed ? 85 : 280,
       decoration: const BoxDecoration(
@@ -152,20 +154,34 @@ class _Sidebar extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
                 _SidebarLink(Icons.dashboard_rounded, 'الرئيسية', '/dashboard', isCollapsed),
+                
+                // المحاسب والأدمن يروْن المستثمرين
+                if (role == UserRole.admin || role == UserRole.accountant)
                 _SidebarLink(
                   Icons.groups_rounded, 
                   'المستثمرون', 
                   '/investors', 
                   isCollapsed,
-                  badge: pendingCount > 0 ? pendingCount : null,
+                  badge: role == UserRole.admin && pendingCount > 0 ? pendingCount : null,
                 ),
-                _SidebarLink(Icons.person_rounded, 'العملاء', '/crm/customers', isCollapsed),
-                _SidebarLink(Icons.directions_car_filled_rounded, 'السيارات', '/inventory', isCollapsed),
+
+                // المبيعات والأدمن يروْن العملاء والسيارات
+                if (role == UserRole.admin || role == UserRole.sales) ...[
+                  _SidebarLink(Icons.person_rounded, 'العملاء', '/crm/customers', isCollapsed),
+                  _SidebarLink(Icons.directions_car_filled_rounded, 'السيارات', '/inventory', isCollapsed),
+                ],
+
+                // الجميع (موظفين) يروْن العقود والتقارير
                 _SidebarLink(Icons.history_edu_rounded, 'العقود', '/contracts', isCollapsed),
+
+                // المحاسب والأدمن يروْن المحاسبة المالية
+                if (role == UserRole.admin || role == UserRole.accountant)
                 _SidebarLink(Icons.account_tree_rounded, 'المحاسبة', '/accounting', isCollapsed),
+
                 _SidebarLink(Icons.bar_chart_rounded, 'التقارير', '/reports', isCollapsed),
                 
-                if (user.role == UserRole.admin) ...[
+                // أدوات الأدمن فقط
+                if (role == UserRole.admin) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                     child: Divider(color: Colors.white10, thickness: 1),
@@ -176,14 +192,14 @@ class _Sidebar extends ConsumerWidget {
                       child: Text('أدوات الإدارة', 
                         style: TextStyle(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     ),
-                  _SidebarLink(Icons.admin_panel_settings_rounded, 'إدارة الموظفين', '/staff-management', isCollapsed),
+                  _SidebarLink(Icons.admin_panel_settings_rounded, 'إدارة فريق العمل', '/staff-management', isCollapsed),
                   _SidebarLink(Icons.security_rounded, 'سجلات الرقابة', '/audit-logs', isCollapsed),
                   _SidebarLink(Icons.cloud_sync_rounded, 'النسخ الاحتياطي', '/backups', isCollapsed),
                   _SidebarLink(Icons.health_and_safety_rounded, 'التعافي من الكوارث', '/disaster-recovery', isCollapsed),
                   _SidebarLink(Icons.terminal_rounded, 'المهام المجدولة', '/background-jobs', isCollapsed),
                   _SidebarLink(Icons.settings_suggest_rounded, 'إعدادات النظام', '/settings', isCollapsed),
                 ] else
-                  _SidebarLink(Icons.settings_rounded, 'الإعدادات', '/settings', isCollapsed),
+                  _SidebarLink(Icons.settings_rounded, 'الإعدادات الشخصية', '/settings', isCollapsed),
               ],
             ),
           ),

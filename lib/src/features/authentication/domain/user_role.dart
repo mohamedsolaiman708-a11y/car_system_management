@@ -7,6 +7,8 @@ enum UserRole {
   manager,
   @JsonValue('accountant')
   accountant,
+  @JsonValue('sales')
+  sales,
   @JsonValue('investor')
   investor;
 
@@ -18,6 +20,8 @@ enum UserRole {
         return 'مدير عمليات';
       case UserRole.accountant:
         return 'محاسب';
+      case UserRole.sales:
+        return 'مسؤول مبيعات';
       case UserRole.investor:
         return 'مستثمر';
     }
