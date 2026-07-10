@@ -6,7 +6,7 @@ part of 'dashboard_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$staffStatsHash() => r'cdba205655711937e2d9bd1951c22635f5a5a331';
+String _$staffStatsHash() => r'db2b25bead26eb137736f43f669edaa4a1e3a34e';
 
 /// See also [staffStats].
 @ProviderFor(staffStats)
@@ -27,9 +27,7 @@ typedef StaffStatsRef = AutoDisposeFutureProviderRef<Map<String, dynamic>>;
 String _$systemIntegrityStatusHash() =>
     r'478ffe9f2a2f49d1a1444e13ddf85c6b36541fd0';
 
-/// موفر حالة "صحة البيانات" في النظام
-///
-/// Copied from [systemIntegrityStatus].
+/// See also [systemIntegrityStatus].
 @ProviderFor(systemIntegrityStatus)
 final systemIntegrityStatusProvider =
     AutoDisposeFutureProvider<Map<String, dynamic>>.internal(
@@ -47,7 +45,7 @@ final systemIntegrityStatusProvider =
 typedef SystemIntegrityStatusRef =
     AutoDisposeFutureProviderRef<Map<String, dynamic>>;
 String _$dashboardControllerHash() =>
-    r'46deda0909ad9c23b0309ef43f9e2a17d5dcc3e3';
+    r'fdb283fd624eb28c8eef9c254ff0d925d221ad86';
 
 /// See also [DashboardController].
 @ProviderFor(DashboardController)

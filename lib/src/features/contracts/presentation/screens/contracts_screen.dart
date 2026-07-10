@@ -173,7 +173,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
         borderRadius: BorderRadius.circular(16),
         child: SingleChildScrollView(
           child: DataTable(
-            headingRowColor: MaterialStateProperty.all(AppColors.bgGrey),
+            headingRowColor: WidgetStateProperty.all(AppColors.bgGrey),
             dataRowHeight: 65,
             columns: const [
               DataColumn(label: Text('رقم العقد', style: TextStyle(fontWeight: FontWeight.bold))),

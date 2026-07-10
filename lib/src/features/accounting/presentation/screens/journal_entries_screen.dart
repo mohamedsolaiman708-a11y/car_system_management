@@ -137,27 +137,29 @@ class _JournalEntryCard extends StatelessWidget {
 
   Widget _buildFooterRow(JournalEntry entry) {
     double totalDebit = 0;
+    double totalCredit = 0;
     for (var l in entry.lines) {
       totalDebit += l.debit;
+      totalCredit += l.credit;
     }
 
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),
       child: Row(
         children: [
-          const Expanded(flex: 3, child: Text('الإجمالي', textAlign: TextAlign.left, style: TextStyle(fontWeight: FontWeight.bold))),
+          const Expanded(flex: 3, child: Text('الإجمالي', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold))),
           Expanded(
             child: Text(
               totalDebit.toStringAsFixed(2),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
             ),
           ),
           Expanded(
             child: Text(
-              totalDebit.toStringAsFixed(2),
+              totalCredit.toStringAsFixed(2),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
             ),
           ),
         ],

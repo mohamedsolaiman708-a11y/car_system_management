@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/services/export_service.dart';
 import '../investor_controller.dart';
@@ -34,7 +35,8 @@ class InvestorDashboardScreen extends ConsumerWidget {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.notifications_none_rounded),
-                        onPressed: () => Navigator.of(context).pushNamed('/notifications'),
+                        // ✅ Fix: استخدام GoRouter بدلاً من pushNamed
+                        onPressed: () => context.push('/notifications'),
                       ),
                       if (unreadCount > 0)
                         Positioned(
@@ -132,52 +134,120 @@ class _OverviewTab extends ConsumerWidget {
     );
   }
 
-  void _showWithdrawalDialog(BuildContext context, WidgetRef ref, investor) {
+  void _showWithdrawalDialog(
+      BuildContext context, WidgetRef ref, dynamic investor) {
     final amountController = TextEditingController();
     final bankController = TextEditingController();
-    
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+    String? errorText;
+
     showDialog(
       context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('طلب سحب رصيد'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('الرصيد المتاح: ${investor.availableBalance} ر.س', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(labelText: 'المبلغ المطلوب سحبه', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: bankController,
-                decoration: const InputDecoration(labelText: 'تفاصيل الحساب البنكي (IBAN)', border: OutlineInputBorder()),
-                maxLines: 2,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text('طلب سحب رصيد'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // عرض الرصيد المتاح
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('الرصيد المتاح:',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '${f.format(investor.availableBalance)} ر.س',
+                        style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: amountController,
+                  decoration: InputDecoration(
+                    labelText: 'المبلغ المطلوب سحبه (ر.س)',
+                    border: const OutlineInputBorder(),
+                    errorText: errorText,
+                    suffixText: 'ر.س',
+                  ),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (_) =>
+                      setDialogState(() => errorText = null),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: bankController,
+                  decoration: const InputDecoration(
+                    labelText: 'تفاصيل الحساب البنكي (IBAN)',
+                    border: OutlineInputBorder(),
+                    hintText: 'SA00 0000 0000 0000 0000 0000',
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('إلغاء')),
+              ElevatedButton(
+                onPressed: () async {
+                  final amount =
+                      double.tryParse(amountController.text.trim());
+                  // التحقق من صحة المدخلات
+                  if (amount == null || amount <= 0) {
+                    setDialogState(() =>
+                        errorText = 'يرجى إدخال مبلغ صحيح أكبر من صفر');
+                    return;
+                  }
+                  if (amount > (investor.availableBalance as num).toDouble()) {
+                    setDialogState(() => errorText =
+                        'المبلغ يتجاوز رصيدك المتاح: ${f.format(investor.availableBalance)} ر.س');
+                    return;
+                  }
+                  if (bankController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                          content: Text('يرجى إدخال تفاصيل الحساب البنكي'),
+                          backgroundColor: Colors.orange),
+                    );
+                    return;
+                  }
+
+                  final success = await ref
+                      .read(withdrawalRequestsControllerProvider().notifier)
+                      .requestWithdrawal(
+                          amount, bankController.text.trim());
+
+                  if (context.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(success
+                              ? 'تم إرسال طلب السحب بنجاح — سيتم المراجعة خلال 24 ساعة'
+                              : 'فشل إرسال الطلب، يرجى المحاولة لاحقاً'),
+                          backgroundColor:
+                              success ? Colors.green : Colors.red),
+                    );
+                  }
+                },
+                child: const Text('إرسال الطلب'),
               ),
             ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountController.text);
-                if (amount != null && amount > 0 && amount <= investor.availableBalance) {
-                  final success = await ref.read(withdrawalRequestsControllerProvider().notifier).requestWithdrawal(amount, bankController.text);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(success ? 'تم إرسال طلب السحب بنجاح' : 'فشل إرسال الطلب'), backgroundColor: success ? Colors.green : Colors.red),
-                    );
-                  }
-                }
-              },
-              child: const Text('إرسال الطلب'),
-            ),
-          ],
         ),
       ),
     );

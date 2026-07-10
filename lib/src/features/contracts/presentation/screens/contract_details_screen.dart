@@ -334,10 +334,33 @@ class _InstallmentsTab extends ConsumerWidget {
   }
 
   Widget _buildStatusBadge(String status) {
-    Color color = Colors.grey;
-    if (status == 'paid') color = Colors.green;
-    if (status == 'unpaid') color = Colors.red;
-    return Text(status == 'paid' ? 'تم السداد' : 'غير مسدد', style: TextStyle(color: color, fontWeight: FontWeight.bold));
+    Color color;
+    String label;
+    switch (status) {
+      case 'paid':
+        color = Colors.green;
+        label = 'تم السداد';
+        break;
+      case 'partially_paid':
+        color = Colors.orange;
+        label = 'مسدد جزئياً';
+        break;
+      case 'overdue':
+        color = Colors.red.shade700;
+        label = 'متأخر';
+        break;
+      default: // unpaid
+        color = Colors.red;
+        label = 'غير مسدد';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+    );
   }
 }
 
@@ -419,40 +442,64 @@ class _PaymentsTab extends ConsumerWidget {
 
   void _confirmReversal(BuildContext context, WidgetRef ref, String paymentId) {
     final reasonController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
     showDialog(
       context: context,
-      builder: (context) => Directionality(
+      builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('عكس عملية الدفع'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('سيتم إلغاء أثر هذه الدفعة محاسبياً وإعادة فتح الأقساط. هل تريد الاستمرار؟'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: reasonController,
-                decoration: const InputDecoration(labelText: 'سبب العكس', border: OutlineInputBorder()),
-              ),
-            ],
+          title: const Text('عكس عملية الدفع',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                    'سيتم إلغاء أثر هذه الدفعة محاسبياً وإعادة فتح الأقساط.',
+                    style: TextStyle(color: Colors.red)),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: reasonController,
+                  decoration: const InputDecoration(
+                    labelText: 'سبب العكس *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'يرجى إدخال سبب العكس' : null,
+                ),
+              ],
+            ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إلغاء')),
             ElevatedButton(
               onPressed: () async {
-                if (reasonController.text.isNotEmpty) {
-                  final success = await ref.read(contractControllerProvider.notifier).reversePayment(
-                    contract.id, 
-                    paymentId, 
-                    reasonController.text,
+                if (!formKey.currentState!.validate()) return;
+                final success = await ref
+                    .read(contractControllerProvider.notifier)
+                    .reversePayment(
+                      contract.id,
+                      paymentId,
+                      reasonController.text.trim(),
+                    );
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(success
+                          ? 'تم عكس الدفعة بنجاح'
+                          : 'فشل عكس الدفعة'),
+                      backgroundColor: success ? Colors.green : Colors.red,
+                    ),
                   );
-                  if (context.mounted) Navigator.pop(context);
-                  if (success) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم عكس الدفعة بنجاح')));
-                  }
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
               child: const Text('تأكيد العكس'),
             ),
           ],

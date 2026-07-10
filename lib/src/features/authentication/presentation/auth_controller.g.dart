@@ -40,7 +40,28 @@ final currentUserProvider = AutoDisposeProvider<AppUser?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentUserRef = AutoDisposeProviderRef<AppUser?>;
-String _$authControllerHash() => r'16ef1bca8dcbd9fdee112c99c371cbd5e17d7199';
+String _$refreshedCurrentUserHash() =>
+    r'412aaf3b4c95275c231befe75f7accfc2e542883';
+
+/// Provider منفصل يُستخدم في pending_approval_screen لإعادة تحميل البروفايل يدوياً
+///
+/// Copied from [refreshedCurrentUser].
+@ProviderFor(refreshedCurrentUser)
+final refreshedCurrentUserProvider =
+    AutoDisposeFutureProvider<AppUser?>.internal(
+      refreshedCurrentUser,
+      name: r'refreshedCurrentUserProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$refreshedCurrentUserHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef RefreshedCurrentUserRef = AutoDisposeFutureProviderRef<AppUser?>;
+String _$authControllerHash() => r'6049b4ee565e1c28b56560740dd5dc4df5bd6566';
 
 /// See also [AuthController].
 @ProviderFor(AuthController)

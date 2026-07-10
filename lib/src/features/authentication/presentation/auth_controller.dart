@@ -14,9 +14,9 @@ class AuthController extends _$AuthController {
   Future<bool> login(String email, String password) async {
     state = const AsyncLoading();
     final authRepo = ref.read(authRepositoryProvider);
-    
-    final result = await AsyncValue.guard(() => 
-      authRepo.signInWithEmailAndPassword(email, password)
+
+    final result = await AsyncValue.guard(
+      () => authRepo.signInWithEmailAndPassword(email, password),
     );
 
     if (result.hasError) {
@@ -41,15 +41,15 @@ class AuthController extends _$AuthController {
   }) async {
     state = const AsyncLoading();
     final authRepo = ref.read(authRepositoryProvider);
-    
-    final result = await AsyncValue.guard(() => 
-      authRepo.signUpInvestor(
+
+    final result = await AsyncValue.guard(
+      () => authRepo.signUpInvestor(
         email: email,
         password: password,
         fullName: fullName,
         nationalId: nationalId,
         phone: phone,
-      )
+      ),
     );
 
     if (result.hasError) {
@@ -64,8 +64,10 @@ class AuthController extends _$AuthController {
   Future<bool> recoverPassword(String email) async {
     state = const AsyncLoading();
     final authRepo = ref.read(authRepositoryProvider);
-    
-    final result = await AsyncValue.guard(() => authRepo.recoverPassword(email));
+
+    final result = await AsyncValue.guard(
+      () => authRepo.recoverPassword(email),
+    );
 
     if (result.hasError) {
       state = result;
@@ -79,8 +81,10 @@ class AuthController extends _$AuthController {
   Future<bool> resetPassword(String newPassword) async {
     state = const AsyncLoading();
     final authRepo = ref.read(authRepositoryProvider);
-    
-    final result = await AsyncValue.guard(() => authRepo.updatePassword(newPassword));
+
+    final result = await AsyncValue.guard(
+      () => authRepo.updatePassword(newPassword),
+    );
 
     if (result.hasError) {
       state = result;
@@ -94,13 +98,13 @@ class AuthController extends _$AuthController {
   Future<void> logout() async {
     state = const AsyncLoading();
     final authRepo = ref.read(authRepositoryProvider);
-    
+
     final user = await authRepo.getCurrentUser();
-    
+
     if (user != null) {
       await _logSecurityEvent('LOGOUT', user.id);
     }
-    
+
     state = await AsyncValue.guard(() => authRepo.signOut());
   }
 

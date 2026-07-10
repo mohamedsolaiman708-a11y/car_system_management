@@ -224,11 +224,9 @@ class _StaffMemberCard extends ConsumerWidget {
             } else if (value == 'edit_name') {
               _showEditNameDialog(context, ref);
             } else if (value == 'reset_password') {
-              // وصول ديناميكي للإيميل لتجنب أخطاء التوليد حالياً
-              final Map<String, dynamic> json = (member as dynamic).toJson();
-              final String? email = json['email'];
-              
-              if (email != null) {
+              // ✅ Fix: الوصول للإيميل مباشرة من نموذج AppUser
+              final email = member.email;
+              if (email != null && email.isNotEmpty) {
                 final success = await ref.read(staffListControllerProvider.notifier).resetPassword(email);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -239,12 +237,16 @@ class _StaffMemberCard extends ConsumerWidget {
                   );
                 }
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('البريد الإلكتروني غير متوفر لهذا الموظف'), backgroundColor: Colors.orange),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('البريد الإلكتروني غير متوفر لهذا الموظف'), backgroundColor: Colors.orange),
+                  );
+                }
               }
             } else if (value.startsWith('role_')) {
-              final roleId = value.split('_')[1];
+              // ✅ Fix: استخراج الـ UUID بشكل صحيح بدلاً من split('_')[1]
+              // UUID يحتوي على '_' لذلك نستخدم substring
+              final roleId = value.substring('role_'.length);
               ref.read(staffListControllerProvider.notifier).updateRole(member.id, roleId);
             }
           },

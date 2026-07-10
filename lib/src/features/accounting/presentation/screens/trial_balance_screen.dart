@@ -88,7 +88,7 @@ class TrialBalanceScreen extends ConsumerWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
-                  headingRowColor: MaterialStateProperty.all(primaryNavy.withOpacity(0.05)),
+                  headingRowColor: WidgetStateProperty.all(primaryNavy.withOpacity(0.05)),
                   headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: primaryNavy),
                   columnSpacing: 40,
                   columns: const [
@@ -111,7 +111,7 @@ class TrialBalanceScreen extends ConsumerWidget {
                     ])),
                     // سطر الإجمالي الختامي
                     DataRow(
-                      color: MaterialStateProperty.all(primaryNavy.withOpacity(0.02)),
+                      color: WidgetStateProperty.all(primaryNavy.withOpacity(0.02)),
                       cells: [
                         const DataCell(Text('')),
                         const DataCell(Text('الإجمالي الكلي', style: TextStyle(fontWeight: FontWeight.bold, color: primaryNavy))),

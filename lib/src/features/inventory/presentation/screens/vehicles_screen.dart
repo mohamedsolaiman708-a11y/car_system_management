@@ -172,7 +172,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
         borderRadius: BorderRadius.circular(16),
         child: SingleChildScrollView(
           child: DataTable(
-            headingRowColor: MaterialStateProperty.all(AppColors.bgGrey),
+            headingRowColor: WidgetStateProperty.all(AppColors.bgGrey),
             columns: const [
               DataColumn(label: Text('المركبة', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('رقم اللوحة', style: TextStyle(fontWeight: FontWeight.bold))),

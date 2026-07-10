@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../data/supabase_auth_repository.dart';
 import '../auth_controller.dart';
 import '../widgets/auth_layout.dart';
 import '../../domain/user_role.dart';
