@@ -166,7 +166,7 @@ class _Sidebar extends ConsumerWidget {
                   ),
                   if (!isCollapsed)
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, marginBottom: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Text('أدوات الإدارة', 
                         style: TextStyle(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     ),
