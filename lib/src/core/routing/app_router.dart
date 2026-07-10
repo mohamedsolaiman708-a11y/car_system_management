@@ -48,6 +48,7 @@ import '../../features/search/presentation/screens/search_screen.dart';
 // Settings & Maintenance
 import '../../features/settings/presentation/screens/maintenance_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/company_settings_screen.dart';
 import '../../features/settings/presentation/settings_controller.dart';
 
 // Audit Logs
@@ -107,7 +108,6 @@ GoRouter goRouter(GoRouterRef ref) {
       }
 
       // 3. حماية حالة الحساب (Pending/Rejected)
-      // الأدمن والموظفين عادة ما تكون حالتهم 'approved' أو 'active'
       final isStaff = user.role != UserRole.investor;
       
       if (user.status == 'pending' && path != '/auth/pending') {
@@ -118,7 +118,6 @@ GoRouter goRouter(GoRouterRef ref) {
       }
 
       // 4. توجيه المستخدمين بعد تسجيل الدخول الناجح
-      // نسمح بالدخول إذا كانت الحالة 'approved' أو 'active' أو كان المستخدم 'admin'
       final canAccess = user.status == 'approved' || user.status == 'active' || isStaff;
 
       if (canAccess && (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
@@ -165,6 +164,7 @@ GoRouter goRouter(GoRouterRef ref) {
           GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
           GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
 
+          // CRM
           GoRoute(
             path: '/crm/customers',
             builder: (context, state) => const CustomersScreen(),
@@ -180,6 +180,7 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
+          // Inventory
           GoRoute(
             path: '/inventory',
             builder: (context, state) => const VehiclesScreen(),
@@ -195,6 +196,7 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
+          // Contracts
           GoRoute(
             path: '/contracts',
             builder: (context, state) => const ContractsScreen(),
@@ -204,6 +206,7 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
+          // Investors
           GoRoute(
             path: '/investors',
             builder: (context, state) => const InvestorsScreen(),
@@ -212,6 +215,7 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
+          // Accounting
           GoRoute(
             path: '/accounting',
             builder: (context, state) => const AccountsScreen(),
@@ -221,7 +225,14 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
+          // System & Admin Tools
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
+            routes: [
+              GoRoute(path: 'company', builder: (context, state) => const CompanySettingsScreen()),
+            ],
+          ),
           GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
           GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
           GoRoute(path: '/background-jobs', builder: (context, state) => const BackgroundJobsScreen()),
