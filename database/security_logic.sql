@@ -47,25 +47,47 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
     v_role_id UUID;
-    v_role_slug TEXT;
+    v_invitation RECORD;
 BEGIN
-    -- استخراج الدور من البيانات الوصفية أو تعيينه كـ 'investor' افتراضياً
-    v_role_slug := COALESCE(NEW.raw_user_meta_data->>'role', 'investor');
-    
-    SELECT id INTO v_role_id FROM public.roles WHERE slug = v_role_slug;
-    
-    -- في حالة عدم وجود الدور، نستخدم 'investor' كخيار أمان
-    IF v_role_id IS NULL THEN
+    -- التحقق من وجود دعوة نشطة وغير مقبولة لهذا البريد الإلكتروني
+    SELECT * INTO v_invitation 
+    FROM public.user_invitations 
+    WHERE email = NEW.email 
+      AND accepted_at IS NULL 
+      AND expires_at > NOW()
+    LIMIT 1;
+
+    IF v_invitation.id IS NOT NULL THEN
+        -- إذا كانت هناك دعوة: نستخدم الدور المدعو وتتم الموافقة فوراً
+        v_role_id := v_invitation.role_id;
+        
+        INSERT INTO public.profiles (id, role_id, full_name, is_active, status)
+        VALUES (
+            NEW.id, 
+            v_role_id, 
+            COALESCE(NEW.raw_user_meta_data->>'full_name', 'New Staff'),
+            true,
+            'approved'::public.registration_status
+        );
+
+        -- تعليم الدعوة كمقبولة
+        UPDATE public.user_invitations 
+        SET accepted_at = NOW() 
+        WHERE id = v_invitation.id;
+    ELSE
+        -- الافتراضي: مستثمر قيد الانتظار
         SELECT id INTO v_role_id FROM public.roles WHERE slug = 'investor';
+        
+        INSERT INTO public.profiles (id, role_id, full_name, is_active, status)
+        VALUES (
+            NEW.id, 
+            v_role_id, 
+            COALESCE(NEW.raw_user_meta_data->>'full_name', 'New User'),
+            true,
+            'pending'::public.registration_status
+        );
     END IF;
 
-    INSERT INTO public.profiles (id, role_id, full_name, is_active)
-    VALUES (
-        NEW.id, 
-        v_role_id, 
-        COALESCE(NEW.raw_user_meta_data->>'full_name', 'New User'),
-        true
-    );
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

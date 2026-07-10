@@ -115,8 +115,8 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/auth/rejected';
       }
 
-      // 4. توجيه المستخدمين بعد تسجيل الدخول الناجح
-      if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
+      // 4. توجيه المستخدمين بعد تسجيل الدخول الناجح (فقط للموافق عليهم)
+      if (user.status == 'approved' && (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
         if (user.role == UserRole.investor) {
           return '/investor-portal';
         }

@@ -104,6 +104,12 @@ class AuthController extends _$AuthController {
     state = await AsyncValue.guard(() => authRepo.signOut());
   }
 
+  /// إعادة تحميل حالة المستخدم من قاعدة البيانات (للتحقق من الموافقة)
+  Future<void> refreshUserStatus() async {
+    // إعادة تحميل بيانات المستخدم الحالي من DB
+    ref.invalidate(authStateProvider);
+  }
+
   Future<void> _logSecurityEvent(String eventType, String? userId) async {
     // Note: Security repository implementation should be verified if it exists and is updated
     // For now, focusing on Auth workflow.
@@ -118,4 +124,10 @@ Stream<AppUser?> authState(AuthStateRef ref) {
 @riverpod
 AppUser? currentUser(CurrentUserRef ref) {
   return ref.watch(authStateProvider).valueOrNull;
+}
+
+/// Provider منفصل يُستخدم في pending_approval_screen لإعادة تحميل البروفايل يدوياً
+@riverpod
+Future<AppUser?> refreshedCurrentUser(RefreshedCurrentUserRef ref) async {
+  return await ref.watch(authRepositoryProvider).getCurrentUser();
 }
