@@ -12,23 +12,26 @@ class SupabaseStaffRepository {
 
   /// جلب كافة الموظفين
   Future<List<AppUser>> getStaffMembers() async {
-    final response = await _client
-        .from('profiles')
-        .select('*, roles!inner(*)')
-        .neq('roles.slug', 'investor')
-        .order('full_name', ascending: true);
-    
-    return (response as List).map((json) {
-      // تحويل البيانات لتناسب AppUser domain model
-      final roleData = json['roles'];
-      return AppUser.fromJson({
-        ...json,
-        'role': roleData['slug'], // نمرر الـ slug للـ Enum
-      });
-    }).toList();
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('*, roles!inner(*)')
+          .neq('roles.slug', 'investor')
+          .order('full_name', ascending: true);
+      
+      return (response as List).map((json) {
+        final roleData = json['roles'];
+        return AppUser.fromJson({
+          ...json,
+          'role': roleData['slug'], 
+        });
+      }).toList();
+    } catch (e) {
+      return [];
+    }
   }
 
-  /// تحديث بيانات الموظف (الحالة، الدور، أو الاسم)
+  /// تحديث بيانات الموظف
   Future<void> updateStaffProfile(String userId, {
     bool? isActive, 
     String? roleId,
@@ -64,9 +67,19 @@ class SupabaseStaffRepository {
     });
   }
 
+  /// جلب الأدوار المتاحة (تم تعديل الاستعلام ليكون أكثر مرونة)
   Future<List<Map<String, dynamic>>> getRoles() async {
-    final response = await _client.from('roles').select().neq('slug', 'investor');
-    return List<Map<String, dynamic>>.from(response);
+    try {
+      final response = await _client
+          .from('roles')
+          .select()
+          .not('slug', 'eq', 'investor')
+          .order('name');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      // في حالة وجود خطأ RLS، نرجع قائمة فارغة لكي تتعامل معها الواجهة
+      return [];
+    }
   }
 }
 

@@ -27,7 +27,10 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => ref.read(staffListControllerProvider.notifier).refresh(),
+              onPressed: () {
+                ref.invalidate(staffListControllerProvider);
+                ref.invalidate(availableRolesProvider);
+              },
             ),
           ],
         ),
@@ -89,7 +92,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: rolesAsync.when(
+            child: rolesAsync.maybeWhen(
               data: (roles) => DropdownButtonFormField<String?>(
                 value: selectedRole,
                 decoration: const InputDecoration(
@@ -100,14 +103,13 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                 items: [
                   const DropdownMenuItem(value: null, child: Text('الكل')),
                   ...roles.map((r) => DropdownMenuItem<String>(
-                    value: r['slug'] as String, 
-                    child: Text(r['name'] as String),
+                    value: r['slug']?.toString(), 
+                    child: Text(r['name']?.toString() ?? 'غير معروف'),
                   )),
                 ],
                 onChanged: (val) => setState(() => selectedRole = val),
               ),
-              loading: () => const SizedBox(),
-              error: (_, __) => const SizedBox(),
+              orElse: () => const SizedBox(),
             ),
           ),
         ],
@@ -129,6 +131,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           return Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: const Text('دعوة موظف جديد'),
               content: SingleChildScrollView(
                 child: Column(
@@ -137,8 +140,9 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     TextField(
                       controller: nameController,
                       decoration: const InputDecoration(
-                        labelText: 'الاسم الكامل',
+                        labelText: 'الاسم الكامل للموظف',
                         prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -148,17 +152,28 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                         labelText: 'البريد الإلكتروني',
                         prefixIcon: Icon(Icons.email_outlined),
                         hintText: 'example@company.com',
+                        border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 24),
                     rolesAsync.when(
                       data: (roles) {
                         if (roles.isEmpty) {
-                          return const Text('لا توجد أدوار متاحة في النظام', style: TextStyle(color: Colors.red));
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red),
+                                SizedBox(width: 8),
+                                Expanded(child: Text('لا توجد أدوار في النظام، يرجى مراجعة قاعدة البيانات', style: TextStyle(color: Colors.red, fontSize: 12))),
+                              ],
+                            ),
+                          );
                         }
                         return DropdownButtonFormField<String>(
                           decoration: const InputDecoration(
-                            labelText: 'الدور الوظيفي',
+                            labelText: 'تحديد الدور الوظيفي',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.work_outline),
                           ),
@@ -170,7 +185,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                           onChanged: (val) => selectedRoleId = val,
                         );
                       },
-                      loading: () => const Center(child: CircularProgressIndicator()),
+                      loading: () => const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())),
                       error: (err, _) => Text('خطأ في تحميل الأدوار: $err', style: const TextStyle(color: Colors.red)),
                     ),
                   ],
@@ -185,11 +200,17 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0D1B3E),
                     foregroundColor: Colors.white,
+                    minimumSize: const Size(120, 45),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () async {
                     if (nameController.text.isEmpty || emailController.text.isEmpty || selectedRoleId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('يرجى ملء جميع الحقول واختيار الدور'), backgroundColor: Colors.orange),
+                        const SnackBar(
+                          content: Text('يرجى ملء جميع الحقول واختيار الدور الوظيفي للمتابعة'),
+                          backgroundColor: Colors.orange,
+                          behavior: SnackBarBehavior.floating,
+                        ),
                       );
                       return;
                     }
@@ -204,13 +225,14 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(success ? 'تم إرسال دعوة الانضمام للموظف بنجاح' : 'فشل إرسال الدعوة، يرجى المحاولة لاحقاً'),
+                          content: Text(success ? 'تم إرسال دعوة الانضمام بنجاح' : 'فشل إرسال الدعوة، قد يكون الإيميل مستخدم مسبقاً'),
                           backgroundColor: success ? Colors.green : Colors.red,
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                     }
                   },
-                  child: const Text('إرسال الدعوة'),
+                  child: const Text('إرسال الدعوة الآن'),
                 ),
               ],
             ),
@@ -231,18 +253,29 @@ class _StaffMemberCard extends ConsumerWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey.shade100)),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: member.isActive ? Colors.blue.shade100 : Colors.grey.shade200,
+          radius: 25,
+          backgroundColor: member.isActive ? const Color(0xFF0D1B3E).withOpacity(0.1) : Colors.grey.shade200,
           child: Text(member.fullName.isNotEmpty ? member.fullName[0] : '?', 
-            style: TextStyle(color: member.isActive ? Colors.blue.shade900 : Colors.grey)),
+            style: TextStyle(color: member.isActive ? const Color(0xFF0D1B3E) : Colors.grey, fontWeight: FontWeight.bold, fontSize: 18)),
         ),
         title: Text(member.fullName, style: TextStyle(
+          fontWeight: FontWeight.bold,
           color: member.isActive ? Colors.black : Colors.grey,
           decoration: member.isActive ? null : TextDecoration.lineThrough,
         )),
-        subtitle: Text('الدور: ${member.role.label}'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('الدور: ${member.role.label}', style: const TextStyle(fontSize: 12)),
+            Text(member.email ?? '', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+          ],
+        ),
         trailing: PopupMenuButton<String>(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           onSelected: (value) async {
             if (value == 'toggle_status') {
               ref.read(staffListControllerProvider.notifier).updateStatus(member.id, !member.isActive);
@@ -254,10 +287,7 @@ class _StaffMemberCard extends ConsumerWidget {
                 final success = await ref.read(staffListControllerProvider.notifier).resetPassword(email);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(success ? 'تم إرسال رابط تعيين كلمة المرور' : 'فشل إرسال الرابط'),
-                      backgroundColor: success ? Colors.green : Colors.red,
-                    ),
+                    SnackBar(content: Text(success ? 'تم إرسال رابط التعيين للإيميل' : 'فشل إرسال الرابط'), backgroundColor: success ? Colors.green : Colors.red),
                   );
                 }
               }
@@ -269,27 +299,19 @@ class _StaffMemberCard extends ConsumerWidget {
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 'edit_name',
-              child: ListTile(
-                leading: Icon(Icons.edit_outlined),
-                title: Text('تعديل الاسم'),
-                contentPadding: EdgeInsets.zero,
-              ),
+              child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('تعديل الاسم'), dense: true, contentPadding: EdgeInsets.zero),
             ),
             PopupMenuItem(
               value: 'toggle_status',
               child: ListTile(
                 leading: Icon(member.isActive ? Icons.block : Icons.check_circle, color: member.isActive ? Colors.red : Colors.green),
                 title: Text(member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'),
-                contentPadding: EdgeInsets.zero,
+                dense: true, contentPadding: EdgeInsets.zero,
               ),
             ),
             const PopupMenuItem(
               value: 'reset_password',
-              child: ListTile(
-                leading: Icon(Icons.lock_reset),
-                title: Text('إعادة تعيين كلمة المرور'),
-                contentPadding: EdgeInsets.zero,
-              ),
+              child: ListTile(leading: Icon(Icons.lock_reset), title: Text('إعادة تعيين كلمة المرور'), dense: true, contentPadding: EdgeInsets.zero),
             ),
             const PopupMenuDivider(),
             ...?rolesAsync.value?.map((role) => PopupMenuItem(
@@ -312,7 +334,7 @@ class _StaffMemberCard extends ConsumerWidget {
           title: const Text('تعديل الاسم'),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(labelText: 'الاسم الكامل'),
+            decoration: const InputDecoration(labelText: 'الاسم الكامل الجديد', border: OutlineInputBorder()),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
@@ -323,7 +345,7 @@ class _StaffMemberCard extends ConsumerWidget {
                   Navigator.pop(context);
                 }
               },
-              child: const Text('حفظ'),
+              child: const Text('حفظ التعديل'),
             ),
           ],
         ),

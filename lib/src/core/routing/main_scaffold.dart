@@ -47,7 +47,7 @@ class _DesktopScaffold extends ConsumerWidget {
                 _TopBar(user: user),
                 Expanded(
                   child: Container(
-                    color: const Color(0xFFF8F9FA), // خلفية هادئة لإبراز المحتوى
+                    color: const Color(0xFFF8F9FA),
                     child: child,
                   ),
                 ),
@@ -131,7 +131,6 @@ class _Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // عدد طلبات الانضمام المعلقة للتنبيه
     final pendingCount = ref.watch(pendingInvestorsControllerProvider).maybeWhen(
           data: (list) => list.length,
           orElse: () => 0,
@@ -384,7 +383,7 @@ class _TopBar extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('تعديل اسمك المعروض في النظام والتقارير:'),
+              const Text('قم بتحديث اسمك المعروض في النظام والتقارير:'),
               const SizedBox(height: 20),
               TextField(
                 controller: nameController,

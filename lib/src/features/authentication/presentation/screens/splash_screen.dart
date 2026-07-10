@@ -43,7 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   }
 
   Future<void> _startApp() async {
-    // انتظار 4 ثواني لترك انطباع قوي بالهوية البصرية
+    // انتظار 4 ثواني لترك انطباع قوي بالهوية البصرية الفخمة
     await Future.delayed(const Duration(seconds: 4));
     
     if (!mounted) return;
@@ -55,7 +55,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       if (user == null) {
         context.go('/portal-selection');
       } else {
-        // التوجيه التلقائي بناءً على الدور
         if (user.role.name == 'investor') {
           context.go('/investor-portal');
         } else {
@@ -94,18 +93,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                   opacity: _fadeAnimation,
                   child: ScaleTransition(
                     scale: _scaleAnimation,
-                    child: const BrandLogo(scale: 1.4), // اللوجو الذهبي الفخم بحجم كبير
+                    child: const BrandLogo(scale: 1.5), // اللوجو الذهبي الفخم بحجم كبير في الإسبلاش
                   ),
                 ),
                 const SizedBox(height: 60),
-                // مؤشر تحميل هادئ وأنيق جداً
+                // مؤشر تحميل هادئ وأنيق
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: const SizedBox(
                     width: 30,
                     height: 30,
                     child: CircularProgressIndicator(
-                      color: Color(0xFFC5A35E), // اللون الذهبي للتحميل
+                      color: Color(0xFFC5A35E),
                       strokeWidth: 1.5,
                     ),
                   ),
@@ -113,7 +112,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
               ],
             ),
           ),
-          // شعار نصي خفيف جداً في الأسفل
+          // جملة ترحيبية في الأسفل
           Positioned(
             bottom: 40,
             left: 0,
@@ -121,12 +120,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: const Text(
-                'AL SAMI AUTO ERP - Premium Edition',
+                'السامي للسيارات - الريادة في حلول التمويل',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white10,
                   fontSize: 10,
                   letterSpacing: 2,
+                  fontFamily: 'Cairo',
                 ),
               ),
             ),
