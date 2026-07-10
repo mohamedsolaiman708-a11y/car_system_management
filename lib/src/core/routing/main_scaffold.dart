@@ -89,7 +89,7 @@ class _MobileScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AL SAMI ERP'),
+        title: const Text('AL SAMI ERP', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
@@ -126,7 +126,6 @@ class _Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // جلب عدد طلبات الانضمام المعلقة لعرض تنبيه للأدمن
     final pendingCount = ref.watch(pendingInvestorsControllerProvider).maybeWhen(
           data: (list) => list.length,
           orElse: () => 0,
@@ -137,9 +136,9 @@ class _Sidebar extends ConsumerWidget {
       color: AppColors.primaryNavy,
       child: Column(
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
           _buildLogo(isCollapsed),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -158,7 +157,6 @@ class _Sidebar extends ConsumerWidget {
                 _SidebarLink(Icons.account_tree_rounded, 'المحاسبة', '/accounting', isCollapsed),
                 _SidebarLink(Icons.bar_chart_rounded, 'التقارير', '/reports', isCollapsed),
                 
-                // --- قسم خاص بالأدمن (أدوات النظام) ---
                 if (user.role == UserRole.admin) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -174,6 +172,7 @@ class _Sidebar extends ConsumerWidget {
                   _SidebarLink(Icons.security_rounded, 'سجلات الرقابة', '/audit-logs', isCollapsed),
                   _SidebarLink(Icons.cloud_sync_rounded, 'النسخ الاحتياطي', '/backups', isCollapsed),
                   _SidebarLink(Icons.health_and_safety_rounded, 'التعافي من الكوارث', '/disaster-recovery', isCollapsed),
+                  _SidebarLink(Icons.terminal_rounded, 'المهام المجدولة', '/background-jobs', isCollapsed),
                   _SidebarLink(Icons.settings_suggest_rounded, 'إعدادات النظام', '/settings', isCollapsed),
                 ] else
                   _SidebarLink(Icons.settings_rounded, 'الإعدادات', '/settings', isCollapsed),
@@ -188,11 +187,16 @@ class _Sidebar extends ConsumerWidget {
 
   Widget _buildLogo(bool collapsed) {
     if (collapsed) {
-      return const Icon(Icons.directions_car_filled_rounded, color: AppColors.accentGold, size: 35);
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Icon(Icons.directions_car_filled_rounded, color: AppColors.accentGold, size: 35),
+      );
     }
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20),
-      child: BrandLogo(scale: 0.55),
+    return const SizedBox(
+      height: 120,
+      child: Center(
+        child: BrandLogo(scale: 0.55),
+      ),
     );
   }
 }
