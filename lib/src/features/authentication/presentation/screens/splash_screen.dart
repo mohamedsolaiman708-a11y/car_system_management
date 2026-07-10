@@ -21,15 +21,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2000),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeIn)),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.8, curve: Curves.easeOutBack)),
     );
 
     _controller.forward();
@@ -43,7 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   }
 
   Future<void> _startApp() async {
-    // ننتظر قليلاً لإظهار الهوية البصرية (اللوغو) بفخامة
+    // انتظار 4 ثواني لترك انطباع قوي بالهوية البصرية
     await Future.delayed(const Duration(seconds: 4));
     
     if (!mounted) return;
@@ -55,6 +55,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       if (user == null) {
         context.go('/portal-selection');
       } else {
+        // التوجيه التلقائي بناءً على الدور
         if (user.role.name == 'investor') {
           context.go('/investor-portal');
         } else {
@@ -69,58 +70,64 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1227), // لون كحلي أغمق وأفخم للـ Splash
+      backgroundColor: const Color(0xFF0A1227), // لون كحلي ملكي عميق
       body: Stack(
         children: [
-          // تدرج لوني خفيف في الخلفية لإعطاء عمق
+          // تدرج لوني في الخلفية لإعطاء عمق وفخامة
           Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 center: Alignment.center,
-                radius: 1.5,
+                radius: 1.2,
                 colors: [
-                  const Color(0xFF162A4D).withOpacity(0.3),
+                  const Color(0xFF1A2E5A).withOpacity(0.4),
                   const Color(0xFF0A1227),
                 ],
               ),
             ),
           ),
           Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: const BrandLogo(scale: 1.2), // تكبير اللوجو في الإسبلاش ليملأ العين
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: const BrandLogo(scale: 1.4), // اللوجو الذهبي الفخم بحجم كبير
+                  ),
+                ),
+                const SizedBox(height: 60),
+                // مؤشر تحميل هادئ وأنيق جداً
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: const SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFC5A35E), // اللون الذهبي للتحميل
+                      strokeWidth: 1.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          // مؤشر تحميل هادئ في الأسفل
+          // شعار نصي خفيف جداً في الأسفل
           Positioned(
-            bottom: 60,
+            bottom: 40,
             left: 0,
             right: 0,
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  const SizedBox(
-                    width: 40,
-                    child: LinearProgressIndicator(
-                      backgroundColor: Colors.white10,
-                      color: Color(0xFFC5A35E),
-                      minHeight: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'جارٍ تهيئة النظام...',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.3),
-                      fontSize: 10,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
+              child: const Text(
+                'AL SAMI AUTO ERP - Premium Edition',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white10,
+                  fontSize: 10,
+                  letterSpacing: 2,
+                ),
               ),
             ),
           ),

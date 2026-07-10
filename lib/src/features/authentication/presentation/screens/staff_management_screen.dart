@@ -63,7 +63,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showAddStaffDialog(context, rolesAsync),
+          onPressed: () => _showAddStaffDialog(context),
           label: const Text('إضافة موظف جديد'),
           icon: const Icon(Icons.person_add_alt_1_rounded),
         ),
@@ -115,83 +115,107 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     );
   }
 
-  void _showAddStaffDialog(BuildContext context, AsyncValue<List<Map<String, dynamic>>> rolesAsync) {
+  void _showAddStaffDialog(BuildContext context) {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
-    String? roleId;
-    bool isLoading = false;
-
+    String? selectedRoleId;
+    
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title: const Text('دعوة موظف جديد'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'الاسم الكامل'),
-                    enabled: !isLoading,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: emailController,
-                    decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
-                    enabled: !isLoading,
-                  ),
-                  const SizedBox(height: 12),
-                  rolesAsync.when(
-                    data: (roles) => DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: 'الدور الوظيفي'),
-                      items: roles.map((r) => DropdownMenuItem<String>(
-                        value: r['id'] as String, 
-                        child: Text(r['name'] as String),
-                      )).toList(),
-                      onChanged: isLoading ? null : (val) => roleId = val,
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final rolesAsync = ref.watch(availableRolesProvider);
+          
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              title: const Text('دعوة موظف جديد'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'الاسم الكامل',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
                     ),
-                    loading: () => const CircularProgressIndicator(),
-                    error: (_, __) => const Text('خطأ في تحميل الأدوار'),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'البريد الإلكتروني',
+                        prefixIcon: Icon(Icons.email_outlined),
+                        hintText: 'example@company.com',
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    rolesAsync.when(
+                      data: (roles) {
+                        if (roles.isEmpty) {
+                          return const Text('لا توجد أدوار متاحة في النظام', style: TextStyle(color: Colors.red));
+                        }
+                        return DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'الدور الوظيفي',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.work_outline),
+                          ),
+                          hint: const Text('اختر الدور الوظيفي'),
+                          items: roles.map((r) => DropdownMenuItem<String>(
+                            value: r['id'].toString(), 
+                            child: Text(r['name'].toString()),
+                          )).toList(),
+                          onChanged: (val) => selectedRoleId = val,
+                        );
+                      },
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (err, _) => Text('خطأ في تحميل الأدوار: $err', style: const TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context), 
+                  child: const Text('إلغاء'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D1B3E),
+                    foregroundColor: Colors.white,
                   ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Navigator.pop(context), 
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: isLoading ? null : () async {
-                  if (nameController.text.isNotEmpty && emailController.text.isNotEmpty && roleId != null) {
-                    setDialogState(() => isLoading = true);
+                  onPressed: () async {
+                    if (nameController.text.isEmpty || emailController.text.isEmpty || selectedRoleId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('يرجى ملء جميع الحقول واختيار الدور'), backgroundColor: Colors.orange),
+                      );
+                      return;
+                    }
+
                     final success = await ref.read(staffListControllerProvider.notifier).inviteStaff(
                       email: emailController.text,
                       fullName: nameController.text,
-                      roleId: roleId!,
+                      roleId: selectedRoleId!,
                     );
                     
                     if (context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(success ? 'تم إرسال دعوة الانضمام للموظف' : 'فشل إرسال الدعوة'),
+                          content: Text(success ? 'تم إرسال دعوة الانضمام للموظف بنجاح' : 'فشل إرسال الدعوة، يرجى المحاولة لاحقاً'),
                           backgroundColor: success ? Colors.green : Colors.red,
                         ),
                       );
                     }
-                  }
-                },
-                child: isLoading 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('إرسال الدعوة'),
-              ),
-            ],
-          ),
-        ),
+                  },
+                  child: const Text('إرسال الدعوة'),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -210,7 +234,8 @@ class _StaffMemberCard extends ConsumerWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: member.isActive ? Colors.blue.shade100 : Colors.grey.shade200,
-          child: Text(member.fullName[0], style: TextStyle(color: member.isActive ? Colors.blue.shade900 : Colors.grey)),
+          child: Text(member.fullName.isNotEmpty ? member.fullName[0] : '?', 
+            style: TextStyle(color: member.isActive ? Colors.blue.shade900 : Colors.grey)),
         ),
         title: Text(member.fullName, style: TextStyle(
           color: member.isActive ? Colors.black : Colors.grey,
@@ -224,7 +249,6 @@ class _StaffMemberCard extends ConsumerWidget {
             } else if (value == 'edit_name') {
               _showEditNameDialog(context, ref);
             } else if (value == 'reset_password') {
-              // ✅ Fix: الوصول للإيميل مباشرة من نموذج AppUser
               final email = member.email;
               if (email != null && email.isNotEmpty) {
                 final success = await ref.read(staffListControllerProvider.notifier).resetPassword(email);
@@ -236,16 +260,8 @@ class _StaffMemberCard extends ConsumerWidget {
                     ),
                   );
                 }
-              } else {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('البريد الإلكتروني غير متوفر لهذا الموظف'), backgroundColor: Colors.orange),
-                  );
-                }
               }
             } else if (value.startsWith('role_')) {
-              // ✅ Fix: استخراج الـ UUID بشكل صحيح بدلاً من split('_')[1]
-              // UUID يحتوي على '_' لذلك نستخدم substring
               final roleId = value.substring('role_'.length);
               ref.read(staffListControllerProvider.notifier).updateRole(member.id, roleId);
             }

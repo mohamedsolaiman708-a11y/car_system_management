@@ -45,7 +45,12 @@ class _DesktopScaffold extends ConsumerWidget {
             child: Column(
               children: [
                 _TopBar(user: user),
-                Expanded(child: child),
+                Expanded(
+                  child: Container(
+                    color: const Color(0xFFF8F9FA), // خلفية هادئة لإبراز المحتوى
+                    child: child,
+                  ),
+                ),
               ],
             ),
           ),
@@ -89,7 +94,7 @@ class _MobileScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AL SAMI ERP', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const BrandLogo(scale: 0.45),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
@@ -126,6 +131,7 @@ class _Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // عدد طلبات الانضمام المعلقة للتنبيه
     final pendingCount = ref.watch(pendingInvestorsControllerProvider).maybeWhen(
           data: (list) => list.length,
           orElse: () => 0,
@@ -133,7 +139,10 @@ class _Sidebar extends ConsumerWidget {
 
     return Container(
       width: isCollapsed ? 85 : 280,
-      color: AppColors.primaryNavy,
+      decoration: const BoxDecoration(
+        color: AppColors.primaryNavy,
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+      ),
       child: Column(
         children: [
           const SizedBox(height: 20),
@@ -180,6 +189,7 @@ class _Sidebar extends ConsumerWidget {
             ),
           ),
           _LogoutButton(isCollapsed: isCollapsed),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -265,53 +275,90 @@ class _TopBar extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: const BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))),
+      decoration: const BoxDecoration(
+        color: Colors.white, 
+        border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+      ),
       child: Row(
         children: [
-          InkWell(
-            onTap: () => _showEditNameDialog(context, ref, user),
-            borderRadius: BorderRadius.circular(30),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.primaryNavy.withOpacity(0.1),
-                    child: const Icon(Icons.person, color: AppColors.primaryNavy, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.edit_outlined, size: 12, color: AppColors.textGrey),
-                        ],
-                      ),
-                      Text(roleLabel, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildUserProfileMenu(context, ref, user, roleLabel),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: AppColors.bgGrey, borderRadius: BorderRadius.circular(12)),
-            child: Row(
+          _buildDateDisplay(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserProfileMenu(BuildContext context, WidgetRef ref, dynamic user, String roleLabel) {
+    return PopupMenuButton<String>(
+      onSelected: (val) {
+        if (val == 'edit_name') _showEditNameDialog(context, ref, user);
+        if (val == 'logout') ref.read(authControllerProvider.notifier).logout();
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'edit_name',
+          child: ListTile(
+            leading: Icon(Icons.edit_outlined, size: 18),
+            title: Text('تعديل الاسم الشخصي'),
+            dense: true,
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          value: 'logout',
+          child: ListTile(
+            leading: Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
+            title: Text('تسجيل الخروج', style: TextStyle(color: Colors.redAccent)),
+            dense: true,
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primaryNavy.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(50),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: AppColors.primaryNavy.withOpacity(0.1),
+              child: const Icon(Icons.person_rounded, color: AppColors.primaryNavy, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.primaryNavy),
-                const SizedBox(width: 8),
-                Text(
-                  intl.DateFormat('dd / MM / yyyy').format(DateTime.now()),
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 13),
-                ),
+                Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryNavy)),
+                Text(roleLabel, style: const TextStyle(color: Colors.grey, fontSize: 10)),
               ],
             ),
+            const SizedBox(width: 8),
+            const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateDisplay() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.bgGrey,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.primaryNavy),
+          const SizedBox(width: 10),
+          Text(
+            intl.DateFormat('dd / MM / yyyy').format(DateTime.now()),
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 13),
           ),
         ],
       ),
@@ -325,18 +372,26 @@ class _TopBar extends ConsumerWidget {
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('إعدادات الملف الشخصي'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.edit_rounded, color: AppColors.accentGold),
+              const SizedBox(width: 12),
+              const Text('إعدادات الملف الشخصي'),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('تعديل الاسم المعروض في النظام:'),
-              const SizedBox(height: 16),
+              const Text('تعديل اسمك المعروض في النظام والتقارير:'),
+              const SizedBox(height: 20),
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'الاسم الكامل',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person_outline),
+                decoration: InputDecoration(
+                  labelText: 'الاسم الكامل الجديد',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.person_outline),
                 ),
               ),
             ],
@@ -344,6 +399,11 @@ class _TopBar extends ConsumerWidget {
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryNavy,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: () async {
                 if (nameController.text.isNotEmpty) {
                   await ref.read(staffListControllerProvider.notifier).updateName(user.id, nameController.text);
