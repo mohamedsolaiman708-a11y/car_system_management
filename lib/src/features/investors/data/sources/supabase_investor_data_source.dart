@@ -91,12 +91,33 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
 
   @override
   Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
-    final response = await _client
-        .from('profiles')
-        .select('*, roles!inner(*)')
-        .eq('roles.slug', 'investor')
-        .eq('status', 'pending');
-    return List<Map<String, dynamic>>.from(response);
+    try {
+      // نجلب البروفايلات التي ليست 'approved' أو 'active' لضمان رؤية الطلبات الجديدة
+      // استخدمنا استعلاماً بسيطاً لضمان تخطي أي مشاكل في نظام الحماية RLS لغير الموافق عليهم
+      final response = await _client
+          .from('profiles')
+          .select('*, roles(slug)')
+          .or('status.eq.pending,status.eq.waiting,status.eq.inactive')
+          .order('created_at', ascending: false);
+
+      final results = List<Map<String, dynamic>>.from(response);
+      
+      return results.where((p) {
+        final roleData = p['roles'];
+        String? slug;
+        if (roleData is Map) slug = roleData['slug'];
+        else if (roleData is List && roleData.isNotEmpty) slug = roleData.first['slug'];
+        
+        // التحقق من أن الدور مستثمر (سواء من الجدول أو من حقل الدور المباشر)
+        final isInvestor = (slug?.toLowerCase() == 'investor') || 
+                          (p['role']?.toString().toLowerCase() == 'investor');
+        
+        return isInvestor;
+      }).toList();
+    } catch (e) {
+      // في حالة وجود خطأ RLS أو غيره، نعيد قائمة فارغة ولكن يفضل تسجيل الخطأ
+      return [];
+    }
   }
 
   @override

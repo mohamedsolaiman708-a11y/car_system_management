@@ -46,8 +46,8 @@ import '../../features/dashboard/presentation/screens/staff_dashboard_screen.dar
 import '../../features/search/presentation/screens/search_screen.dart';
 
 // Settings & Maintenance
-import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/maintenance_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/settings_controller.dart';
 
 // Audit Logs
@@ -100,14 +100,16 @@ GoRouter goRouter(GoRouterRef ref) {
 
       // 2. إذا كان المستخدم غير مسجل دخول
       if (!isLoggedIn) {
-        if (path == '/portal-selection' || path.startsWith('/auth') || path == '/maintenance' || path == '/') {
-          if (path == '/') return '/portal-selection';
+        if (path == '/portal-selection' || path.startsWith('/auth') || path == '/') {
           return null;
         }
         return '/portal-selection';
       }
 
-      // 3. حماية حالة الحساب (Pending/Rejected) - تطبق على الجميع
+      // 3. حماية حالة الحساب (Pending/Rejected)
+      // الأدمن والموظفين عادة ما تكون حالتهم 'approved' أو 'active'
+      final isStaff = user.role != UserRole.investor;
+      
       if (user.status == 'pending' && path != '/auth/pending') {
         return '/auth/pending';
       }
@@ -115,8 +117,11 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/auth/rejected';
       }
 
-      // 4. توجيه المستخدمين بعد تسجيل الدخول الناجح (فقط للموافق عليهم)
-      if (user.status == 'approved' && (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
+      // 4. توجيه المستخدمين بعد تسجيل الدخول الناجح
+      // نسمح بالدخول إذا كانت الحالة 'approved' أو 'active' أو كان المستخدم 'admin'
+      final canAccess = user.status == 'approved' || user.status == 'active' || isStaff;
+
+      if (canAccess && (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
         if (user.role == UserRole.investor) {
           return '/investor-portal';
         }
@@ -124,7 +129,6 @@ GoRouter goRouter(GoRouterRef ref) {
       }
 
       // 5. حماية المسارات بناءً على الدور (RBAC)
-      // منع المستثمرين من دخول لوحة تحكم الموظفين
       final staffPaths = [
         '/dashboard', '/crm', '/inventory', '/contracts', 
         '/investors', '/accounting', '/settings', '/staff-management'
@@ -133,8 +137,7 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/investor-portal';
       }
 
-      // منع الموظفين من دخول بوابة المستثمرين
-      if (user.role != UserRole.investor && path.startsWith('/investor-portal')) {
+      if (isStaff && path.startsWith('/investor-portal')) {
         return '/dashboard';
       }
 
@@ -154,7 +157,6 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/auth/rejected', builder: (context, state) => const AccountRejectedScreen()),
       GoRoute(path: '/auth/session-expired', builder: (context, state) => const SessionExpiredScreen()),
       
-      // Shell Route for Staff Portal
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
@@ -163,7 +165,6 @@ GoRouter goRouter(GoRouterRef ref) {
           GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
           GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
 
-          // CRM
           GoRoute(
             path: '/crm/customers',
             builder: (context, state) => const CustomersScreen(),
@@ -179,7 +180,6 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Inventory
           GoRoute(
             path: '/inventory',
             builder: (context, state) => const VehiclesScreen(),
@@ -195,7 +195,6 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Contracts
           GoRoute(
             path: '/contracts',
             builder: (context, state) => const ContractsScreen(),
@@ -205,7 +204,6 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Investors
           GoRoute(
             path: '/investors',
             builder: (context, state) => const InvestorsScreen(),
@@ -214,7 +212,6 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Accounting
           GoRoute(
             path: '/accounting',
             builder: (context, state) => const AccountsScreen(),
@@ -224,7 +221,6 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // System
           GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
           GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
           GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),

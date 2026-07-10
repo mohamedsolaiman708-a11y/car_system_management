@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' as intl;
 import '../../features/authentication/presentation/auth_controller.dart';
 import '../../features/authentication/domain/user_role.dart';
 import '../utils/app_theme.dart';
@@ -118,8 +119,6 @@ class _MobileScaffold extends ConsumerWidget {
   }
 }
 
-// --- المكونات الداخلية (Sidebar & TopBar) بنفس التصميم الفاخر ---
-
 class _Sidebar extends ConsumerWidget {
   final bool isCollapsed;
   final dynamic user;
@@ -146,6 +145,9 @@ class _Sidebar extends ConsumerWidget {
                 _SidebarLink(Icons.history_edu_rounded, 'العقود', '/contracts', isCollapsed),
                 _SidebarLink(Icons.account_tree_rounded, 'المحاسبة', '/accounting', isCollapsed),
                 _SidebarLink(Icons.bar_chart_rounded, 'التقارير', '/reports', isCollapsed),
+                if (user.role == UserRole.admin)
+                   _SidebarLink(Icons.admin_panel_settings_rounded, 'إدارة الموظفين', '/staff-management', isCollapsed),
+                _SidebarLink(Icons.settings_suggest_rounded, 'الإعدادات', '/settings', isCollapsed),
               ],
             ),
           ),
@@ -202,6 +204,12 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // جلب المسمى الوظيفي من دور المستخدم الفعلي بدلاً من نص ثابت
+    String roleLabel = 'موظف نظام';
+    if (user.role is UserRole) {
+      roleLabel = (user.role as UserRole).label;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: const BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))),
@@ -214,11 +222,15 @@ class _TopBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const Text('مدير النظام', style: TextStyle(color: Colors.grey, fontSize: 11)),
+              Text(roleLabel, style: const TextStyle(color: Colors.grey, fontSize: 11)),
             ],
           ),
           const Spacer(),
-          const Text('17 / 11 / 1445 هـ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+          // عرض التاريخ الحالي بشكل ديناميكي
+          Text(
+            intl.DateFormat('dd / MM / yyyy').format(DateTime.now()),
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy),
+          ),
         ],
       ),
     );
