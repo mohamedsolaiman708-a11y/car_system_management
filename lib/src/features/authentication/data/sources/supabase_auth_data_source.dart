@@ -72,10 +72,22 @@ class SupabaseAuthDataSource implements AuthDataSource {
       // منطق تحديد الدور بشكل آمن
       String roleSlug = 'investor'; // الدور الافتراضي للأمان هو مستثمر وليس أدمن
       
-      if (response != null && response['roles'] != null && response['roles']['slug'] != null) {
-        roleSlug = (response['roles']['slug'] as String).toLowerCase();
-      } else if (authUser?.userMetadata != null && authUser!.userMetadata!['role'] != null) {
-        // إذا لم يوجد بروفايل بعد، نأخذ الدور من الـ Metadata
+      if (response != null) {
+        final rolesData = response['roles'] ?? response['role'];
+        if (rolesData != null) {
+          if (rolesData is Map && rolesData['slug'] != null) {
+            roleSlug = (rolesData['slug'] as String).toLowerCase();
+          } else if (rolesData is List && rolesData.isNotEmpty) {
+            final firstRole = rolesData.first;
+            if (firstRole is Map && firstRole['slug'] != null) {
+              roleSlug = (firstRole['slug'] as String).toLowerCase();
+            }
+          }
+        }
+      }
+
+      // إذا لم يتم تحديد دور مخصص من قاعدة البيانات، نأخذ الدور من الـ Metadata كاحتياط
+      if (roleSlug == 'investor' && authUser?.userMetadata != null && authUser!.userMetadata!['role'] != null) {
         roleSlug = authUser.userMetadata!['role'].toString().toLowerCase();
       }
 
