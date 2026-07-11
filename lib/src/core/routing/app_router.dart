@@ -105,19 +105,26 @@ GoRouter goRouter(GoRouterRef ref) {
 
       final isStaff = user.role != UserRole.investor;
       
+      // إذا كان موظفاً، يتم توجيهه للوحة التحكم فوراً ولا يحتاج لصفحة الانتظار
+      if (isStaff) {
+        if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
+          return '/dashboard';
+        }
+        return null;
+      }
+
+      // منطق المستثمرين (يحتاج موافقة)
       if (user.status == 'pending' && path != '/auth/pending') return '/auth/pending';
       if (user.status == 'rejected' && path != '/auth/rejected') return '/auth/rejected';
 
-      final canAccess = user.status == 'approved' || user.status == 'active' || isStaff;
-
-      if (canAccess && (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
-        if (user.role == UserRole.investor) return '/investor-portal';
-        return '/dashboard';
+      if ((user.status == 'approved' || user.status == 'active') && 
+          (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
+        return '/investor-portal';
       }
 
+      // منع المستثمر من دخول صفحات الموظفين
       final staffPaths = ['/dashboard', '/crm', '/inventory', '/contracts', '/investors', '/accounting', '/settings', '/staff-management'];
       if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) return '/investor-portal';
-      if (isStaff && path.startsWith('/investor-portal')) return '/dashboard';
 
       return null;
     },
@@ -127,7 +134,6 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/portal-selection', builder: (context, state) => const PortalSelectionScreen()),
       GoRoute(path: '/auth/staff/login', builder: (context, state) => const StaffLoginScreen()),
       GoRoute(path: '/auth/investor/login', builder: (context, state) => const InvestorLoginScreen()),
-      // تم تعديل مسار التسجيل ليدعم نوع المستخدم بشكل ديناميكي
       GoRoute(
         path: '/auth/register', 
         builder: (context, state) {
@@ -135,9 +141,7 @@ GoRouter goRouter(GoRouterRef ref) {
           return InvestorRegisterScreen(type: type);
         }
       ),
-      // المسار القديم للتوافق
       GoRoute(path: '/auth/investor/register', redirect: (_, __) => '/auth/register?type=investor'),
-      
       GoRoute(path: '/auth/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
       GoRoute(path: '/auth/reset-password', builder: (context, state) => const ResetPasswordScreen()),
       GoRoute(path: '/auth/verify-email', builder: (context, state) => const EmailVerificationScreen()),
