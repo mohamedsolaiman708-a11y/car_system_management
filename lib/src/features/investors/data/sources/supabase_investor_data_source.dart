@@ -92,26 +92,29 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
     try {
-      // جلب كافة البروفايلات مع الأدوار الخاصة بها
+      // 1. جلب كافة البروفايلات مع الأدوار (باستخدام Left Join لضمان عدم ضياع أي سجل)
       final response = await _client
           .from('profiles')
-          .select('*, roles(*)')
-          .order('created_at', ascending: false);
+          .select('*, roles(*)');
 
-      final results = List<Map<String, dynamic>>.from(response);
+      final List<dynamic> data = response as List;
       
-      // فلترة النتائج برمجياً لضمان الدقة وتخطي مشاكل الـ Join المعقدة
-      return results.where((p) {
+      // 2. فلترة النتائج برمجياً لضمان أقصى درجات المرونة
+      return data.map((item) => Map<String, dynamic>.from(item)).where((p) {
         final roleData = p['roles'];
-        final slug = roleData is Map ? roleData['slug']?.toString().toLowerCase() : '';
         final status = p['status']?.toString().toLowerCase() ?? '';
         
-        // جلب أي مستثمر حالته ليست "مقبول" أو "نشط"
-        return slug == 'investor' && 
-               status != 'approved' && 
-               status != 'active';
+        // التحقق من أن المستخدم مستثمر:
+        // إما أن الـ slug هو 'investor' أو أن رتبته لم تحدد بعد (فيُعامل كمستثمر جديد)
+        final isInvestor = roleData == null || (roleData is Map && roleData['slug'] == 'investor');
+        
+        // جلب فقط من ليس لديهم حالة "نشط" أو "مقبول"
+        final isPending = status != 'approved' && status != 'active';
+        
+        return isInvestor && isPending;
       }).toList();
     } catch (e) {
+      print('DEBUG: Error fetching pending investors: $e');
       return [];
     }
   }
