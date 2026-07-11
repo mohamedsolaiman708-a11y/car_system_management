@@ -1,191 +1,170 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
-// استخدام Package Import لضمان التعرف على المزودات بشكل صحيح
-import 'package:car_system_management/src/features/reports/presentation/reports_controller.dart';
+import '../../../../core/utils/app_theme.dart';
+import '../../reports/presentation/reports_controller.dart';
 
 class TrialBalanceScreen extends ConsumerWidget {
   const TrialBalanceScreen({super.key});
 
-  // الألوان الرسمية المعتمدة في النظام (كحلي وذهبي)
-  static const Color primaryNavy = Color(0xFF0D1B3E);
-  static const Color accentGold = Color(0xFFC5A35E);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // جلب البيانات من المزود (تأكد من تشغيل build_runner لتوليد هذا المزود)
     final trialBalanceAsync = ref.watch(trialBalanceProvider);
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
-        appBar: AppBar(
-          backgroundColor: primaryNavy,
-          foregroundColor: Colors.white,
-          title: const Text('ميزان المراجعة المحاسبي', style: TextStyle(fontWeight: FontWeight.bold)),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded),
-              onPressed: () => ref.invalidate(trialBalanceProvider),
-              tooltip: 'تحديث البيانات',
-            ),
-          ],
-        ),
-        body: trialBalanceAsync.when(
-          data: (data) => _buildTrialBalanceTable(context, data, f),
-          loading: () => const Center(child: CircularProgressIndicator(color: primaryNavy)),
-          error: (err, _) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
-                const SizedBox(height: 16),
-                Text('حدث خطأ أثناء جلب البيانات: $err'),
-                TextButton(
-                  onPressed: () => ref.invalidate(trialBalanceProvider),
-                  child: const Text('إعادة المحاولة'),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: AppColors.bgGrey,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(140),
+        child: Container(
+          color: AppColors.primaryNavy,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('ميزان المراجعة الختامي', 
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('التحقق من توازن الأرصدة المدينة والدائنة في الوقت الحقيقي', 
+                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                    ],
+                  ),
+                  Container(
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      onPressed: () => ref.invalidate(trialBalanceProvider),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
+      body: trialBalanceAsync.when(
+        data: (data) => _buildPremiumTrialBalance(context, data, f),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+        error: (err, _) => Center(child: Text('خطأ في تحميل البيانات: $err')),
+      ),
     );
   }
 
-  Widget _buildTrialBalanceTable(BuildContext context, List<Map<String, dynamic>> data, intl.NumberFormat f) {
-    if (data.isEmpty) {
-      return const Center(child: Text('لا توجد قيود محاسبية مسجلة في هذه الفترة'));
-    }
+  Widget _buildPremiumTrialBalance(BuildContext context, List<Map<String, dynamic>> data, intl.NumberFormat f) {
+    if (data.isEmpty) return const Center(child: Text('لا توجد حركات مالية مسجلة حالياً'));
 
     double grandTotalDebit = 0;
     double grandTotalCredit = 0;
-
     for (var row in data) {
       grandTotalDebit += (row['total_debit'] ?? 0);
       grandTotalCredit += (row['total_credit'] ?? 0);
     }
 
-    return SingleChildScrollView(
+    final isBalanced = (grandTotalDebit - grandTotalCredit).abs() < 0.01;
+
+    return ListView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // ملخص سريع علوي (Executive Summary)
-          _buildQuickSummary(grandTotalDebit, grandTotalCredit, f),
-          const SizedBox(height: 24),
-          
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.shade200),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(primaryNavy.withOpacity(0.05)),
-                  headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: primaryNavy),
-                  columnSpacing: 40,
-                  columns: const [
-                    DataColumn(label: Text('كود الحساب')),
-                    DataColumn(label: Text('اسم الحساب')),
-                    DataColumn(label: Text('مدين (Debit)')),
-                    DataColumn(label: Text('دائن (Credit)')),
-                    DataColumn(label: Text('الرصيد الصافي')),
-                  ],
-                  rows: [
-                    ...data.map((row) => DataRow(cells: [
-                      DataCell(Text(row['account_code'] ?? '', style: const TextStyle(fontFamily: 'monospace'))),
-                      DataCell(Text(row['account_name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500))),
-                      DataCell(Text(f.format(row['total_debit'] ?? 0))),
-                      DataCell(Text(f.format(row['total_credit'] ?? 0))),
-                      DataCell(Text(
-                        f.format(row['net_balance'] ?? 0),
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: primaryNavy),
-                      )),
-                    ])),
-                    // سطر الإجمالي الختامي
-                    DataRow(
-                      color: WidgetStateProperty.all(primaryNavy.withOpacity(0.02)),
-                      cells: [
-                        const DataCell(Text('')),
-                        const DataCell(Text('الإجمالي الكلي', style: TextStyle(fontWeight: FontWeight.bold, color: primaryNavy))),
-                        DataCell(Text(f.format(grandTotalDebit), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
-                        DataCell(Text(f.format(grandTotalCredit), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))),
-                        const DataCell(Text('')),
-                      ],
-                    ),
+      children: [
+        // كروت الملخص العلوي
+        Row(
+          children: [
+            Expanded(child: _buildSummaryCard('إجمالي الحركات المدينة', f.format(grandTotalDebit), Colors.green)),
+            const SizedBox(width: 20),
+            Expanded(child: _buildSummaryCard('إجمالي الحركات الدائنة', f.format(grandTotalCredit), Colors.red)),
+            const SizedBox(width: 20),
+            Expanded(child: _buildStatusCard(isBalanced)),
+          ],
+        ),
+        const SizedBox(height: 32),
+        
+        // الجدول المالي الفاخر
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.02)),
+              dataRowHeight: 70,
+              columns: const [
+                DataColumn(label: Text('كود الحساب', style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('اسم الحساب المالي', style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('مدين (Debit)', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('دائن (Credit)', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('الرصيد الصافي', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))),
+              ],
+              rows: [
+                ...data.map((row) => DataRow(cells: [
+                  DataCell(Text(row['account_code'] ?? '', style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold))),
+                  DataCell(Text(row['account_name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500))),
+                  DataCell(Text(f.format(row['total_debit'] ?? 0), style: const TextStyle(color: Colors.green))),
+                  DataCell(Text(f.format(row['total_credit'] ?? 0), style: const TextStyle(color: Colors.red))),
+                  DataCell(Text(f.format(row['net_balance'] ?? 0), style: const TextStyle(fontWeight: FontWeight.bold))),
+                ])),
+                // سطر الإجمالي
+                DataRow(
+                  color: WidgetStateProperty.all(AppColors.bgGrey),
+                  cells: [
+                    const DataCell(Text('')),
+                    const DataCell(Text('الإجمالي الكلي', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataCell(Text(f.format(grandTotalDebit), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
+                    DataCell(Text(f.format(grandTotalCredit), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))),
+                    const DataCell(Text('')),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: 32),
-          _buildIntegrityStatus(grandTotalDebit, grandTotalCredit, f),
+        ),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 8),
+          Text('$value ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: color)),
         ],
       ),
     );
   }
 
-  Widget _buildQuickSummary(double debit, double credit, intl.NumberFormat f) {
-    return Row(
-      children: [
-        _buildSummaryBox('إجمالي الحركات المدينة', f.format(debit), Colors.green),
-        const SizedBox(width: 16),
-        _buildSummaryBox('إجمالي الحركات الدائنة', f.format(credit), Colors.red),
-      ],
-    );
-  }
-
-  Widget _buildSummaryBox(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.1)),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 10)],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-            const SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIntegrityStatus(double debit, double credit, intl.NumberFormat f) {
-    final diff = (debit - credit).abs();
-    final isBalanced = diff < 0.01;
-
+  Widget _buildStatusCard(bool isBalanced) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isBalanced ? Colors.green.shade50 : Colors.red.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isBalanced ? Colors.green.shade200 : Colors.red.shade200),
+        color: isBalanced ? Colors.green : Colors.red,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: (isBalanced ? Colors.green : Colors.red).withOpacity(0.3), blurRadius: 10)],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(isBalanced ? Icons.verified_rounded : Icons.warning_amber_rounded, color: isBalanced ? Colors.green : Colors.red, size: 28),
+          Icon(isBalanced ? Icons.verified_rounded : Icons.warning_rounded, color: Colors.white, size: 32),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              isBalanced 
-                ? 'ميزان المراجعة متزن: كافة العمليات المالية والقيود اليومية مطابقة تماماً.' 
-                : 'تنبيه: يوجد خلل في اتزان الميزان! هناك فرق محاسبي قدره: ${f.format(diff)} ر.س. يرجى مراجعة القيود الأخيرة.',
-              style: TextStyle(color: isBalanced ? Colors.green.shade900 : Colors.red.shade900, fontWeight: FontWeight.bold),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('حالة الميزان', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                Text(isBalanced ? 'متوازن تماماً' : 'يوجد خلل!', 
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
             ),
           ),
         ],

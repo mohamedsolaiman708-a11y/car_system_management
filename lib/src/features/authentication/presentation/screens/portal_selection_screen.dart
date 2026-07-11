@@ -9,67 +9,76 @@ class PortalSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1227), // كحلي فاخر
+      backgroundColor: const Color(0xFF070B14), // أسود ملكي عميق جداً
       body: Stack(
         children: [
-          // خلفية بتدرج ناعم
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF162A4D).withOpacity(0.2),
-                  const Color(0xFF0A1227),
-                ],
-              ),
-            ),
+          // خلفية بتدرجات إبداعية (Abstract Background)
+          Positioned(
+            top: -100,
+            right: -100,
+            child: CircleAvatar(radius: 200, backgroundColor: AppColors.primaryNavy.withOpacity(0.3)),
           ),
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: CircleAvatar(radius: 150, backgroundColor: AppColors.accentGold.withOpacity(0.05)),
+          ),
+          
           Center(
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const BrandLogo(scale: 1.0), // اللوجو الفخم في المنتصف
-                    const SizedBox(height: 60),
-                    const Text(
-                      'مرحباً بك في نظام السامي',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Cairo',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'يرجى اختيار بوابة الدخول للمتابعة',
-                      style: TextStyle(color: Colors.white54, fontSize: 14),
-                    ),
-                    const SizedBox(height: 50),
-                    
-                    // كروت الاختيار
-                    _buildPortalCard(
-                      context,
-                      title: 'بوابة الموظفين',
-                      subtitle: 'الإدارة، المحاسبة، والعمليات',
-                      icon: Icons.admin_panel_settings_rounded,
-                      color: AppColors.accentGold,
-                      onTap: () => context.push('/auth/staff/login'),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildPortalCard(
-                      context,
-                      title: 'بوابة المستثمرين',
-                      subtitle: 'متابعة الاستثمارات والأرباح',
-                      icon: Icons.account_balance_wallet_rounded,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // شعار العلامة التجارية مع تأثير الظل
+                  const BrandLogo(scale: 1.2),
+                  const SizedBox(height: 60),
+                  
+                  const Text(
+                    'مرحباً بك في المنصة الذكية لإدارة الأصول',
+                    style: TextStyle(
                       color: Colors.white,
-                      onTap: () => context.push('/auth/investor/login'),
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'اختر الهوية المخصصة للمتابعة والوصول إلى الأدوات',
+                    style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+                  ),
+                  const SizedBox(height: 60),
+                  
+                  // كروت الاختيار بتصميم فاخر (Glassmorphism)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPortalCard(
+                        context,
+                        title: 'بوابة الإدارة والموظفين',
+                        subtitle: 'العمليات، المحاسبة، والرقابة',
+                        icon: Icons.admin_panel_settings_rounded,
+                        color: AppColors.accentGold,
+                        path: '/auth/staff/login',
+                      ),
+                      const SizedBox(width: 32),
+                      _buildPortalCard(
+                        context,
+                        title: 'بوابة شركاء الاستثمار',
+                        subtitle: 'المحافظ المالية، الأرباح، والتقارير',
+                        icon: Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        path: '/auth/investor/login',
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 80),
+                  Text(
+                    'نظام السامي لإدارة تمويل السيارات © 2024',
+                    style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 10, letterSpacing: 2),
+                  ),
+                ],
               ),
             ),
           ),
@@ -84,51 +93,45 @@ class PortalSelectionScreen extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required Color color,
-    required VoidCallback onTap,
+    required String path,
   }) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      onTap: () => context.push(path),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
-        width: double.infinity,
-        constraints: const BoxConstraints(maxWidth: 400),
-        padding: const EdgeInsets.all(24),
+        width: 320,
+        height: 280,
+        padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.2), width: 1),
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
         ),
-        child: Row(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: color.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(icon, color: color, size: 28),
+              child: Icon(icon, color: color, size: 48),
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.white38, fontSize: 12),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 16),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+            ),
+            const SizedBox(height: 24),
+            Icon(Icons.arrow_forward_rounded, color: color.withOpacity(0.3), size: 20),
           ],
         ),
       ),
