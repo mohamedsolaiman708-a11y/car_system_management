@@ -92,29 +92,33 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
     try {
-      // 1. جلب كافة البروفايلات مع الأدوار (باستخدام Left Join لضمان عدم ضياع أي سجل)
+      // نجلب الكل بدون فلترة Join معقدة لضمان رؤية حسين لبيب ومحمد سليمان
       final response = await _client
           .from('profiles')
-          .select('*, roles(*)');
+          .select('*, roles(slug)');
 
+      if (response == null) return [];
       final List<dynamic> data = response as List;
       
-      // 2. فلترة النتائج برمجياً لضمان أقصى درجات المرونة
-      return data.map((item) => Map<String, dynamic>.from(item)).where((p) {
+      return data.map((item) {
+        final Map<String, dynamic> p = Map<String, dynamic>.from(item);
+        final status = (p['status'] ?? '').toString().toLowerCase().trim();
         final roleData = p['roles'];
-        final status = p['status']?.toString().toLowerCase() ?? '';
         
-        // التحقق من أن المستخدم مستثمر:
-        // إما أن الـ slug هو 'investor' أو أن رتبته لم تحدد بعد (فيُعامل كمستثمر جديد)
-        final isInvestor = roleData == null || (roleData is Map && roleData['slug'] == 'investor');
+        String? roleSlug;
+        if (roleData is Map) {
+          roleSlug = roleData['slug'];
+        } else if (roleData is List && roleData.isNotEmpty) {
+          roleSlug = roleData[0]['slug'];
+        }
+
+        // أي شخص حالته pending ودوره إما مستثمر أو غير محدد (كما في حالتك)
+        final isInvestorType = roleSlug == null || roleSlug == 'investor';
+        final isPendingStatus = status == 'pending' || status == 'waiting' || status == '';
         
-        // جلب فقط من ليس لديهم حالة "نشط" أو "مقبول"
-        final isPending = status != 'approved' && status != 'active';
-        
-        return isInvestor && isPending;
-      }).toList();
+        return (isInvestorType && isPendingStatus) ? p : null;
+      }).whereType<Map<String, dynamic>>().toList();
     } catch (e) {
-      print('DEBUG: Error fetching pending investors: $e');
       return [];
     }
   }
