@@ -253,6 +253,13 @@ class PendingInvestorsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // تحديث قائمة المستثمرين النشطين تلقائياً عند قبول أي مستثمر من هذه القائمة
+    ref.listen(pendingInvestorsControllerProvider, (previous, next) {
+      if (previous?.isLoading == true && !next.isLoading && !next.hasError) {
+        ref.invalidate(investorListControllerProvider);
+      }
+    });
+
     final pendingAsync = ref.watch(pendingInvestorsControllerProvider);
 
     return RefreshIndicator(
@@ -287,7 +294,6 @@ class PendingInvestorsList extends ConsumerWidget {
   }
 }
 
-// ─── Card مستثمر معلق (Stateful للتعامل مع حالة Loading) ───
 class _PendingInvestorCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> req;
   const _PendingInvestorCard({required this.req});
@@ -300,7 +306,6 @@ class _PendingInvestorCard extends ConsumerStatefulWidget {
 class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
   bool _isLoading = false;
 
-  // ✅ قبول طلب الانضمام
   Future<void> _approve() async {
     setState(() => _isLoading = true);
     await ref
@@ -309,7 +314,6 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
     if (mounted) setState(() => _isLoading = false);
   }
 
-  // ✅ رفض طلب الانضمام مع تأكيد
   Future<void> _reject() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -412,9 +416,6 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
   }
 }
 
-// ─────────────────────────────────────────────
-// قائمة طلبات السحب
-// ─────────────────────────────────────────────
 class WithdrawalRequestsList extends ConsumerWidget {
   const WithdrawalRequestsList({super.key});
 
@@ -456,7 +457,6 @@ class WithdrawalRequestsList extends ConsumerWidget {
   }
 }
 
-// ─── Card طلب سحب (Stateful لحالة Loading) ───
 class _WithdrawalRequestCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> req;
   const _WithdrawalRequestCard({required this.req});
@@ -470,7 +470,6 @@ class _WithdrawalRequestCardState
     extends ConsumerState<_WithdrawalRequestCard> {
   bool _isLoading = false;
 
-  // ✅ الموافقة على طلب السحب — يستدعي approveRequest الصحيح
   Future<void> _approve() async {
     setState(() => _isLoading = true);
     await ref
@@ -486,7 +485,6 @@ class _WithdrawalRequestCardState
     }
   }
 
-  // ✅ رفض طلب السحب — يستدعي rejectRequest الصحيح
   Future<void> _reject() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -575,7 +573,6 @@ class _WithdrawalRequestCardState
             ],
           ),
           const SizedBox(height: 12),
-          // تفاصيل الحساب البنكي
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
