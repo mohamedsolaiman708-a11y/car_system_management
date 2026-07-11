@@ -39,17 +39,16 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1227), // خلفية كحلي فاخر
+      backgroundColor: const Color(0xFF0A1227),
       body: Row(
         children: [
-          // القسم الأيسر: صورة أو خلفية جمالية (للديسكتوب)
           if (MediaQuery.of(context).size.width > 900)
             Expanded(
               flex: 3,
               child: Container(
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/images/login_bg.jpg'), // تأكد من وجود صورة أو استخدم تدرج
+                    image: AssetImage('assets/images/login_bg.jpg'), 
                     fit: BoxFit.cover,
                     opacity: 0.4,
                   ),
@@ -65,7 +64,6 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
               ),
             ),
           
-          // القسم الأيمن: نموذج تسجيل الدخول
           Expanded(
             flex: 2,
             child: Container(
@@ -80,7 +78,7 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (MediaQuery.of(context).size.width <= 900) ...[
-                          const BrandLogo(scale: 0.8), // لوجو ملون أو داكن هنا
+                          const BrandLogo(scale: 0.8), 
                           const SizedBox(height: 40),
                         ],
                         const Text(
@@ -143,6 +141,17 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
                               : const Text('دخول النظام', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('لديك دعوة عمل؟'),
+                            TextButton(
+                              onPressed: () => context.push('/auth/register?type=staff'), // إرسال نوع "موظف"
+                              child: const Text('أنشئ حسابك الآن', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: () => context.go('/portal-selection'),
                           icon: const Icon(Icons.arrow_back),

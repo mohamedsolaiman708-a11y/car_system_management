@@ -127,7 +127,17 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/portal-selection', builder: (context, state) => const PortalSelectionScreen()),
       GoRoute(path: '/auth/staff/login', builder: (context, state) => const StaffLoginScreen()),
       GoRoute(path: '/auth/investor/login', builder: (context, state) => const InvestorLoginScreen()),
-      GoRoute(path: '/auth/investor/register', builder: (context, state) => const InvestorRegisterScreen()),
+      // تم تعديل مسار التسجيل ليدعم نوع المستخدم بشكل ديناميكي
+      GoRoute(
+        path: '/auth/register', 
+        builder: (context, state) {
+          final type = state.uri.queryParameters['type'] ?? 'investor';
+          return InvestorRegisterScreen(type: type);
+        }
+      ),
+      // المسار القديم للتوافق
+      GoRoute(path: '/auth/investor/register', redirect: (_, __) => '/auth/register?type=investor'),
+      
       GoRoute(path: '/auth/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
       GoRoute(path: '/auth/reset-password', builder: (context, state) => const ResetPasswordScreen()),
       GoRoute(path: '/auth/verify-email', builder: (context, state) => const EmailVerificationScreen()),

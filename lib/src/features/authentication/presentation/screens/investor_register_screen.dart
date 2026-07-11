@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:car_system_management/l10n/app_localizations.dart';
 import 'package:car_system_management/src/features/authentication/presentation/auth_controller.dart';
 import 'package:car_system_management/src/features/authentication/presentation/widgets/auth_layout.dart';
 
 class InvestorRegisterScreen extends ConsumerStatefulWidget {
-  const InvestorRegisterScreen({super.key});
+  final String type; // 'investor' أو 'staff'
+  const InvestorRegisterScreen({super.key, this.type = 'investor'});
 
   @override
   ConsumerState<InvestorRegisterScreen> createState() => _InvestorRegisterScreenState();
@@ -33,12 +33,7 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى التأكد من صحة جميع البيانات المدخلة')),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final success = await ref.read(authControllerProvider.notifier).registerInvestor(
           email: _emailController.text.trim(),
@@ -49,36 +44,26 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
         );
 
     if (success && mounted) {
-      context.go('/auth/pending');
+      // إذا كان موظف، غالباً سيتم توجيهه للـ dashboard مباشرة بواسطة الـ redirect في الراوتر
+      // لأن الـ trigger سيفعله فوراً. أما المستثمر سيذهب لصفحة الانتظار.
+      if (widget.type == 'staff') {
+        context.go('/dashboard');
+      } else {
+        context.go('/auth/pending');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    if (l10n == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-
     final authState = ref.watch(authControllerProvider);
-
-    // إضافة مستمع للأخطاء لإظهارها للمستخدم
-    ref.listen<AsyncValue>(
-      authControllerProvider,
-      (previous, next) {
-        if (next.hasError && !next.isLoading) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(next.error.toString()),
-              backgroundColor: Colors.red.shade700,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
-    );
+    final isStaff = widget.type == 'staff';
 
     return AuthLayout(
-      title: 'تسجيل مستثمر جديد',
-      subtitle: 'انضم إلينا لتبدأ رحلتك الاستثمارية في تمويل السيارات',
+      title: isStaff ? 'إنشاء حساب موظف' : 'تسجيل مستثمر جديد',
+      subtitle: isStaff 
+          ? 'مرحباً بك في فريق العمل، أكمل بياناتك لتفعيل حسابك' 
+          : 'انضم إلينا لتبدأ رحلتك الاستثمارية في تمويل السيارات',
       child: Form(
         key: _formKey,
         child: Column(
@@ -163,19 +148,15 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
                 backgroundColor: const Color(0xFF1B3A5B),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                disabledBackgroundColor: const Color(0xFF1B3A5B).withOpacity(0.6),
               ),
               child: authState.isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text('إنشاء الحساب', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text(isStaff ? 'تفعيل الحساب والبدء' : 'إنشاء الحساب', 
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () => context.go('/auth/investor/login'),
+              onPressed: () => context.go(isStaff ? '/auth/staff/login' : '/auth/investor/login'),
               child: const Text('لديك حساب بالفعل؟ سجل دخولك'),
             ),
           ],
