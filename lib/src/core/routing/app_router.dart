@@ -105,7 +105,6 @@ GoRouter goRouter(GoRouterRef ref) {
 
       final isStaff = user.role != UserRole.investor;
       
-      // إذا كان موظفاً، يتم توجيهه للوحة التحكم فوراً ولا يحتاج لصفحة الانتظار
       if (isStaff) {
         if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
           return '/dashboard';
@@ -113,7 +112,6 @@ GoRouter goRouter(GoRouterRef ref) {
         return null;
       }
 
-      // منطق المستثمرين (يحتاج موافقة)
       if (user.status == 'pending' && path != '/auth/pending') return '/auth/pending';
       if (user.status == 'rejected' && path != '/auth/rejected') return '/auth/rejected';
 
@@ -122,7 +120,6 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/investor-portal';
       }
 
-      // منع المستثمر من دخول صفحات الموظفين
       final staffPaths = ['/dashboard', '/crm', '/inventory', '/contracts', '/investors', '/accounting', '/settings', '/staff-management'];
       if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) return '/investor-portal';
 
@@ -190,7 +187,10 @@ GoRouter goRouter(GoRouterRef ref) {
 
           GoRoute(
             path: '/investors',
-            builder: (context, state) => const InvestorsScreen(),
+            builder: (context, state) {
+              final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
+              return InvestorsScreen(initialIndex: tab);
+            },
             routes: [
               GoRoute(path: ':id', builder: (context, state) => InvestorDetailsScreen(id: state.pathParameters['id']!)),
             ],

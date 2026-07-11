@@ -8,12 +8,14 @@ import '../investor_controller.dart';
 import '../widgets/create_investor_dialog.dart';
 
 class InvestorsScreen extends ConsumerWidget {
-  const InvestorsScreen({super.key});
+  final int initialIndex;
+  const InvestorsScreen({super.key, this.initialIndex = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
       length: 3,
+      initialIndex: initialIndex,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Padding(
