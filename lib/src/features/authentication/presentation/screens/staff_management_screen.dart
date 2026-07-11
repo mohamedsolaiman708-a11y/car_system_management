@@ -14,21 +14,16 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   String searchQuery = '';
   String? selectedRole;
 
-  // دالة موحدة لتعريب مسميات الأدوار بشكل فخم
+  // دالة موحدة لتعريب مسميات الأدوار بطلب العميل
   String _translateRole(String slugOrName) {
     final mapping = {
       'admin': 'مدير نظام',
-      'system_administrator': 'مدير نظام',
-      'manager': 'مدير عمليات',
-      'operations_manager': 'مدير عمليات',
-      'accountant': 'محاسب مالي',
-      'chief_accountant': 'رئيس حسابات',
+      'accountant': 'محاسب',
       'sales': 'مسؤول مبيعات',
-      'sales_agent': 'مسؤول مبيعات',
-      'employee': 'موظف',
+      'manager': 'مدير عمليات',
     };
     
-    final key = slugOrName.toLowerCase().replaceAll(' ', '_');
+    final key = slugOrName.toLowerCase().trim();
     return mapping[key] ?? slugOrName;
   }
 
@@ -128,9 +123,9 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           Expanded(
             child: rolesAsync.maybeWhen(
               data: (roles) {
-                // فلترة الأدوار المعروضة في البحث لتشمل المحاسب والمبيعات فقط + الكل
-                final relevantSlugs = ['accountant', 'sales', 'chief_accountant', 'sales_agent'];
-                final filteredRoles = roles.where((r) => relevantSlugs.contains(r['slug'].toString().toLowerCase())).toList();
+                // تصفية خيارات البحث لتشمل المحاسب والمبيعات
+                final allowedSlugs = ['accountant', 'sales'];
+                final filteredRoles = roles.where((r) => allowedSlugs.contains(r['slug'].toString().toLowerCase())).toList();
 
                 return DropdownButtonFormField<String?>(
                   value: selectedRole,
@@ -145,7 +140,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     const DropdownMenuItem(value: null, child: Text('كافة الأدوار')),
                     ...filteredRoles.map((r) => DropdownMenuItem<String>(
                       value: r['slug']?.toString(), 
-                      child: Text(_translateRole(r['name']?.toString() ?? '')),
+                      child: Text(_translateRole(r['slug']?.toString() ?? '')),
                     )),
                   ],
                   onChanged: (val) => setState(() => selectedRole = val),
@@ -201,14 +196,15 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     const SizedBox(height: 24),
                     rolesAsync.when(
                       data: (roles) {
-                        // الحصر المطلوب: المحاسب والمبيعات فقط
+                        // الحصر المطلوب: محاسب ومبيعات فقط (تطابق دقيق)
                         final allowedRoles = roles.where((r) {
                           final slug = r['slug'].toString().toLowerCase();
-                          return slug.contains('accountant') || slug.contains('sales');
+                          return slug == 'accountant' || slug == 'sales';
                         }).toList();
 
                         if (allowedRoles.isEmpty) {
-                          return const Text('لا توجد أدوار محاسبة أو مبيعات معرفة في النظام', style: TextStyle(color: Colors.red));
+                          return const Text('يرجى التأكد من وجود أدوار "accountant" و "sales" في قاعدة البيانات', 
+                            style: TextStyle(color: Colors.red, fontSize: 11));
                         }
                         
                         return DropdownButtonFormField<String>(
@@ -220,7 +216,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                           hint: const Text('اختر الدور'),
                           items: allowedRoles.map((r) => DropdownMenuItem<String>(
                             value: r['id'].toString(), 
-                            child: Text(_translateRole(r['name'].toString())),
+                            child: Text(_translateRole(r['slug'].toString())),
                           )).toList(),
                           onChanged: (val) => selectedRoleId = val,
                         );
@@ -323,7 +319,7 @@ class _StaffMemberCard extends ConsumerWidget {
                   color: member.isActive ? Colors.blue.shade50 : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(translator(member.role.label), style: TextStyle(
+                child: Text(translator(member.role.name), style: TextStyle(
                   fontSize: 11, 
                   color: member.isActive ? Colors.blue.shade700 : Colors.grey,
                   fontWeight: FontWeight.w600
@@ -380,12 +376,11 @@ class _StaffMemberCard extends ConsumerWidget {
             ),
             const PopupMenuDivider(),
             ...?rolesAsync.value?.where((r) {
-               // حصر خيارات تغيير الدور أيضاً في المحاسب والمبيعات
                final s = r['slug'].toString().toLowerCase();
-               return s.contains('accountant') || s.contains('sales');
+               return s == 'accountant' || s == 'sales';
             }).map((role) => PopupMenuItem(
               value: 'role_${role['id']}',
-              child: Text('تغيير إلى ${translator(role['name'])}'),
+              child: Text('تغيير إلى ${translator(role['slug'])}'),
             )),
           ],
         ),
