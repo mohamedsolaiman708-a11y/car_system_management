@@ -10,20 +10,20 @@ class SupabaseStaffRepository {
   final SupabaseClient _client;
   SupabaseStaffRepository(this._client);
 
-  /// جلب كافة الموظفين
+  /// جلب كافة الموظفين والمستخدمين الذين لم يتم اعتمادهم كمستثمرين بعد
   Future<List<AppUser>> getStaffMembers() async {
     try {
+      // قمنا بإزالة الفلترة الصارمة لنسمح للأدمن برؤية الجميع وتعديل رتبهم
       final response = await _client
           .from('profiles')
-          .select('*, roles!inner(*)')
-          .neq('roles.slug', 'investor')
+          .select('*, roles(*)')
           .order('full_name', ascending: true);
       
       return (response as List).map((json) {
         final roleData = json['roles'];
         return AppUser.fromJson({
           ...json,
-          'role': roleData['slug'], 
+          'role': roleData != null ? roleData['slug'] : 'investor', 
         });
       }).toList();
     } catch (e) {
@@ -36,11 +36,13 @@ class SupabaseStaffRepository {
     bool? isActive, 
     String? roleId,
     String? fullName,
+    String? status, // إضافة إمكانية تحديث الحالة
   }) async {
     final updates = <String, dynamic>{};
     if (isActive != null) updates['is_active'] = isActive;
     if (roleId != null) updates['role_id'] = roleId;
     if (fullName != null) updates['full_name'] = fullName;
+    if (status != null) updates['status'] = status;
     
     updates['updated_at'] = DateTime.now().toIso8601String();
     
@@ -59,7 +61,7 @@ class SupabaseStaffRepository {
     required String roleId,
   }) async {
     await _client.from('user_invitations').insert({
-      'email': email,
+      'email': email.trim().toLowerCase(), // ضمان تخزين الإيميل موحد
       'role_id': roleId,
       'invited_by': _client.auth.currentUser?.id,
       'token': 'INV-${DateTime.now().millisecondsSinceEpoch}',
@@ -67,17 +69,15 @@ class SupabaseStaffRepository {
     });
   }
 
-  /// جلب الأدوار المتاحة (تم تعديل الاستعلام ليكون أكثر مرونة)
+  /// جلب الأدوار المتاحة
   Future<List<Map<String, dynamic>>> getRoles() async {
     try {
       final response = await _client
           .from('roles')
           .select()
-          .not('slug', 'eq', 'investor')
           .order('name');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      // في حالة وجود خطأ RLS، نرجع قائمة فارغة لكي تتعامل معها الواجهة
       return [];
     }
   }

@@ -361,6 +361,17 @@ class _StaffMemberCard extends ConsumerWidget {
               value: 'edit_name',
               child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('تعديل الاسم'), dense: true, contentPadding: EdgeInsets.zero),
             ),
+            // خيار جديد لاعتماد الموظف العالق في صفحة الانتظار
+            if (member.status == 'pending')
+              const PopupMenuItem(
+                value: 'approve_as_staff',
+                child: ListTile(
+                  leading: Icon(Icons.verified_user_outlined, color: Colors.blue),
+                  title: Text('اعتماد كـموظف'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
             PopupMenuItem(
               value: 'toggle_status',
               child: ListTile(
