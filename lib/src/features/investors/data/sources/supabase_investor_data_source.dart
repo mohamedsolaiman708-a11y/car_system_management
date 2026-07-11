@@ -92,30 +92,26 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
     try {
-      // نجلب البروفايلات التي ليست 'approved' أو 'active' لضمان رؤية الطلبات الجديدة
-      // استخدمنا استعلاماً بسيطاً لضمان تخطي أي مشاكل في نظام الحماية RLS لغير الموافق عليهم
+      // جلب كافة البروفايلات مع الأدوار الخاصة بها
       final response = await _client
           .from('profiles')
-          .select('*, roles(slug)')
-          .or('status.eq.pending,status.eq.waiting,status.eq.inactive')
+          .select('*, roles(*)')
           .order('created_at', ascending: false);
 
       final results = List<Map<String, dynamic>>.from(response);
       
+      // فلترة النتائج برمجياً لضمان الدقة وتخطي مشاكل الـ Join المعقدة
       return results.where((p) {
         final roleData = p['roles'];
-        String? slug;
-        if (roleData is Map) slug = roleData['slug'];
-        else if (roleData is List && roleData.isNotEmpty) slug = roleData.first['slug'];
+        final slug = roleData is Map ? roleData['slug']?.toString().toLowerCase() : '';
+        final status = p['status']?.toString().toLowerCase() ?? '';
         
-        // التحقق من أن الدور مستثمر (سواء من الجدول أو من حقل الدور المباشر)
-        final isInvestor = (slug?.toLowerCase() == 'investor') || 
-                          (p['role']?.toString().toLowerCase() == 'investor');
-        
-        return isInvestor;
+        // جلب أي مستثمر حالته ليست "مقبول" أو "نشط"
+        return slug == 'investor' && 
+               status != 'approved' && 
+               status != 'active';
       }).toList();
     } catch (e) {
-      // في حالة وجود خطأ RLS أو غيره، نعيد قائمة فارغة ولكن يفضل تسجيل الخطأ
       return [];
     }
   }
