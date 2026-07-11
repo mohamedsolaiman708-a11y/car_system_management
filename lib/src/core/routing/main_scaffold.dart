@@ -7,6 +7,7 @@ import '../../features/authentication/domain/user_role.dart';
 import '../../features/authentication/presentation/widgets/brand_logo.dart';
 import '../../features/authentication/presentation/staff_controller.dart';
 import '../../features/investors/presentation/investor_controller.dart';
+import '../../features/notifications/presentation/notification_controller.dart';
 import '../utils/app_theme.dart';
 import '../utils/responsive_layout.dart';
 
@@ -102,6 +103,10 @@ class _MobileScaffold extends ConsumerWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        actions: [
+          _NotificationButton(),
+          const SizedBox(width: 8),
+        ],
       ),
       drawer: Drawer(child: _Sidebar(isCollapsed: false, user: user)),
       body: child,
@@ -155,7 +160,6 @@ class _Sidebar extends ConsumerWidget {
               children: [
                 _SidebarLink(Icons.dashboard_rounded, 'الرئيسية', '/dashboard', isCollapsed),
                 
-                // المحاسب والأدمن يروْن المستثمرين
                 if (role == UserRole.admin || role == UserRole.accountant)
                 _SidebarLink(
                   Icons.groups_rounded, 
@@ -165,22 +169,18 @@ class _Sidebar extends ConsumerWidget {
                   badge: role == UserRole.admin && pendingCount > 0 ? pendingCount : null,
                 ),
 
-                // المبيعات والأدمن يروْن العملاء والسيارات
                 if (role == UserRole.admin || role == UserRole.sales) ...[
                   _SidebarLink(Icons.person_rounded, 'العملاء', '/crm/customers', isCollapsed),
                   _SidebarLink(Icons.directions_car_filled_rounded, 'السيارات', '/inventory', isCollapsed),
                 ],
 
-                // الجميع (موظفين) يروْن العقود والتقارير
                 _SidebarLink(Icons.history_edu_rounded, 'العقود', '/contracts', isCollapsed),
 
-                // المحاسب والأدمن يروْن المحاسبة المالية
                 if (role == UserRole.admin || role == UserRole.accountant)
                 _SidebarLink(Icons.account_tree_rounded, 'المحاسبة', '/accounting', isCollapsed),
 
                 _SidebarLink(Icons.bar_chart_rounded, 'التقارير', '/reports', isCollapsed),
                 
-                // أدوات الأدمن فقط
                 if (role == UserRole.admin) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -299,6 +299,8 @@ class _TopBar extends ConsumerWidget {
         children: [
           _buildUserProfileMenu(context, ref, user, roleLabel),
           const Spacer(),
+          _NotificationButton(), // زر التنبيهات الذكي
+          const SizedBox(width: 16),
           _buildDateDisplay(),
         ],
       ),
@@ -399,7 +401,7 @@ class _TopBar extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('قم بتحديث اسمك المعروض في النظام والتقارير:'),
+              const Text('تعديل اسمك المعروض في النظام والتقارير:'),
               const SizedBox(height: 20),
               TextField(
                 controller: nameController,
@@ -431,6 +433,38 @@ class _TopBar extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NotificationButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textGrey, size: 24),
+          onPressed: () => context.push('/notifications'),
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                '$unreadCount',
+                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

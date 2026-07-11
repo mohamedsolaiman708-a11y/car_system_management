@@ -24,6 +24,25 @@ final staffStatsProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef StaffStatsRef = AutoDisposeFutureProviderRef<Map<String, dynamic>>;
+String _$monthlyGrowthDataHash() => r'935df0cd711f0e30f9fc6b34980818e99bfe476f';
+
+/// See also [monthlyGrowthData].
+@ProviderFor(monthlyGrowthData)
+final monthlyGrowthDataProvider =
+    AutoDisposeFutureProvider<List<Map<String, dynamic>>>.internal(
+      monthlyGrowthData,
+      name: r'monthlyGrowthDataProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$monthlyGrowthDataHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef MonthlyGrowthDataRef =
+    AutoDisposeFutureProviderRef<List<Map<String, dynamic>>>;
 String _$systemIntegrityStatusHash() =>
     r'478ffe9f2a2f49d1a1444e13ddf85c6b36541fd0';
 

@@ -1,261 +1,168 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
+import '../../../../core/utils/app_theme.dart';
+import '../../data/supabase_audit_repository.dart';
 import '../../domain/audit_log.dart';
-import '../audit_controller.dart';
-import '../../../authentication/presentation/staff_controller.dart';
 
-class AuditLogsScreen extends ConsumerStatefulWidget {
+class AuditLogsScreen extends ConsumerWidget {
   const AuditLogsScreen({super.key});
 
   @override
-  ConsumerState<AuditLogsScreen> createState() => _AuditLogsScreenState();
-}
-
-class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
-  String? selectedTable;
-  String? selectedEvent;
-  String? selectedUser;
-
-  final List<String> eventTypes = ['INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT'];
-  final List<String> tableNames = [
-    'profiles', 
-    'financing_contracts', 
-    'payments', 
-    'installments', 
-    'customers', 
-    'investors'
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final logsAsync = ref.watch(auditLogControllerProvider);
-    final staffAsync = ref.watch(staffListControllerProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final logsAsync = ref.watch(auditLogsListProvider);
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: const Text('سجل الرقابة والتدقيق (Audit Logs)'),
+          title: const Text('سجلات الرقابة والنشاط'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => ref.read(auditLogControllerProvider.notifier).refresh(),
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () => ref.invalidate(auditLogsListProvider),
             ),
           ],
         ),
-        body: Column(
-          children: [
-            _buildFilterPanel(staffAsync),
-            const Divider(height: 1),
-            Expanded(
-              child: logsAsync.when(
-                data: (logs) {
-                  if (logs.isEmpty) {
-                    return const Center(child: Text('لا توجد سجلات تطابق خيارات البحث'));
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: logs.length,
-                    itemBuilder: (context, index) => _AuditLogTile(log: logs[index]),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) => Center(child: Text('حدث خطأ أثناء تحميل السجلات: $err')),
-              ),
-            ),
-          ],
+        body: logsAsync.when(
+          data: (logs) => logs.isEmpty
+              ? const Center(child: Text('لا توجد سجلات نشاط حالياً'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: logs.length,
+                  itemBuilder: (context, index) {
+                    final log = logs[index];
+                    return _AuditLogCard(log: log);
+                  },
+                ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('خطأ في تحميل السجلات: $err')),
         ),
       ),
-    );
-  }
-
-  Widget _buildFilterPanel(AsyncValue staffAsync) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      color: Colors.white,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // فلتر الجدول
-              Expanded(
-                child: DropdownButtonFormField<String?>(
-                  value: selectedTable,
-                  decoration: const InputDecoration(labelText: 'الجدول', contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('كل الجداول')),
-                    ...tableNames.map((t) => DropdownMenuItem(value: t, child: Text(t))),
-                  ],
-                  onChanged: (val) {
-                    setState(() => selectedTable = val);
-                    _applyFilters();
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              // فلتر العملية
-              Expanded(
-                child: DropdownButtonFormField<String?>(
-                  value: selectedEvent,
-                  decoration: const InputDecoration(labelText: 'العملية', contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('كل العمليات')),
-                    ...eventTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))),
-                  ],
-                  onChanged: (val) {
-                    setState(() => selectedEvent = val);
-                    _applyFilters();
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // فلتر المستخدم
-          staffAsync.when(
-            data: (staff) => DropdownButtonFormField<String?>(
-              value: selectedUser,
-              decoration: const InputDecoration(labelText: 'بواسطة الموظف', contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('كل الموظفين')),
-                ...(staff as List).map((s) => DropdownMenuItem(value: s.id, child: Text(s.fullName))),
-              ],
-              onChanged: (val) {
-                setState(() => selectedUser = val);
-                _applyFilters();
-              },
-            ),
-            loading: () => const LinearProgressIndicator(),
-            error: (_, __) => const Text('تعذر تحميل قائمة الموظفين'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _applyFilters() {
-    ref.read(auditLogControllerProvider.notifier).filterLogs(
-      tableName: selectedTable,
-      eventType: selectedEvent,
-      profileId: selectedUser,
     );
   }
 }
 
-class _AuditLogTile extends StatelessWidget {
-  final AuditLog log;
-  const _AuditLogTile({required this.log});
+class _AuditLogCard extends StatelessWidget {
+  final AuditLog log; // تم تغيير النوع هنا من Map إلى AuditLog
+  const _AuditLogCard({required this.log});
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = intl.DateFormat('yyyy/MM/dd HH:mm:ss').format(log.createdAt);
-    final userName = log.profile?['full_name'] ?? 'نظام تلقائي';
+    final eventType = log.eventType;
+    final createdAt = log.createdAt;
+    final fullName = log.profile?['full_name'] ?? 'نظام آلي';
     
-    // تحديد لون العملية
-    Color actionColor = Colors.blue;
-    if (log.eventType.contains('INSERT')) actionColor = Colors.green;
-    if (log.eventType.contains('DELETE')) actionColor = Colors.red;
-    if (log.eventType.contains('UPDATE')) actionColor = Colors.orange;
+    Color eventColor;
+    IconData eventIcon;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(8),
+    if (eventType.contains('CREATED')) {
+      eventColor = Colors.green;
+      eventIcon = Icons.add_circle_outline_rounded;
+    } else if (eventType.contains('UPDATED')) {
+      eventColor = Colors.blue;
+      eventIcon = Icons.edit_note_rounded;
+    } else if (eventType.contains('DELETED')) {
+      eventColor = Colors.red;
+      eventIcon = Icons.delete_forever_rounded;
+    } else {
+      eventColor = AppColors.primaryNavy;
+      eventIcon = Icons.info_outline_rounded;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
-      child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: actionColor.withOpacity(0.1),
-          child: Icon(_getIcon(log.eventType), color: actionColor, size: 20),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: eventColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(eventIcon, color: eventColor),
         ),
-        title: Text(
-          '${_translateAction(log.eventType)} في ${log.tableName}',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        title: Row(
+          children: [
+            Text(
+              _formatEventType(eventType),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const Spacer(),
+            Text(
+              intl.DateFormat('yyyy/MM/dd HH:mm').format(createdAt),
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ],
         ),
-        subtitle: Text('بواسطة: $userName | $dateStr', style: const TextStyle(fontSize: 12)),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            width: double.infinity,
-            color: Colors.grey.shade50,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            Text('القائم بالعملية: $fullName', style: const TextStyle(fontSize: 12, color: AppColors.primaryNavy)),
+            const SizedBox(height: 4),
+            Text('الجدول المتأثر: ${log.tableName}', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+          ],
+        ),
+        onTap: () => _showLogDetails(context, log),
+      ),
+    );
+  }
+
+  String _formatEventType(String type) {
+    return type
+        .replaceAll('_', ' ')
+        .replaceAll('CREATED', 'إضافة')
+        .replaceAll('UPDATED', 'تحديث')
+        .replaceAll('DELETED', 'حذف')
+        .replaceAll('CONTRACT', 'عقد')
+        .replaceAll('CUSTOMER', 'عميل')
+        .replaceAll('VEHICLE', 'سيارة')
+        .replaceAll('PAYMENT', 'عملية دفع');
+  }
+
+  void _showLogDetails(BuildContext context, AuditLog log) {
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('تفاصيل العملية'),
+          content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoRow('معرف السجل:', log.recordId),
-                if (log.ipAddress != null) _buildInfoRow('عنوان IP:', log.ipAddress!),
+                _detailItem('القيم القديمة', log.oldValues?.toString() ?? 'لا يوجد'),
                 const Divider(),
-                if (log.newValues != null && log.newValues!.isNotEmpty) ...[
-                  const Text('البيانات الجديدة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
-                  _buildJsonViewer(log.newValues!),
-                ],
-                if (log.oldValues != null && log.oldValues!.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  const Text('البيانات السابقة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.red)),
-                  _buildJsonViewer(log.oldValues!),
-                ],
+                _detailItem('القيم الجديدة', log.newValues?.toString() ?? 'لا يوجد'),
               ],
             ),
           ),
-        ],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق')),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _detailItem(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(width: 8),
-          SelectableText(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildJsonViewer(Map<String, dynamic> data) {
-    return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(4),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: data.entries.map((e) => Padding(
-          padding: const EdgeInsets.only(bottom: 2),
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(color: Colors.black87, fontSize: 11, fontFamily: 'monospace'),
-              children: [
-                TextSpan(text: '${e.key}: ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-                TextSpan(text: '${e.value}'),
-              ],
-            ),
-          ),
-        )).toList(),
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+        ],
       ),
     );
-  }
-
-  IconData _getIcon(String type) {
-    if (type.contains('INSERT')) return Icons.add_box_outlined;
-    if (type.contains('UPDATE')) return Icons.edit_note_rounded;
-    if (type.contains('DELETE')) return Icons.delete_forever_outlined;
-    return Icons.history;
-  }
-
-  String _translateAction(String action) {
-    switch (action) {
-      case 'INSERT': return 'إضافة سجل جديد';
-      case 'UPDATE': return 'تعديل بيانات';
-      case 'DELETE': return 'حذف سجل';
-      default: return action;
-    }
   }
 }

@@ -13,15 +13,25 @@ class AuditLogController extends _$AuditLogController {
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(auditRepositoryProvider).getAuditLogs());
+    state = await AsyncValue.guard(
+      () => ref.read(auditRepositoryProvider).getAuditLogs(),
+    );
   }
 
-  Future<void> filterLogs({String? tableName, String? eventType, String? profileId}) async {
+  Future<void> filterLogs({
+    String? tableName,
+    String? eventType,
+    String? profileId,
+  }) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(auditRepositoryProvider).getAuditLogs(
-      tableName: tableName,
-      eventType: eventType,
-      profileId: profileId,
-    ));
+    state = await AsyncValue.guard(
+      () => ref
+          .read(auditRepositoryProvider)
+          .getAuditLogs(
+            tableName: tableName,
+            eventType: eventType,
+            profileId: profileId,
+          ),
+    );
   }
 }

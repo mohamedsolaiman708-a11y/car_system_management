@@ -23,6 +23,11 @@ Future<Map<String, dynamic>> staffStats(StaffStatsRef ref) async {
 }
 
 @riverpod
+Future<List<Map<String, dynamic>>> monthlyGrowthData(MonthlyGrowthDataRef ref) async {
+  return ref.watch(dashboardRepositoryProvider).getMonthlyGrowthData();
+}
+
+@riverpod
 Future<Map<String, dynamic>> systemIntegrityStatus(SystemIntegrityStatusRef ref) async {
   final history = await ref.watch(disasterRecoveryRepositoryProvider).getIntegrityHistory();
   if (history.isEmpty) {

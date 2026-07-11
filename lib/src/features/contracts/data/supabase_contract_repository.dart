@@ -48,7 +48,6 @@ class SupabaseContractRepository implements ContractRepository {
 
   @override
   Future<Contract> createContract(Map<String, dynamic> data) async {
-    // إرسال كافة البيانات الجديدة (الكفلاء، الرسوم، الشهود)
     final response = await _client.from('financing_contracts').insert(data).select().single();
     
     // Audit Log
@@ -84,12 +83,12 @@ class SupabaseContractRepository implements ContractRepository {
     String? reference,
     String? idempotencyKey,
   }) async {
-    await _client.rpc('process_contract_payment', params: {
+    // تم تحديث اسم الدالة ليتطابق مع المحرك المالي الاحترافي (Stage 4)
+    await _client.rpc('process_installment_payment', params: {
       'p_contract_id': contractId,
-      'p_amount': amount,
+      'p_amount_paid': amount,
       'p_payment_method': method,
       'p_reference_no': reference,
-      'p_idempotency_key': idempotencyKey,
     });
   }
 

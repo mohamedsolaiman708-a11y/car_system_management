@@ -25,7 +25,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
     return Scaffold(
       backgroundColor:
-          Colors.transparent, // لأن الخلفية تأتي من الـ Scaffold الرئيسي
+      Colors.transparent, // لأن الخلفية تأتي من الـ Scaffold الرئيسي
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -49,10 +49,10 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       ),
       floatingActionButton: !isDesktop
           ? FloatingActionButton(
-              onPressed: () => context.push('/crm/customers/new'),
-              backgroundColor: AppColors.primaryNavy,
-              child: const Icon(Icons.person_add_alt_1, color: Colors.white),
-            )
+        onPressed: () => context.push('/crm/customers/new'),
+        backgroundColor: AppColors.primaryNavy,
+        child: const Icon(Icons.person_add_alt_1, color: Colors.white),
+      )
           : null,
     );
   }
@@ -170,46 +170,46 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           rows: customers
               .map(
                 (c) => DataRow(
-                  cells: [
-                    DataCell(
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: AppColors.primaryNavy.withOpacity(
-                              0.1,
-                            ),
-                            child: Text(
-                              c.fullName[0],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.primaryNavy,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            c.fullName,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                    DataCell(Text(c.nationalId)),
-                    DataCell(Text(c.phone)),
-                    DataCell(_buildRiskChip(c.riskRating)),
-                    DataCell(
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14,
+              cells: [
+                DataCell(
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.primaryNavy.withOpacity(
+                          0.1,
                         ),
-                        onPressed: () => context.push('/crm/customers/${c.id}'),
+                        child: Text(
+                          c.fullName.isNotEmpty ? c.fullName[0] : '?',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primaryNavy,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        c.fullName,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
-              )
+                DataCell(Text(c.nationalId)),
+                DataCell(Text(c.phone)),
+                DataCell(_buildRiskChip(c.riskRating)),
+                DataCell(
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                    ),
+                    onPressed: () => context.push('/crm/customers/${c.id}'),
+                  ),
+                ),
+              ],
+            ),
+          )
               .toList(),
         ),
       ),
@@ -227,7 +227,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
             contentPadding: const EdgeInsets.all(16),
             leading: CircleAvatar(
               backgroundColor: AppColors.bgGrey,
-              child: Text(c.fullName[0]),
+              child: Text(c.fullName.isNotEmpty ? c.fullName[0] : '?'),
             ),
             title: Text(
               c.fullName,
@@ -331,20 +331,26 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
     final exportService = ref.read(exportServiceProvider);
     final columns = ['الاسم', 'رقم الهوية', 'الجوال', 'درجة المخاطر'];
-    final rows = customers
-        .map(
-          (c) => [
-            c.fullName,
-            c.nationalId,
-            c.phone,
-            c.riskRating == 'high'
-                ? 'عالية'
-                : (c.riskRating == 'medium' ? 'متوسطة' : 'منخفضة'),
-          ],
-        )
-        .toList();
+
+    // تجهيز البيانات بصيغة Map لخدمة التصدير الجديدة
+    final exportData = customers.map((c) => {
+      'full_name': c.fullName,
+      'national_id': c.nationalId,
+      'phone': c.phone,
+      'risk': c.riskRating == 'high' ? 'عالية' : (c.riskRating == 'medium' ? 'متوسطة' : 'منخفضة'),
+    }).toList();
+
+    final dataKeys = ['full_name', 'national_id', 'phone', 'risk'];
 
     if (format == 'pdf') {
+      // PDF لا يزال يحتاج List of Lists
+      final rows = exportData.map((e) => [
+        e['full_name'],
+        e['national_id'],
+        e['phone'],
+        e['risk'],
+      ]).toList();
+
       await exportService.exportToPdf(
         title: 'قائمة العملاء',
         columns: columns,
@@ -354,7 +360,8 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       await exportService.exportToExcel(
         fileName: 'قائمة_العملاء',
         columns: columns,
-        rows: rows,
+        data: exportData,
+        dataKeys: dataKeys,
       );
     }
 

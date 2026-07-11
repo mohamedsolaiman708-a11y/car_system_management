@@ -10,13 +10,11 @@ class SupabaseDashboardRepository {
 
   SupabaseDashboardRepository(this._client);
 
-  /// جلب الإحصائيات للوحة التحكم عبر RPC (ديناميكي 100%)
+  /// جلب الإحصائيات العامة للوحة التحكم
   Future<Map<String, dynamic>> getStaffStats() async {
     try {
-      // استدعاء الوظيفة المحاسبية من السيرفر
       final response = await _client.rpc('get_dashboard_stats');
       
-      // جلب العقود الأخيرة
       final recentContracts = await _client
           .from('financing_contracts')
           .select('contract_no, status, total_contract_value, customers(full_name)')
@@ -30,6 +28,25 @@ class SupabaseDashboardRepository {
     } catch (e) {
       developer.log('Dashboard Stats Error', error: e);
       rethrow;
+    }
+  }
+
+  /// جلب بيانات الرسوم البيانية (نمو الأرباح والمبيعات)
+  Future<List<Map<String, dynamic>>> getMonthlyGrowthData() async {
+    try {
+      // نستخدم دالة التقرير المالي المتاحة في قاعدة البيانات لجلب بيانات آخر 6 أشهر
+      final now = DateTime.now();
+      final startDate = DateTime(now.year, now.month - 5, 1);
+      
+      final response = await _client.rpc('get_profit_report', params: {
+        'p_start_date': startDate.toIso8601String(),
+        'p_end_date': now.toIso8601String(),
+      });
+      
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      developer.log('Growth Data Error', error: e);
+      return [];
     }
   }
 

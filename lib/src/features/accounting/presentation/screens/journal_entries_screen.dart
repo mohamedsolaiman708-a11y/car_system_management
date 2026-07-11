@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
+import '../../../../core/utils/app_theme.dart';
 import '../accounting_controller.dart';
-import '../../domain/journal_entry.dart';
 
 class JournalEntriesScreen extends ConsumerWidget {
   const JournalEntriesScreen({super.key});
@@ -14,154 +14,122 @@ class JournalEntriesScreen extends ConsumerWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: const Text('القيود اليومية والعمليات المالية'),
+          title: const Text('دفتر القيود اليومية'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => ref.read(journalEntriesControllerProvider.notifier).refresh(),
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () => ref.invalidate(journalEntriesControllerProvider),
             ),
           ],
         ),
         body: entriesAsync.when(
-          data: (entries) => _buildEntriesList(context, entries),
+          data: (entries) => entries.isEmpty
+              ? const Center(child: Text('لا توجد قيود مسجلة حالياً'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: entries.length,
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    return _JournalEntryCard(entry: entry);
+                  },
+                ),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('حدث خطأ: $err')),
+          error: (err, _) => Center(child: Text('خطأ في تحميل القيود: $err')),
         ),
       ),
-    );
-  }
-
-  Widget _buildEntriesList(BuildContext context, List<JournalEntry> entries) {
-    if (entries.isEmpty) {
-      return const Center(child: Text('لا توجد قيود مسجلة حالياً'));
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        return _JournalEntryCard(entry: entry);
-      },
     );
   }
 }
 
 class _JournalEntryCard extends StatelessWidget {
-  final JournalEntry entry;
+  final dynamic entry;
   const _JournalEntryCard({required this.entry});
 
   @override
   Widget build(BuildContext context) {
-    final df = intl.DateFormat('yyyy/MM/dd HH:mm');
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+    final date = DateTime.parse(entry.createdAt.toString());
+    final lines = entry.lines ?? [];
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
       ),
-      child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue.shade50,
-          child: const Icon(Icons.article_outlined, color: Colors.blue),
-        ),
-        title: Text(entry.description, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text('مرجع: ${entry.referenceNo ?? "N/A"} | ${df.format(entry.createdAt)}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // رأس القيد
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.grey.shade50,
-            child: Column(
+            decoration: BoxDecoration(
+              color: AppColors.primaryNavy.withOpacity(0.03),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Row(
               children: [
-                _buildHeaderRow(),
-                const Divider(),
-                ...entry.lines.map((line) => _buildLineRow(line)),
-                const Divider(),
-                _buildFooterRow(entry),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: AppColors.primaryNavy, borderRadius: BorderRadius.circular(8)),
+                  child: Text('قيد رقم: ${entry.id.toString().substring(0, 8)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(entry.description ?? 'بدون وصف',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+                Text(intl.DateFormat('yyyy/MM/dd').format(date),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderRow() {
-    return const Row(
-      children: [
-        Expanded(flex: 3, child: Text('الحساب', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-        Expanded(child: Text('مدين (Debit)', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-        Expanded(child: Text('دائن (Credit)', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-      ],
-    );
-  }
-
-  Widget _buildLineRow(JournalEntryLine line) {
-    final accountName = line.accounts?['name'] ?? 'حساب غير معروف';
-    final accountCode = line.accounts?['code'] ?? '';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          
+          // تفاصيل القيد (مدين / دائن)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(3),
+                1: FlexColumnWidth(1),
+                2: FlexColumnWidth(1),
+              },
               children: [
-                Text(accountName, style: const TextStyle(fontSize: 13)),
-                Text(accountCode, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                const TableRow(
+                  children: [
+                    Padding(padding: EdgeInsets.only(bottom: 8), child: Text('الحساب', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey))),
+                    Text('مدين', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                    Text('دائن', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+                ...lines.map((line) {
+                  final isDebit = (line.debit ?? 0) > 0;
+                  return TableRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(line.accountName ?? 'حساب غير معروف', style: TextStyle(fontSize: 13, fontWeight: isDebit ? FontWeight.bold : FontWeight.normal)),
+                      ),
+                      Text(line.debit > 0 ? f.format(line.debit) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.bold)),
+                      Text(line.credit > 0 ? f.format(line.credit) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Colors.red, fontWeight: FontWeight.bold)),
+                    ],
+                  );
+                }).toList(),
               ],
             ),
           ),
-          Expanded(
-            child: Text(
-              line.debit > 0 ? line.debit.toStringAsFixed(2) : '-',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: line.debit > 0 ? Colors.green : Colors.grey, fontSize: 13),
+          
+          // حقل المرجع
+          if (entry.referenceNo != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16, bottom: 16),
+              child: Text('المرجع: ${entry.referenceNo}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey, fontStyle: FontStyle.italic)),
             ),
-          ),
-          Expanded(
-            child: Text(
-              line.credit > 0 ? line.credit.toStringAsFixed(2) : '-',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: line.credit > 0 ? Colors.red : Colors.grey, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFooterRow(JournalEntry entry) {
-    double totalDebit = 0;
-    double totalCredit = 0;
-    for (var l in entry.lines) {
-      totalDebit += l.debit;
-      totalCredit += l.credit;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Row(
-        children: [
-          const Expanded(flex: 3, child: Text('الإجمالي', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(
-            child: Text(
-              totalDebit.toStringAsFixed(2),
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              totalCredit.toStringAsFixed(2),
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
-            ),
-          ),
         ],
       ),
     );

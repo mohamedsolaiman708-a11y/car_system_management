@@ -1,46 +1,58 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../data/supabase_disaster_recovery_repository.dart';
+import 'package:car_system_management/src/features/audit/data/supabase_disaster_recovery_repository.dart';
+import 'package:car_system_management/src/features/accounting/data/supabase_accounting_repository.dart';
 
 part 'disaster_recovery_controller.g.dart';
 
 @riverpod
 class DisasterRecoveryController extends _$DisasterRecoveryController {
   @override
-  FutureOr<List<Map<String, dynamic>>> build() {
-    return ref.watch(disasterRecoveryRepositoryProvider).getIntegrityHistory();
-  }
+  FutureOr<void> build() => null;
 
+  /// تشغيل فحص النزاهة الشامل
   Future<void> runIntegrityCheck() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(disasterRecoveryRepositoryProvider).performIntegrityCheck();
-      return ref.read(disasterRecoveryRepositoryProvider).getIntegrityHistory();
-    });
+    state = await AsyncValue.guard(
+      () => ref.read(disasterRecoveryRepositoryProvider).performIntegrityCheck(),
+    );
   }
 
-  Future<bool> repairBalances() async {
-    final repository = ref.read(disasterRecoveryRepositoryProvider);
-    final result = await AsyncValue.guard(() => repository.repairInvestorBalances());
-    if (!result.hasError) {
-      await refresh();
-      return true;
-    }
-    return false;
-  }
-
-  Future<void> toggleFreeze(bool isFrozen) async {
+  /// تجميد أو إلغاء تجميد العمليات المالية
+  Future<void> toggleFreeze(bool freeze) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(disasterRecoveryRepositoryProvider).toggleFinancialFreeze(isFrozen);
-      ref.invalidate(systemFreezeStatusProvider); // تحديث حالة التجميد عالمياً
-      return ref.read(disasterRecoveryRepositoryProvider).getIntegrityHistory();
-    });
+    state = await AsyncValue.guard(
+      () => ref.read(disasterRecoveryRepositoryProvider).toggleFinancialFreeze(freeze),
+    );
+    ref.invalidate(systemFreezeStatusProvider);
   }
 
-  Future<void> refresh() async {
+  /// إغلاق فترة مالية بشكل نهائي
+  Future<bool> closePeriod(String periodId) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(disasterRecoveryRepositoryProvider).getIntegrityHistory());
+    final repo = ref.read(accountingRepositoryProvider);
+    final result = await AsyncValue.guard(
+      () => repo.closeFiscalPeriod(periodId),
+    );
+    ref.invalidate(fiscalPeriodsProvider);
+    return !result.hasError;
   }
+
+  /// فتح فترة مالية جديدة
+  Future<bool> openPeriod(String name, DateTime start, DateTime end) async {
+    state = const AsyncLoading();
+    final repo = ref.read(accountingRepositoryProvider);
+    final result = await AsyncValue.guard(
+      () => repo.openNewFiscalPeriod(name, start, end),
+    );
+    ref.invalidate(fiscalPeriodsProvider);
+    return !result.hasError;
+  }
+}
+
+@riverpod
+Future<List<Map<String, dynamic>>> fiscalPeriods(FiscalPeriodsRef ref) {
+  final repo = ref.watch(accountingRepositoryProvider);
+  return repo.getFiscalPeriods();
 }
 
 @riverpod

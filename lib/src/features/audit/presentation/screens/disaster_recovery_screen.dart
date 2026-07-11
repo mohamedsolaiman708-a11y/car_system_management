@@ -1,182 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
+import '../../../../core/utils/app_theme.dart';
 import '../disaster_recovery_controller.dart';
+import '../../../dashboard/presentation/dashboard_controller.dart';
 
 class DisasterRecoveryScreen extends ConsumerWidget {
   const DisasterRecoveryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(disasterRecoveryControllerProvider);
-    final freezeAsync = ref.watch(systemFreezeStatusProvider);
-
+    final integrityAsync = ref.watch(systemIntegrityStatusProvider);
+    final periodsAsync = ref.watch(fiscalPeriodsProvider);
+    
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: const Text('مركز التعافي والنزاهة المالية'),
+          title: const Text('مركز التحكم في نزاهة البيانات والفترات'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => ref.read(disasterRecoveryControllerProvider.notifier).refresh(),
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () {
+                ref.invalidate(systemIntegrityStatusProvider);
+                ref.invalidate(fiscalPeriodsProvider);
+              },
             ),
           ],
         ),
-        body: Column(
-          children: [
-            _buildFreezeAlert(context, ref, freezeAsync),
-            _buildActionHeader(context, ref),
-            const Divider(),
-            Expanded(
-              child: historyAsync.when(
-                data: (history) => _buildHistoryList(context, history),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) => Center(child: Text('خطأ: $err')),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFreezeAlert(BuildContext context, WidgetRef ref, AsyncValue<bool> freezeAsync) {
-    return freezeAsync.when(
-      data: (isFrozen) => isFrozen 
-        ? Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            color: Colors.red.shade900,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.ac_unit, color: Colors.white),
-                const SizedBox(width: 12),
-                const Text(
-                  'النظام المالي مجمد حالياً - كافة العمليات الحساسة متوقفة',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () => _confirmToggleFreeze(context, ref, false),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red.shade900),
-                  child: const Text('إلغاء التجميد'),
-                ),
-              ],
-            ),
-          )
-        : const SizedBox.shrink(),
-      loading: () => const LinearProgressIndicator(),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildActionHeader(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Column(
-        children: [
-          Row(
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.health_and_safety_rounded, size: 48, color: Colors.blue),
+              _buildIntegrityHeader(integrityAsync),
+              const SizedBox(height: 32),
+              const Text('إجراءات الحماية المتقدمة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+              const SizedBox(height: 16),
+              _buildActionCards(context, ref),
+              const SizedBox(height: 32),
+              _buildFiscalPeriodsSection(context, ref, periodsAsync),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIntegrityHeader(AsyncValue<Map<String, dynamic>> integrityAsync) {
+    return integrityAsync.when(
+      data: (status) {
+        final isHealthy = status['is_healthy'] == true;
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isHealthy ? Colors.green.shade50 : Colors.red.shade50,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isHealthy ? Colors.green.shade100 : Colors.red.shade100),
+          ),
+          child: Row(
+            children: [
+              Icon(isHealthy ? Icons.verified_user_rounded : Icons.gpp_maybe_rounded, 
+                   size: 48, color: isHealthy ? Colors.green : Colors.red),
               const SizedBox(width: 20),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'أدوات صيانة البيانات',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'قم بإجراء فحص دوري للتأكد من توازن الحسابات وإصلاح أي فروقات.',
-                      style: TextStyle(fontSize: 12, color: Colors.blueGrey),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () => _runCheck(context, ref),
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('بدء فحص النزاهة'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade800, foregroundColor: Colors.white),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () => _confirmToggleFreeze(context, ref, true),
-                    icon: const Icon(Icons.lock_outline_rounded),
-                    label: const Text('تجميد العمليات'),
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: () => _confirmRepair(context, ref),
-                icon: const Icon(Icons.auto_fix_high_rounded),
-                label: const Text('إصلاح أرصدة المستثمرين تلقائياً'),
-                style: TextButton.styleFrom(foregroundColor: Colors.orange.shade900),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryList(BuildContext context, List<Map<String, dynamic>> history) {
-    if (history.isEmpty) return const Center(child: Text('لا توجد سجلات فحص سابقة.'));
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: history.length,
-      itemBuilder: (context, index) {
-        final item = history[index];
-        final isHealthy = item['is_healthy'] == true;
-        final date = DateTime.parse(item['check_date']);
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ExpansionTile(
-            leading: Icon(
-              isHealthy ? Icons.check_circle : Icons.warning_amber_rounded,
-              color: isHealthy ? Colors.green : Colors.red,
-            ),
-            title: Text(isHealthy ? 'النظام سليم ومتزن' : 'تم اكتشاف خلل في التوازن'),
-            subtitle: Text(intl.DateFormat('yyyy/MM/dd HH:mm:ss').format(date)),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildMetricRow('فرق التوازن المحاسبي:', '${item['accounting_imbalance'] ?? 0} ر.س'),
-                    _buildMetricRow('فرق أرصدة المستثمرين:', '${item['investor_imbalance'] ?? 0} ر.س'),
-                    if (item['issues_found'] != null) ...[
-                      const Divider(),
-                      const Align(
-                        alignment: Alignment.centerRight,
-                        child: Text('التفاصيل الفنية:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
-                        child: Text(item['issues_found'].toString(), style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                      ),
-                    ],
+                    Text(isHealthy ? 'حالة النظام: سليم ومستقر' : 'تنبيه: تم اكتشاف خلل في ميزان المراجعة',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isHealthy ? Colors.green.shade900 : Colors.red.shade900)),
+                    const SizedBox(height: 4),
+                    Text(isHealthy 
+                        ? 'تم فحص القيود المحاسبية وأرصدة المستثمرين وجميعها متطابقة.' 
+                        : 'يوجد فرق مالي بين مجموع المدين والدائن بقيمة ${status['accounting_gap']} ر.س',
+                        style: TextStyle(color: isHealthy ? Colors.green.shade700 : Colors.red.shade700, fontSize: 13)),
                   ],
                 ),
               ),
@@ -184,77 +82,215 @@ class DisasterRecoveryScreen extends ConsumerWidget {
           ),
         );
       },
+      loading: () => const LinearProgressIndicator(),
+      error: (e, _) => Text('خطأ في جلب حالة النزاهة: $e'),
     );
   }
 
-  Widget _buildMetricRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildActionCards(BuildContext context, WidgetRef ref) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 1.5,
+      children: [
+        _ActionCard(
+          title: 'تجميد العمليات',
+          description: 'إيقاف فوري لكافة حركات القبض والصرف والسحب.',
+          icon: Icons.ac_unit_rounded,
+          color: Colors.blue,
+          onTap: () => _confirmAction(context, 'تجميد النظام المالي', () {
+             ref.read(disasterRecoveryControllerProvider.notifier).toggleFreeze(true);
+          }),
+        ),
+        _ActionCard(
+          title: 'فحص النزاهة العميق',
+          description: 'إعادة حساب كافة الأرصدة من واقع القيود اليومية.',
+          icon: Icons.manage_search_rounded,
+          color: Colors.purple,
+          onTap: () {
+            ref.read(disasterRecoveryControllerProvider.notifier).runIntegrityCheck();
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بدأ الفحص الشامل في الخلفية...')));
+          },
+        ),
+        _ActionCard(
+          title: 'تحديث المؤشرات',
+          description: 'تنشيط بيانات الداشبورد والرسوم البيانية.',
+          icon: Icons.auto_mode_rounded,
+          color: Colors.orange,
+          onTap: () {
+             ref.refresh(staffStatsProvider);
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث إحصائيات النظام.')));
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFiscalPeriodsSection(BuildContext context, WidgetRef ref, AsyncValue<List<Map<String, dynamic>>> periodsAsync) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('الفترات المالية (الشهور)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ElevatedButton.icon(
+                onPressed: () => _showOpenPeriodDialog(context, ref), 
+                icon: const Icon(Icons.add), 
+                label: const Text('فتح شهر مالي جديد'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          periodsAsync.when(
+            data: (periods) => ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: periods.length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                final p = periods[index];
+                final isClosed = p['is_closed'] == true;
+                return ListTile(
+                  leading: Icon(isClosed ? Icons.lock_outline : Icons.calendar_today, 
+                               color: isClosed ? Colors.red : Colors.green),
+                  title: Text(p['name'] ?? 'فترة غير مسماة'),
+                  subtitle: Text('من: ${p['start_date']} إلى: ${p['end_date']}'),
+                  trailing: isClosed 
+                    ? const Text('مغلقة', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+                    : ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                        onPressed: () => _confirmAction(context, 'إغلاق الفترة المالية ${p['name']}', () {
+                          ref.read(disasterRecoveryControllerProvider.notifier).closePeriod(p['id']);
+                        }),
+                        child: const Text('إغلاق الآن'),
+                      ),
+                );
+              },
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Text('خطأ في تحميل الفترات: $err'),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _runCheck(BuildContext context, WidgetRef ref) async {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('جاري فحص نزاهة البيانات...')));
-    await ref.read(disasterRecoveryControllerProvider.notifier).runIntegrityCheck();
-  }
+  void _showOpenPeriodDialog(BuildContext context, WidgetRef ref) {
+    final nameController = TextEditingController();
+    DateTime? startDate;
+    DateTime? endDate;
 
-  Future<void> _confirmToggleFreeze(BuildContext context, WidgetRef ref, bool isFrozen) async {
-    final confirmed = await showDialog<bool>(
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isFrozen ? 'تجميد العمليات المالية' : 'إلغاء التجميد'),
-        content: Text(isFrozen 
-          ? 'هل أنت متأكد؟ سيؤدي هذا لإيقاف كافة عمليات الدفع والسحب في النظام فوراً.'
-          : 'هل تريد إعادة تفعيل العمليات المالية؟'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: isFrozen ? Colors.red : Colors.green),
-            child: Text(isFrozen ? 'تجميد الآن' : 'إعادة التفعيل'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text('فتح فترة مالية جديدة'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'اسم الفترة (مثلاً: يوليو 2026)')),
+                const SizedBox(height: 16),
+                ListTile(
+                  title: Text(startDate == null ? 'اختر تاريخ البداية' : intl.DateFormat('yyyy/MM/dd').format(startDate!)),
+                  trailing: const Icon(Icons.date_range),
+                  onTap: () async {
+                    final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2020), lastDate: DateTime(2030));
+                    if (d != null) setDialogState(() => startDate = d);
+                  },
+                ),
+                ListTile(
+                  title: Text(endDate == null ? 'اختر تاريخ النهاية' : intl.DateFormat('yyyy/MM/dd').format(endDate!)),
+                  trailing: const Icon(Icons.date_range),
+                  onTap: () async {
+                    final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2020), lastDate: DateTime(2030));
+                    if (d != null) setDialogState(() => endDate = d);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+              ElevatedButton(
+                onPressed: () async {
+                  if (nameController.text.isNotEmpty && startDate != null && endDate != null) {
+                    final success = await ref.read(disasterRecoveryControllerProvider.notifier).openPeriod(nameController.text, startDate!, endDate!);
+                    if (context.mounted && success) Navigator.pop(context);
+                  }
+                },
+                child: const Text('تأكيد الفتح'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
-
-    if (confirmed == true) {
-      await ref.read(disasterRecoveryControllerProvider.notifier).toggleFreeze(isFrozen);
-    }
   }
 
-  Future<void> _confirmRepair(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+  void _confirmAction(BuildContext context, String action, VoidCallback onConfirm) {
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('إصلاح أرصدة المستثمرين'),
-        content: const Text('سيقوم النظام بإعادة حساب كافة أرصدة المستثمرين بناءً على سجلات العمليات الفعلية. هل تريد الاستمرار؟'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('بدء الإصلاح'),
-          ),
-        ],
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: Text('تأكيد $action'),
+          content: const Text('هل أنت متأكد؟ هذا الإجراء سيغير حالة النظام المالية وسيتم تسجيله في سجل الرقابة.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: () {
+                onConfirm();
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text('تأكيد التنفيذ'),
+            ),
+          ],
+        ),
       ),
     );
+  }
+}
 
-    if (confirmed == true) {
-      final success = await ref.read(disasterRecoveryControllerProvider.notifier).repairBalances();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(success ? 'تمت عملية الإصلاح بنجاح' : 'فشلت عملية الإصلاح'),
-            backgroundColor: success ? Colors.green : Colors.red,
-          ),
-        );
-      }
-    }
+class _ActionCard extends StatelessWidget {
+  final String title, description;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionCard({required this.title, required this.description, required this.icon, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 32, color: color),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 4),
+            Text(description, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+          ],
+        ),
+      ),
+    );
   }
 }

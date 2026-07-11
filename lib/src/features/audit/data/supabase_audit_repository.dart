@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../domain/audit_log.dart';
 import '../../../core/providers/supabase_provider.dart';
+import '../domain/audit_log.dart';
 
 part 'supabase_audit_repository.g.dart';
 
@@ -10,8 +10,8 @@ class SupabaseAuditRepository {
   SupabaseAuditRepository(this._client);
 
   Future<List<AuditLog>> getAuditLogs({
-    String? tableName,
     String? eventType,
+    String? tableName,
     String? profileId,
     int limit = 50,
   }) async {
@@ -19,25 +19,26 @@ class SupabaseAuditRepository {
         .from('audit_logs')
         .select('*, profiles(full_name)');
 
-    if (tableName != null) {
-      query = query.eq('table_name', tableName);
-    }
-    if (eventType != null) {
-      query = query.eq('event_type', eventType);
-    }
-    if (profileId != null) {
-      query = query.eq('profile_id', profileId);
-    }
+    // تطبيق الفلاتر
+    if (eventType != null) query = query.eq('event_type', eventType);
+    if (tableName != null) query = query.eq('table_name', tableName);
+    if (profileId != null) query = query.eq('profile_id', profileId);
 
     final response = await query
         .order('created_at', ascending: false)
         .limit(limit);
 
+    // تحويل البيانات من Map إلى AuditLog
     return (response as List).map((json) => AuditLog.fromJson(json)).toList();
   }
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 SupabaseAuditRepository auditRepository(AuditRepositoryRef ref) {
   return SupabaseAuditRepository(ref.watch(supabaseClientProvider));
+}
+
+@riverpod
+Future<List<AuditLog>> auditLogsList(AuditLogsListRef ref) {
+  return ref.watch(auditRepositoryProvider).getAuditLogs();
 }

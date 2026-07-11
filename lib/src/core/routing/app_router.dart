@@ -93,52 +93,31 @@ GoRouter goRouter(GoRouterRef ref) {
       final isLoggedIn = user != null;
       final path = state.matchedLocation;
 
-      // 1. حماية وضع الصيانة
       if (maintenanceModeAsync.value == true && path != '/maintenance') {
         if (isLoggedIn && user.role != UserRole.admin) return '/maintenance';
         if (!isLoggedIn) return '/maintenance';
       }
 
-      // 2. إذا كان المستخدم غير مسجل دخول
       if (!isLoggedIn) {
-        if (path == '/portal-selection' || path.startsWith('/auth') || path == '/') {
-          return null;
-        }
+        if (path == '/portal-selection' || path.startsWith('/auth') || path == '/') return null;
         return '/portal-selection';
       }
 
-      // 3. حماية حالة الحساب (Pending/Rejected)
       final isStaff = user.role != UserRole.investor;
       
-      if (user.status == 'pending' && path != '/auth/pending') {
-        return '/auth/pending';
-      }
-      if (user.status == 'rejected' && path != '/auth/rejected') {
-        return '/auth/rejected';
-      }
+      if (user.status == 'pending' && path != '/auth/pending') return '/auth/pending';
+      if (user.status == 'rejected' && path != '/auth/rejected') return '/auth/rejected';
 
-      // 4. توجيه المستخدمين بعد تسجيل الدخول الناجح
       final canAccess = user.status == 'approved' || user.status == 'active' || isStaff;
 
       if (canAccess && (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
-        if (user.role == UserRole.investor) {
-          return '/investor-portal';
-        }
+        if (user.role == UserRole.investor) return '/investor-portal';
         return '/dashboard';
       }
 
-      // 5. حماية المسارات بناءً على الدور (RBAC)
-      final staffPaths = [
-        '/dashboard', '/crm', '/inventory', '/contracts', 
-        '/investors', '/accounting', '/settings', '/staff-management'
-      ];
-      if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) {
-        return '/investor-portal';
-      }
-
-      if (isStaff && path.startsWith('/investor-portal')) {
-        return '/dashboard';
-      }
+      final staffPaths = ['/dashboard', '/crm', '/inventory', '/contracts', '/investors', '/accounting', '/settings', '/staff-management'];
+      if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) return '/investor-portal';
+      if (isStaff && path.startsWith('/investor-portal')) return '/dashboard';
 
       return null;
     },
@@ -164,49 +143,37 @@ GoRouter goRouter(GoRouterRef ref) {
           GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
           GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
 
-          // CRM
           GoRoute(
             path: '/crm/customers',
             builder: (context, state) => const CustomersScreen(),
             routes: [
               GoRoute(path: 'new', builder: (context, state) => const CreateCustomerScreen()),
-              GoRoute(
-                path: ':id',
-                builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
-                routes: [
-                  GoRoute(path: 'edit', builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!)),
-                ],
+              GoRoute(path: ':id', builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
+                routes: [GoRoute(path: 'edit', builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!))],
               ),
             ],
           ),
 
-          // Inventory
           GoRoute(
             path: '/inventory',
             builder: (context, state) => const VehiclesScreen(),
             routes: [
               GoRoute(path: 'new', builder: (context, state) => const CreateVehicleScreen()),
-              GoRoute(
-                path: ':id',
-                builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
-                routes: [
-                  GoRoute(path: 'edit', builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!)),
-                ],
+              GoRoute(path: ':id', builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
+                routes: [GoRoute(path: 'edit', builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!))],
               ),
             ],
           ),
 
-          // Contracts
           GoRoute(
             path: '/contracts',
             builder: (context, state) => const ContractsScreen(),
             routes: [
               GoRoute(path: 'new', builder: (context, state) => const CreateContractScreen()),
-              GoRoute(path: ':id', builder: (context, state) => ContractDetailsScreen(id: state.pathParameters['id']!),),
+              GoRoute(path: ':id', builder: (context, state) => ContractDetailsScreen(id: state.pathParameters['id']!)),
             ],
           ),
 
-          // Investors
           GoRoute(
             path: '/investors',
             builder: (context, state) => const InvestorsScreen(),
@@ -215,7 +182,6 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Accounting
           GoRoute(
             path: '/accounting',
             builder: (context, state) => const AccountsScreen(),
@@ -225,7 +191,6 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // System & Admin Tools
           GoRoute(
             path: '/settings',
             builder: (context, state) => const SettingsScreen(),
@@ -233,6 +198,7 @@ GoRouter goRouter(GoRouterRef ref) {
               GoRoute(path: 'company', builder: (context, state) => const CompanySettingsScreen()),
             ],
           ),
+          
           GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
           GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
           GoRoute(path: '/background-jobs', builder: (context, state) => const BackgroundJobsScreen()),
