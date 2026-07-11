@@ -235,7 +235,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.02)),
             dataRowHeight: 80,
-            headingHeight: 60,
+            headingRowHeight: 60,
             columns: const [
               DataColumn(label: Text('المركبة والموديل', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
               DataColumn(label: Text('بيانات اللوحة', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
