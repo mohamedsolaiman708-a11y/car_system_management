@@ -24,6 +24,19 @@ class StaffListController extends _$StaffListController {
     });
   }
 
+  /// اعتماد المستخدم كعضو في الفريق (تغيير الحالة وتفعيل الحساب)
+  Future<void> approveAsStaff(String userId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(staffRepositoryProvider).updateStaffProfile(
+        userId, 
+        status: 'approved', 
+        isActive: true
+      );
+      return ref.read(staffRepositoryProvider).getStaffMembers();
+    });
+  }
+
   Future<void> updateRole(String userId, String roleId) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {

@@ -341,6 +341,8 @@ class _StaffMemberCard extends ConsumerWidget {
           onSelected: (value) async {
             if (value == 'toggle_status') {
               ref.read(staffListControllerProvider.notifier).updateStatus(member.id, !member.isActive);
+            } else if (value == 'approve_as_staff') {
+              ref.read(staffListControllerProvider.notifier).approveAsStaff(member.id);
             } else if (value == 'edit_name') {
               _showEditNameDialog(context, ref);
             } else if (value == 'reset_password') {
