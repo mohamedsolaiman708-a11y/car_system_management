@@ -10,20 +10,21 @@ class SupabaseStaffRepository {
   final SupabaseClient _client;
   SupabaseStaffRepository(this._client);
 
-  /// جلب كافة الموظفين والمستخدمين الذين لم يتم اعتمادهم كمستثمرين بعد
+  /// جلب كافة الموظفين فقط (استبعاد المستثمرين)
   Future<List<AppUser>> getStaffMembers() async {
     try {
-      // قمنا بإزالة الفلترة الصارمة لنسمح للأدمن برؤية الجميع وتعديل رتبهم
+      // أعدنا الفلترة لاستبعاد المستثمرين من قائمة فريق العمل
       final response = await _client
           .from('profiles')
-          .select('*, roles(*)')
+          .select('*, roles!inner(*)')
+          .neq('roles.slug', 'investor') // استبعاد المستثمرين
           .order('full_name', ascending: true);
       
       return (response as List).map((json) {
         final roleData = json['roles'];
         return AppUser.fromJson({
           ...json,
-          'role': roleData != null ? roleData['slug'] : 'investor', 
+          'role': roleData['slug'], 
         });
       }).toList();
     } catch (e) {
@@ -36,7 +37,7 @@ class SupabaseStaffRepository {
     bool? isActive, 
     String? roleId,
     String? fullName,
-    String? status, // إضافة إمكانية تحديث الحالة
+    String? status,
   }) async {
     final updates = <String, dynamic>{};
     if (isActive != null) updates['is_active'] = isActive;
@@ -61,7 +62,7 @@ class SupabaseStaffRepository {
     required String roleId,
   }) async {
     await _client.from('user_invitations').insert({
-      'email': email.trim().toLowerCase(), // ضمان تخزين الإيميل موحد
+      'email': email.trim().toLowerCase(),
       'role_id': roleId,
       'invited_by': _client.auth.currentUser?.id,
       'token': 'INV-${DateTime.now().millisecondsSinceEpoch}',
@@ -69,12 +70,13 @@ class SupabaseStaffRepository {
     });
   }
 
-  /// جلب الأدوار المتاحة
+  /// جلب الأدوار المتاحة (استبعاد دور المستثمر)
   Future<List<Map<String, dynamic>>> getRoles() async {
     try {
       final response = await _client
           .from('roles')
           .select()
+          .neq('slug', 'investor') // لا نحتاج لدور المستثمر هنا
           .order('name');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {

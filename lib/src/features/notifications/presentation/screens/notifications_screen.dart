@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../notification_controller.dart';
 import '../../domain/app_notification.dart';
@@ -88,10 +89,24 @@ class _NotificationTile extends ConsumerWidget {
           ],
         ),
         onTap: () {
+          // 1. تمييز كمقروء
           if (!notification.isRead) {
             ref.read(notificationControllerProvider.notifier).markAsRead(notification.id);
           }
-          // logic to navigate to relevant record based on notification type/metadata
+          
+          // 2. منطق التوجيه الذكي بناءً على نص التنبيه
+          final title = notification.title;
+          final content = notification.content;
+
+          if (title.contains('انضمام مستثمر') || content.contains('طلب انضمام جديد')) {
+            context.push('/investors'); 
+            // ملاحظة: بما أن صفحة المستثمرين بها TabController، 
+            // يفضل أن تفتح تلقائياً على التبويب الثاني (طلبات الانضمام).
+          } else if (title.contains('سحب') || content.contains('طلب سحب')) {
+            context.push('/investors');
+          } else if (title.contains('عقد') || content.contains('عقد جديد')) {
+            context.push('/contracts');
+          }
         },
       ),
     );
