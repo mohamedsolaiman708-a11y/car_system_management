@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../../l10n/app_localizations.dart';
+import 'package:car_system_management/l10n/app_localizations.dart';
 import '../auth_controller.dart';
 import '../widgets/auth_layout.dart';
+import '../../../../core/utils/app_theme.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -16,6 +17,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -45,8 +47,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final authState = ref.watch(authControllerProvider);
 
     return AuthLayout(
-      title: l10n.resetPassword,
-      subtitle: 'أدخل كلمة المرور الجديدة الخاصة بك',
+      title: 'تعيين كلمة مرور جديدة',
+      subtitle: 'يرجى إدخال كلمة المرور الجديدة وتأكيدها للمتابعة',
       child: Form(
         key: _formKey,
         child: Column(
@@ -54,51 +56,56 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           children: [
             TextFormField(
               controller: _passwordController,
+              obscureText: _obscurePassword,
+              style: const TextStyle(fontSize: 14),
               decoration: InputDecoration(
-                labelText: l10n.password,
-                prefixIcon: const Icon(Icons.lock_outline),
+                labelText: 'كلمة المرور الجديدة',
+                prefixIcon: const Icon(Icons.lock_outline, size: 18),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, size: 18),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
                 border: const OutlineInputBorder(),
               ),
-              obscureText: true,
               validator: (val) {
-                if (val == null || val.isEmpty) return l10n.errorFieldRequired;
-                if (val.length < 6) return l10n.errorPasswordTooShort;
+                if (val == null || val.isEmpty) return 'الحقل مطلوب';
+                if (val.length < 6) return 'كلمة المرور قصيرة جداً';
                 return null;
               },
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _confirmPasswordController,
-              decoration: InputDecoration(
-                labelText: l10n.confirmPassword,
-                prefixIcon: const Icon(Icons.lock_reset),
-                border: const OutlineInputBorder(),
+              obscureText: _obscurePassword,
+              style: const TextStyle(fontSize: 14),
+              decoration: const InputDecoration(
+                labelText: 'تأكيد كلمة المرور',
+                prefixIcon: Icon(Icons.lock_reset, size: 18),
+                border: OutlineInputBorder(),
               ),
-              obscureText: true,
               validator: (val) {
-                if (val == null || val.isEmpty) return l10n.errorFieldRequired;
-                if (val != _passwordController.text) return l10n.errorPasswordsDontMatch;
+                if (val == null || val.isEmpty) return 'الحقل مطلوب';
+                if (val != _passwordController.text) return 'كلمات المرور غير متطابقة';
                 return null;
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             if (authState.hasError)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Text(
-                  authState.error.toString(),
-                  style: const TextStyle(color: Colors.red),
+                  'حدث خطأ أثناء التحديث، يرجى المحاولة لاحقاً',
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),
               ),
             ElevatedButton(
               onPressed: authState.isLoading ? null : _submit,
               style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryNavy,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: const Color(0xFF0A192F),
-                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
               child: authState.isLoading
@@ -110,7 +117,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : Text(l10n.submit),
+                  : const Text('تحديث كلمة المرور', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

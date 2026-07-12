@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/contract.dart';
 import '../contract_controller.dart';
-import '../../../../core/utils/app_theme.dart';
 
 class AddPaymentDialog extends ConsumerStatefulWidget {
   final Contract contract;
@@ -17,15 +16,18 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _refController = TextEditingController();
-  
+  final _bankNameController = TextEditingController(); // للـ PDF
+  final _checkDateController = TextEditingController(); // للـ PDF
+
   String _paymentMethod = 'cash';
-  bool _isSubmitting = false;
   final _idempotencyKey = const Uuid().v4();
 
   @override
   void dispose() {
     _amountController.dispose();
     _refController.dispose();
+    _bankNameController.dispose();
+    _checkDateController.dispose();
     super.dispose();
   }
 
@@ -34,60 +36,73 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        title: const Text('إصدار سند قبض ائتماني', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+        title: const Row(
+          children: [
+            Icon(Icons.receipt_long_rounded, color: Color(0xFF0D1B3E)),
+            SizedBox(width: 12),
+            Text('إصدار سند قبض جديد'),
+          ],
+        ),
         content: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                width: double.infinity,
-                color: Colors.grey.shade50,
-                child: Text('عقد رقم: ${widget.contract.contractNo}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _amountController,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-                decoration: const InputDecoration(
-                  labelText: 'المبلغ المستلم نقداً',
-                  suffixText: 'ر.س',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _amountController,
+                  decoration: const InputDecoration(
+                    labelText: 'المبلغ المستلم *',
+                    suffixText: 'ر.س',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (val) => (val == null || double.tryParse(val) == null) ? 'مطلوب' : null,
                 ),
-                keyboardType: TextInputType.number,
-                validator: (val) => (val == null || double.tryParse(val) == null) ? 'مطلوب' : null,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _paymentMethod,
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
-                decoration: const InputDecoration(labelText: 'قناة السداد', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                items: const [
-                  DropdownMenuItem(value: 'cash', child: Text('نقدي / كاش')),
-                  DropdownMenuItem(value: 'bank_transfer', child: Text('تحويل بنكي')),
-                  DropdownMenuItem(value: 'pos', child: Text('مدى / شبكة')),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _paymentMethod,
+                  decoration: const InputDecoration(labelText: 'طريقة السداد', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'cash', child: Text('نقداً')),
+                    DropdownMenuItem(value: 'check', child: Text('شيك')),
+                    DropdownMenuItem(value: 'bank_transfer', child: Text('تحويل بنكي')),
+                    DropdownMenuItem(value: 'pos', child: Text('شبكة / مدى')),
+                  ],
+                  onChanged: (val) => setState(() => _paymentMethod = val!),
+                ),
+                if (_paymentMethod == 'check') ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _refController,
+                    decoration: const InputDecoration(labelText: 'رقم الشيك *', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'مطلوب للشيكات' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _bankNameController,
+                    decoration: const InputDecoration(labelText: 'مسحوب على (البنك) *', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                  ),
                 ],
-                onChanged: (val) => setState(() => _paymentMethod = val!),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _refController,
-                style: const TextStyle(fontSize: 13),
-                decoration: const InputDecoration(labelText: 'رقم المرجع (اختياري)', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-              ),
-            ],
+                if (_paymentMethod != 'cash' && _paymentMethod != 'check') ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _refController,
+                    decoration: const InputDecoration(labelText: 'رقم المرجع / العملية', border: OutlineInputBorder()),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء', style: TextStyle(fontSize: 12, color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           ElevatedButton.icon(
-            onPressed: _isSubmitting ? null : _submit,
-            icon: const Icon(Icons.print_rounded, size: 16),
-            label: Text(_isSubmitting ? 'جاري التسجيل...' : 'تسجيل وطباعة السند', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+            onPressed: _submit,
+            icon: const Icon(Icons.print_rounded),
+            label: const Text('تسجيل وطباعة السند'),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D1B3E), foregroundColor: Colors.white),
           ),
         ],
       ),
@@ -95,22 +110,20 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    
-    setState(() => _isSubmitting = true);
-    final success = await ref.read(contractControllerProvider.notifier).processPayment(
-      contractId: widget.contract.id,
-      amount: double.parse(_amountController.text),
-      method: _paymentMethod,
-      reference: _refController.text.trim(),
-      idempotencyKey: _idempotencyKey,
-    );
+    if (_formKey.currentState!.validate()) {
+      // 1. تسجيل العملية في قاعدة البيانات
+      final success = await ref.read(contractControllerProvider.notifier).processPayment(
+        contractId: widget.contract.id,
+        amount: double.parse(_amountController.text),
+        method: _paymentMethod,
+        reference: _refController.text,
+        idempotencyKey: _idempotencyKey,
+      );
 
-    if (mounted) {
-      setState(() => _isSubmitting = false);
-      if (success) {
+      if (mounted && success) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تسجيل الدفعة بنجاح'), backgroundColor: Colors.green));
+        // سنقوم هنا باستدعاء محرك الـ PDF لطباعة السند فوراً
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تسجيل الدفعة بنجاح، جاري تجهيز السند للطباعة...')));
       }
     }
   }

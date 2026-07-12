@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../settings_controller.dart';
 import '../../domain/company_settings.dart';
-import '../../../../core/utils/app_theme.dart';
 
 class CompanySettingsScreen extends ConsumerStatefulWidget {
   const CompanySettingsScreen({super.key});
@@ -13,7 +12,7 @@ class CompanySettingsScreen extends ConsumerStatefulWidget {
 
 class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _nameController;
   late TextEditingController _addressController;
   late TextEditingController _phoneController;
@@ -53,136 +52,206 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsControllerProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('إعدادات هوية المنشأة', 
-          style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 16)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.grey.shade200),
-        ),
-      ),
-      body: settingsAsync.when(
-        data: (settingsList) {
-          final companySetting = settingsList.firstWhere(
-            (s) => s.key == 'company_profile',
-            orElse: () => throw Exception('الإعدادات غير موجودة'),
-          );
-          
-          final currentSettings = CompanySettings.fromJson(companySetting.value);
-          
-          if (_nameController.text.isEmpty) {
-            _nameController.text = currentSettings.companyName;
-            _addressController.text = currentSettings.address;
-            _phoneController.text = currentSettings.phone;
-            _emailController.text = currentSettings.email;
-            _profitRatioController.text = currentSettings.defaultProfitRatio.toString();
-            _taxNumberController.text = currentSettings.taxNumber;
-            _crNumberController.text = currentSettings.crNumber;
-            _websiteController.text = currentSettings.website;
-          }
-
-          return Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                _buildClassicSection('المعلومات الرسمية', [
-                  _buildSimpleField(_nameController, 'الاسم التجاري للمؤسسة'),
-                  Row(children: [
-                    Expanded(child: _buildSimpleField(_crNumberController, 'رقم السجل التجاري')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildSimpleField(_taxNumberController, 'الرقم الضريبي')),
-                  ]),
-                ]),
-                const SizedBox(height: 16),
-                _buildClassicSection('قنوات التواصل', [
-                  _buildSimpleField(_addressController, 'العنوان'),
-                  Row(children: [
-                    Expanded(child: _buildSimpleField(_phoneController, 'الهاتف')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildSimpleField(_emailController, 'البريد الإلكتروني')),
-                  ]),
-                ]),
-                const SizedBox(height: 16),
-                _buildClassicSection('التفضيلات والتحكم', [
-                  _buildSimpleField(_profitRatioController, 'نسبة الربح الافتراضية (%)', isNumber: true),
-                  const SizedBox(height: 12),
-                  _buildMaintenanceControl(),
-                ]),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _saveSettings,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryNavy,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                    ),
-                    child: const Text('حفظ كافة الإعدادات', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          title: const Text('إعدادات المنشأة والنظام'),
+          centerTitle: true,
+          actions: [
+            if (!settingsAsync.isLoading)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: TextButton.icon(
+                  onPressed: _saveSettings,
+                  icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                  label: const Text('حفظ الإعدادات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: TextButton.styleFrom(backgroundColor: Colors.green.shade700),
                 ),
-              ],
-            ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => const Center(child: Text('خطأ في التحميل')),
+              ),
+          ],
+        ),
+        body: settingsAsync.when(
+          data: (settingsList) {
+            final companySetting = settingsList.firstWhere(
+                  (s) => s.key == 'company_profile',
+              orElse: () => throw Exception('إعدادات المنشأة غير موجودة في قاعدة البيانات'),
+            );
+
+            final currentSettings = CompanySettings.fromJson(companySetting.value);
+
+            if (_nameController.text.isEmpty) {
+              _nameController.text = currentSettings.companyName;
+              _addressController.text = currentSettings.address;
+              _phoneController.text = currentSettings.phone;
+              _emailController.text = currentSettings.email;
+              _profitRatioController.text = currentSettings.defaultProfitRatio.toString();
+              _taxNumberController.text = currentSettings.taxNumber;
+              _crNumberController.text = currentSettings.crNumber;
+              _websiteController.text = currentSettings.website;
+            }
+
+            return Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  _buildHeaderCard(),
+                  const SizedBox(height: 24),
+                  _buildSectionCard(
+                    title: 'المعلومات القانونية والتجارية',
+                    icon: Icons.gavel_rounded,
+                    children: [
+                      _buildTextField(_nameController, 'الاسم التجاري للمنشأة'),
+                      Row(
+                        children: [
+                          Expanded(child: _buildTextField(_crNumberController, 'رجم السجل التجاري (CR)')),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildTextField(_taxNumberController, 'الرقم الضريبي (VAT)')),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionCard(
+                    title: 'معلومات الاتصال',
+                    icon: Icons.contact_mail_rounded,
+                    children: [
+                      _buildTextField(_addressController, 'العنوان الوطني / المقر الرئيسي'),
+                      Row(
+                        children: [
+                          Expanded(child: _buildTextField(_phoneController, 'رقم الهاتف الموحد')),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildTextField(_emailController, 'البريد الإلكتروني الرسمي')),
+                        ],
+                      ),
+                      _buildTextField(_websiteController, 'الموقع الإلكتروني'),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionCard(
+                    title: 'الإعدادات المالية الافتراضية',
+                    icon: Icons.account_balance_wallet_rounded,
+                    children: [
+                      _buildTextField(_profitRatioController, 'نسبة ربح الشركة الافتراضية للتمويل (%)', isNumber: true),
+                      const Text(
+                        'ملاحظة: هذه النسبة يتم اقتراحها عند إنشاء عقود جديدة ويمكن تعديلها لكل عقد على حدة.',
+                        style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionCard(
+                    title: 'التحكم في الوصول والصيانة',
+                    icon: Icons.admin_panel_settings_rounded,
+                    children: [
+                      _buildMaintenanceToggle(),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('خطأ في تحميل الإعدادات: $err')),
+        ),
       ),
     );
   }
 
-  Widget _buildClassicSection(String title, List<Widget> children) {
+  Widget _buildHeaderCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(4),
+        gradient: LinearGradient(colors: [Colors.blue.shade900, Colors.blue.shade700]),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
-          const Divider(height: 24),
-          ...children,
+          CircleAvatar(
+            radius: 35,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: const Icon(Icons.business_rounded, size: 40, color: Colors.white),
+          ),
+          const SizedBox(width: 20),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('هوية المنشأة', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                Text('قم بتحديث بيانات شركتك التي ستظهر في التقارير والفواتير والعقود.', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSimpleField(TextEditingController controller, String label, {bool isNumber = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        style: const TextStyle(fontSize: 13),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(fontSize: 12),
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: Colors.blue.shade800, size: 22),
+                const SizedBox(width: 10),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+              ],
+            ),
+            const Divider(height: 32),
+            ...children,
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildMaintenanceControl() {
+  Widget _buildTextField(TextEditingController controller, String label, {bool isNumber = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        validator: (val) => val == null || val.isEmpty ? 'هذا الحقل مطلوب لسلامة البيانات' : null,
+      ),
+    );
+  }
+
+  Widget _buildMaintenanceToggle() {
     final isMaintenance = ref.watch(isMaintenanceModeProvider).value ?? false;
-    return SwitchListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      title: const Text('وضع الصيانة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-      subtitle: const Text('تقييد دخول النظام للمشرفين فقط', style: TextStyle(fontSize: 11)),
-      value: isMaintenance,
-      onChanged: (val) {
-        ref.read(settingsControllerProvider.notifier).toggleMaintenance(val, 'النظام قيد الصيانة');
-      },
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isMaintenance ? Colors.red.shade50 : Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SwitchListTile(
+        title: Text(
+          'وضع الصيانة العام',
+          style: TextStyle(fontWeight: FontWeight.bold, color: isMaintenance ? Colors.red.shade900 : Colors.green.shade900),
+        ),
+        subtitle: const Text('عند التفعيل، يقتصر دخول النظام على مدراء النظام فقط (Admins) لحماية البيانات أثناء التحديثات.', style: TextStyle(fontSize: 11)),
+        value: isMaintenance,
+        activeColor: Colors.red.shade700,
+        onChanged: (val) {
+          ref.read(settingsControllerProvider.notifier).toggleMaintenance(val, 'النظام قيد الصيانة المجدولة حالياً لضمان جودة الخدمة. نعتذر عن الإزعاج.');
+        },
+      ),
     );
   }
 
@@ -198,8 +267,18 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
         'cr_number': _crNumberController.text,
         'website': _websiteController.text,
       };
+
       await ref.read(settingsControllerProvider.notifier).updateSetting('company_profile', updatedData);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الحفظ')));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم تحديث إعدادات المنشأة بنجاح'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 }

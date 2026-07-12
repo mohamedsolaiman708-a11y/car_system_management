@@ -13,13 +13,13 @@ class CreateCustomerScreen extends ConsumerStatefulWidget {
 
 class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final _fullNameController = TextEditingController();
   final _nationalIdController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
-  
+
   final _altPhoneController = TextEditingController();
   final _cityController = TextEditingController();
   final _employerController = TextEditingController();
@@ -77,10 +77,23 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
     };
 
     await ref.read(crmControllerProvider.notifier).createCustomer(data);
-    
+
     if (mounted && !ref.read(crmControllerProvider).hasError) {
       context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تسجيل العميل بنجاح')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Text('تم تسجيل العميل بنجاح في قاعدة البيانات'),
+            ],
+          ),
+          backgroundColor: AppColors.successGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
       ref.invalidate(customersListProvider);
     }
   }
@@ -90,91 +103,323 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
     final state = ref.watch(crmControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bgGrey,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.primaryNavy,
         elevation: 0,
-        title: const Text('تسجيل عميل جديد', style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 16)),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: Colors.grey.shade200)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text('تسجيل ملف ائتماني جديد',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
       ),
-      body: state.isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  _buildClassicSection('المعلومات الشخصية', [
-                    _buildField(_fullNameController, 'الاسم الكامل كما في الهوية *'),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: _buildField(_nationalIdController, 'رقم الهوية *', isNumber: true)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildField(_phoneController, 'رقم الجوال *', isNumber: true)),
-                    ]),
-                  ]),
-                  const SizedBox(height: 16),
-                  _buildClassicSection('بيانات العمل والدخل', [
-                    _buildField(_employerController, 'جهة العمل'),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: _buildField(_jobTitleController, 'المسمى الوظيفي')),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildField(_salaryController, 'الراتب الشهري', isNumber: true)),
-                    ]),
-                  ]),
-                  const SizedBox(height: 16),
-                  _buildClassicSection('الضامن (الكفيل)', [
-                    _buildField(_guarantorNameController, 'اسم الضامن'),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: _buildField(_guarantorPhoneController, 'جوال الضامن', isNumber: true)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildField(_guarantorRelationshipController, 'صلة القرابة')),
-                    ]),
-                  ]),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _save,
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
-                      child: const Text('حفظ ملف العميل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy))
+          : SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildFormHeader(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _buildSectionCard(
+                      title: 'الهوية والمعلومات الشخصية',
+                      icon: Icons.badge_rounded,
+                      children: [
+                        _buildPremiumTextField(
+                          controller: _fullNameController,
+                          label: 'الاسم الكامل (كما في الهوية)',
+                          prefixIcon: Icons.person_rounded,
+                          validator: (v) => v == null || v.isEmpty ? 'يرجى إدخال الاسم الكامل' : null,
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _nationalIdController,
+                                label: 'رقم الهوية الوطنية',
+                                prefixIcon: Icons.fingerprint_rounded,
+                                keyboardType: TextInputType.number,
+                                validator: (v) => (v == null || v.length != 10) ? 'يجب أن يكون 10 أرقام' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _cityController,
+                                label: 'المدينة',
+                                prefixIcon: Icons.location_city_rounded,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildPremiumTextField(
+                          controller: _addressController,
+                          label: 'العنوان بالتفصيل',
+                          prefixIcon: Icons.map_rounded,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 40),
-                ],
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'معلومات التواصل والدخل',
+                      icon: Icons.contact_mail_rounded,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _phoneController,
+                                label: 'رقم الجوال الأساسي',
+                                prefixIcon: Icons.phone_android_rounded,
+                                keyboardType: TextInputType.phone,
+                                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _altPhoneController,
+                                label: 'رقم بديل (اختياري)',
+                                prefixIcon: Icons.phone_rounded,
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildPremiumTextField(
+                          controller: _emailController,
+                          label: 'البريد الإلكتروني',
+                          prefixIcon: Icons.alternate_email_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 24),
+                        const Divider(),
+                        const SizedBox(height: 24),
+                        _buildPremiumTextField(
+                          controller: _employerController,
+                          label: 'جهة العمل / المؤسسة',
+                          prefixIcon: Icons.business_rounded,
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _jobTitleController,
+                                label: 'المسمى الوظيفي',
+                                prefixIcon: Icons.work_outline_rounded,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _salaryController,
+                                label: 'الراتب الشهري',
+                                prefixIcon: Icons.payments_rounded,
+                                suffix: const Text('ر.س', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'الضمانات والتقييم الائتماني',
+                      icon: Icons.gpp_good_rounded,
+                      children: [
+                        _buildPremiumTextField(
+                          controller: _guarantorNameController,
+                          label: 'اسم الضامن (الكفيل)',
+                          prefixIcon: Icons.person_pin_rounded,
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _guarantorPhoneController,
+                                label: 'جوال الضامن',
+                                prefixIcon: Icons.phone_iphone_rounded,
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildPremiumTextField(
+                                controller: _guarantorRelationshipController,
+                                label: 'صلة القرابة',
+                                prefixIcon: Icons.people_outline_rounded,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        const Text('تصنيف المخاطر المبدئي',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
+                        const SizedBox(height: 12),
+                        _buildRiskSelector(),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                    ElevatedButton(
+                      onPressed: _save,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryNavy,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 64),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 8,
+                        shadowColor: AppColors.primaryNavy.withOpacity(0.4),
+                      ),
+                      child: const Text('حفظ واعتماد ملف العميل',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    ),
+                    const SizedBox(height: 20),
+                    TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('إلغاء العملية والعودة', style: TextStyle(color: Colors.grey)),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildClassicSection(String title, List<Widget> children) {
+  Widget _buildFormHeader() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(4)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
-        const Divider(height: 24),
-        ...children,
-      ]),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(32, 20, 32, 40),
+      decoration: const BoxDecoration(
+        color: AppColors.primaryNavy,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('نموذج تسجيل متعامل',
+              style: TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+          const SizedBox(height: 8),
+          const Text('إدخال البيانات الديموغرافية والائتمانية',
+              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text('يرجى التأكد من مطابقة البيانات للوثائق الرسمية لضمان دقة التقييم الائتماني.',
+              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13, height: 1.4)),
+        ],
+      ),
     );
   }
 
-  Widget _buildField(TextEditingController controller, String label, {bool isNumber = false}) {
+  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppColors.accentGold.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: Icon(icon, color: AppColors.accentGold, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            ],
+          ),
+          const SizedBox(height: 32),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData prefixIcon,
+    TextInputType? keyboardType,
+    Widget? suffix,
+    String? Function(String?)? validator,
+  }) {
     return TextFormField(
       controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(fontSize: 13),
+      keyboardType: keyboardType,
+      validator: validator,
       decoration: InputDecoration(
-        labelText: label, labelStyle: const TextStyle(fontSize: 12),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-        border: const OutlineInputBorder(),
+        labelText: label,
+        prefixIcon: Icon(prefixIcon, size: 20, color: Colors.grey.shade400),
+        suffix: suffix,
+        filled: true,
+        fillColor: AppColors.bgGrey.withOpacity(0.5),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.accentGold, width: 1.5)),
       ),
-      validator: (v) => (v == null || v.isEmpty) && label.contains('*') ? 'مطلوب' : null,
+    );
+  }
+
+  Widget _buildRiskSelector() {
+    return Row(
+      children: [
+        _RiskOption(label: 'منخفضة', value: 'low', color: Colors.green, groupValue: _riskRating, onChanged: (v) => setState(() => _riskRating = v)),
+        const SizedBox(width: 12),
+        _RiskOption(label: 'متوسطة', value: 'medium', color: Colors.orange, groupValue: _riskRating, onChanged: (v) => setState(() => _riskRating = v)),
+        const SizedBox(width: 12),
+        _RiskOption(label: 'عالية', value: 'high', color: Colors.red, groupValue: _riskRating, onChanged: (v) => setState(() => _riskRating = v)),
+      ],
+    );
+  }
+}
+
+class _RiskOption extends StatelessWidget {
+  final String label, value, groupValue;
+  final Color color;
+  final Function(String) onChanged;
+
+  const _RiskOption({required this.label, required this.value, required this.color, required this.groupValue, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isSelected = value == groupValue;
+    return Expanded(
+      child: InkWell(
+        onTap: () => onChanged(value),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isSelected ? color : Colors.grey.shade200),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(
+              color: isSelected ? color : Colors.grey,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 13,
+            )),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/utils/app_theme.dart';
 import '../../domain/vehicle.dart';
 import '../inventory_controller.dart';
 
@@ -15,7 +14,7 @@ class EditVehicleScreen extends ConsumerStatefulWidget {
 
 class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _vinController;
   late TextEditingController _makeController;
   late TextEditingController _modelController;
@@ -43,7 +42,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
 
   void _initFields(Vehicle vehicle) {
     if (_initialized) return;
-    
+
     _vinController.text = vehicle.vin;
     _makeController.text = vehicle.make;
     _modelController.text = vehicle.model;
@@ -53,7 +52,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     _priceController.text = vehicle.purchasePrice.toString();
     _marketValueController.text = vehicle.estimatedMarketValue?.toString() ?? '';
     _status = vehicle.status;
-    
+
     _initialized = true;
   }
 
@@ -74,19 +73,19 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final data = {
-      'vin': _vinController.text.trim().toUpperCase(),
-      'make': _makeController.text.trim(),
-      'model': _modelController.text.trim(),
+      'vin': _vinController.text,
+      'make': _makeController.text,
+      'model': _modelController.text,
       'year': int.tryParse(_yearController.text) ?? 0,
-      'color': _colorController.text.trim(),
-      'license_plate': _plateController.text.isEmpty ? null : _plateController.text.trim(),
+      'color': _colorController.text,
+      'license_plate': _plateController.text.isEmpty ? null : _plateController.text,
       'purchase_price': double.tryParse(_priceController.text) ?? 0.0,
       'estimated_market_value': double.tryParse(_marketValueController.text),
       'status': _status,
     };
 
     await ref.read(inventoryControllerProvider.notifier).updateVehicle(widget.id, data);
-    
+
     if (mounted && !ref.read(inventoryControllerProvider).hasError) {
       context.pop();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,85 +102,110 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     final state = ref.watch(inventoryControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('تعديل بيانات المركبة', style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 16)),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: Colors.grey.shade200)),
+        title: const Text('تعديل بيانات المركبة'),
       ),
       body: vehicleAsync.when(
         data: (vehicle) {
           if (vehicle == null) return const Center(child: Text('المركبة غير موجودة'));
           _initFields(vehicle);
-          
-          return state.isLoading 
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _buildClassicSection('بيانات الهوية والمواصفات', [
-                        _buildField(_vinController, 'رقم الهيكل (VIN) *'),
-                        const SizedBox(height: 12),
-                        Row(children: [
-                          Expanded(child: _buildField(_makeController, 'الماركة *')),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildField(_modelController, 'الموديل *')),
-                        ]),
-                        const SizedBox(height: 12),
-                        Row(children: [
-                          Expanded(child: _buildField(_yearController, 'سنة الصنع *', isNumber: true)),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildField(_colorController, 'اللون')),
-                        ]),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          value: _status,
-                          style: const TextStyle(fontSize: 13, color: AppColors.primaryNavy),
-                          decoration: const InputDecoration(
-                            labelText: 'حالة المركبة', labelStyle: TextStyle(fontSize: 12),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                            border: OutlineInputBorder(),
+
+          return state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Directionality(
+            textDirection: TextDirection.rtl,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle('بيانات المركبة'),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _vinController,
+                      decoration: const InputDecoration(labelText: 'رقم الهيكل (VIN) *', border: OutlineInputBorder()),
+                      validator: (v) => v == null || v.isEmpty ? 'هذا الحقل مطلوب' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _makeController,
+                            decoration: const InputDecoration(labelText: 'الماركة *', border: OutlineInputBorder()),
+                            validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                           ),
-                          items: const [
-                            DropdownMenuItem(value: 'available', child: Text('متوفرة')),
-                            DropdownMenuItem(value: 'on_contract', child: Text('تحت عقد')),
-                            DropdownMenuItem(value: 'maintenance', child: Text('صيانة')),
-                          ],
-                          onChanged: (v) => setState(() => _status = v!),
                         ),
-                      ]),
-                      const SizedBox(height: 16),
-                      _buildClassicSection('البيانات المالية واللوحة', [
-                        _buildField(_plateController, 'رقم اللوحة'),
-                        const SizedBox(height: 12),
-                        Row(children: [
-                          Expanded(child: _buildField(_priceController, 'سعر الشراء *', isNumber: true)),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildField(_marketValueController, 'القيمة السوقية', isNumber: true)),
-                        ]),
-                      ]),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _update,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryNavy,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _modelController,
+                            decoration: const InputDecoration(labelText: 'الموديل *', border: OutlineInputBorder()),
+                            validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                           ),
-                          child: const Text('حفظ التعديلات النهائية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _status,
+                      decoration: const InputDecoration(labelText: 'حالة المركبة', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'available', child: Text('متوفرة')),
+                        DropdownMenuItem(value: 'on_contract', child: Text('في عقد')),
+                        DropdownMenuItem(value: 'maintenance', child: Text('صيانة')),
+                      ],
+                      onChanged: (v) => setState(() => _status = v!),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('البيانات المالية واللوحة'),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _plateController,
+                      decoration: const InputDecoration(labelText: 'رقم اللوحة', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _priceController,
+                            decoration: const InputDecoration(labelText: 'سعر الشراء *', border: OutlineInputBorder()),
+                            keyboardType: TextInputType.number,
+                            validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _marketValueController,
+                            decoration: const InputDecoration(labelText: 'القيمة السوقية', border: OutlineInputBorder()),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: _update,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade800,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('تحديث بيانات المركبة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              );
+              ),
+            ),
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
@@ -189,29 +213,10 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     );
   }
 
-  Widget _buildClassicSection(String title, List<Widget> children) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(4)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
-        const Divider(height: 24),
-        ...children,
-      ]),
-    );
-  }
-
-  Widget _buildField(TextEditingController controller, String label, {bool isNumber = false}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(fontSize: 13),
-      decoration: InputDecoration(
-        labelText: label, labelStyle: const TextStyle(fontSize: 12),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-        border: const OutlineInputBorder(),
-      ),
-      validator: (v) => (v == null || v.isEmpty) && label.contains('*') ? 'مطلوب' : null,
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
     );
   }
 }

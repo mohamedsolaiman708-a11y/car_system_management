@@ -1,36 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../../l10n/app_localizations.dart';
+import 'package:go_router/go_router.dart';
+import 'package:car_system_management/l10n/app_localizations.dart';
 import '../auth_controller.dart';
 import '../widgets/auth_layout.dart';
+import '../../../../core/utils/app_theme.dart';
 
 class AccountRejectedScreen extends ConsumerWidget {
   const AccountRejectedScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-
     return AuthLayout(
-      title: l10n.accountRejectedTitle,
-      subtitle: l10n.accountRejectedMessage,
+      title: 'تم رفض طلب الانضمام',
+      subtitle: 'نعتذر منك، لم تتم الموافقة على طلب تفعيل حسابك من قبل الإدارة في الوقت الحالي.',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(
-            Icons.block_flipped,
-            size: 100,
-            color: Colors.red,
+          const Icon(Icons.block_rounded, size: 64, color: AppColors.errorRed),
+          const SizedBox(height: 32),
+          const Text(
+            'لمزيد من التفاصيل أو للاعتراض، يرجى التواصل مع الدعم الفني للمؤسسة.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
           ),
           const SizedBox(height: 32),
-          OutlinedButton.icon(
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-            icon: const Icon(Icons.logout),
-            label: Text(l10n.backToLogin),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+              icon: const Icon(Icons.logout_rounded, size: 18),
+              label: const Text('تسجيل الخروج والعودة', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.grey),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
             ),
           ),

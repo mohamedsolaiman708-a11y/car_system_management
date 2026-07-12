@@ -28,200 +28,278 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('سجل العقود والتمويل', 
-          style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 18)),
-        actions: [
-          if (isDesktop)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ElevatedButton.icon(
-                onPressed: () => context.push('/contracts/new'),
-                icon: const Icon(Icons.add_task_rounded, size: 16),
-                label: const Text('إصدار عقد جديد', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryNavy,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
+      backgroundColor: AppColors.bgGrey,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(160),
+        child: Container(
+          color: AppColors.primaryNavy,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
+              child: _buildPremiumHeader(),
             ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.grey.shade200),
+          ),
         ),
       ),
       body: Column(
         children: [
-          // إحصائيات كلاسيكية مدمجة
-          _buildCompactStatsBar(statsAsync, f),
-          
-          // شريط البحث المدمج
-          _buildCompactFilterBar(),
+          // لوحة الإحصائيات التنفيذية
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: _buildExecutiveStats(statsAsync, f),
+          ),
+
+          // منطقة البحث والتصفية
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: _buildModernFilterBar(),
+          ),
 
           Expanded(
             child: contractsAsync.when(
-              data: (contracts) => contracts.isEmpty 
-                ? _buildEmptyState()
-                : _buildClassicTable(contracts, f),
+              data: (contracts) => contracts.isEmpty
+                  ? _buildEmptyState()
+                  : isDesktop
+                  ? _buildPremiumTable(contracts, f)
+                  : _buildPremiumCards(contracts, f),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('حدث خطأ في تحميل البيانات')),
+              error: (err, _) => Center(child: Text('حدث خطأ: $err')),
             ),
           ),
         ],
       ),
-      floatingActionButton: !isDesktop ? FloatingActionButton(
+      floatingActionButton: !isDesktop ? FloatingActionButton.extended(
         onPressed: () => context.push('/contracts/new'),
-        backgroundColor: AppColors.primaryNavy,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.accentGold,
+        foregroundColor: AppColors.primaryNavy,
+        icon: const Icon(Icons.add_task_rounded),
+        label: const Text('عقد جديد', style: TextStyle(fontWeight: FontWeight.bold)),
       ) : null,
     );
   }
 
-  Widget _buildCompactStatsBar(AsyncValue<Map<String, dynamic>> statsAsync, intl.NumberFormat f) {
-    return statsAsync.when(
-      data: (stats) => Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        child: Row(
+  Widget _buildPremiumHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildSmallStat('إجمالي العقود', stats['total'] ?? 0, Colors.blue),
-            _buildDivider(),
-            _buildSmallStat('نشطة', stats['active'] ?? 0, Colors.green),
-            _buildDivider(),
-            _buildSmallStat('متأخرات', f.format(stats['total_overdue'] ?? 0), Colors.red),
-            _buildDivider(),
-            _buildSmallStat('مسودات', stats['draft'] ?? 0, Colors.orange),
+            const Text('سجل العقود والتمويل',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 4),
+            Text('إدارة عمليات البيع الآجل، مراجعة الأقساط، وتحليل التحصيل',
+                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
           ],
         ),
+        if (ResponsiveLayout.isDesktop(context))
+          ElevatedButton.icon(
+            onPressed: () => context.push('/contracts/new'),
+            icon: const Icon(Icons.add_task_rounded, size: 20),
+            label: const Text('إصدار عقد تمويل جديد'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accentGold,
+              foregroundColor: AppColors.primaryNavy,
+              minimumSize: const Size(220, 54),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildExecutiveStats(AsyncValue<Map<String, dynamic>> statsAsync, intl.NumberFormat f) {
+    return statsAsync.when(
+      data: (stats) => Row(
+        children: [
+          _buildExecutiveStatCard('إجمالي العقود', stats['total'] ?? 0, Icons.assignment_rounded, Colors.blue),
+          const SizedBox(width: 20),
+          _buildExecutiveStatCard('عقود نشطة', stats['active'] ?? 0, Icons.check_circle_rounded, Colors.green),
+          const SizedBox(width: 20),
+          _buildExecutiveStatCard('متأخرات (قيمة)', f.format(stats['total_overdue'] ?? 0), Icons.warning_amber_rounded, Colors.red),
+          const SizedBox(width: 20),
+          _buildExecutiveStatCard('مسودات', stats['draft'] ?? 0, Icons.edit_note_rounded, Colors.orange),
+        ],
       ),
       loading: () => const LinearProgressIndicator(),
       error: (_, __) => const SizedBox(),
     );
   }
 
-  Widget _buildSmallStat(String label, dynamic value, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 8),
-        Text('$label: ', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        Text(value.toString(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-      ],
+  Widget _buildExecutiveStatCard(String label, dynamic value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value.toString(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+                Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textGrey, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildDivider() => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 24),
-    child: Container(width: 1, height: 15, color: Colors.grey.shade300),
-  );
-
-  Widget _buildCompactFilterBar() {
+  Widget _buildModernFilterBar() {
     return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10)],
+      ),
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.grey.shade300)),
-              child: TextField(
-                onChanged: (val) => setState(() => searchQuery = val),
-                style: const TextStyle(fontSize: 13),
-                decoration: const InputDecoration(
-                  hintText: 'بحث برقم العقد، اسم العميل، أو السيارة...',
-                  prefixIcon: Icon(Icons.search, size: 16),
-                  contentPadding: EdgeInsets.zero,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                ),
+            flex: 3,
+            child: TextField(
+              onChanged: (val) => setState(() => searchQuery = val),
+              decoration: InputDecoration(
+                hintText: 'البحث برقم العقد، اسم العميل، أو السيارة...',
+                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
+                filled: true,
+                fillColor: AppColors.bgGrey.withOpacity(0.5),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.grey.shade300)),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: statusFilter,
-                style: const TextStyle(fontSize: 13, color: AppColors.primaryNavy),
-                hint: const Text('تصفية الحالة', style: TextStyle(fontSize: 12)),
-                onChanged: (val) => setState(() => statusFilter = val),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('كافة العقود')),
-                  DropdownMenuItem(value: 'active', child: Text('نشطة')),
-                  DropdownMenuItem(value: 'draft', child: Text('مسودات')),
-                  DropdownMenuItem(value: 'closed', child: Text('مكتملة')),
-                  DropdownMenuItem(value: 'defaulted', child: Text('متعثرة')),
-                ],
-              ),
-            ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 1,
+            child: _buildPremiumFilterDropdown(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildClassicTable(List<dynamic> contracts, intl.NumberFormat f) {
+  Widget _buildPremiumFilterDropdown() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: SingleChildScrollView(
-        child: DataTable(
-          headingRowHeight: 45,
-          dataRowHeight: 55,
-          horizontalMargin: 16,
-          columnSpacing: 24,
-          headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
-          columns: const [
-            DataColumn(label: Text('رقم العقد', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('العميل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('المركبة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('القيمة الإجمالية', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('الحالة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('إجراء', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(color: AppColors.bgGrey.withOpacity(0.5), borderRadius: BorderRadius.circular(16)),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: statusFilter,
+          hint: const Text('تصفية الحالة', style: TextStyle(fontSize: 14)),
+          isExpanded: true,
+          onChanged: (val) => setState(() => statusFilter = val),
+          items: const [
+            DropdownMenuItem(value: null, child: Text('كافة العقود')),
+            DropdownMenuItem(value: 'active', child: Text('عقود نشطة')),
+            DropdownMenuItem(value: 'draft', child: Text('مسودات')),
+            DropdownMenuItem(value: 'closed', child: Text('عقود مغلقة')),
+            DropdownMenuItem(value: 'defaulted', child: Text('متعثرة')),
           ],
-          rows: contracts.map((c) => DataRow(
-            cells: [
-              DataCell(Text(c.contractNo, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
-              DataCell(Text(c.customer?['full_name'] ?? '-', style: const TextStyle(fontSize: 13))),
-              DataCell(Text('${c.vehicle?['make'] ?? ''} ${c.vehicle?['model'] ?? ''}', style: const TextStyle(fontSize: 12))),
-              DataCell(Text('${f.format(c.totalContractValue)} ر.س', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-              DataCell(_buildStatusChip(c.status)),
-              DataCell(IconButton(
-                icon: const Icon(Icons.open_in_new_rounded, size: 16, color: Colors.blue),
-                onPressed: () => context.push('/contracts/${c.id}'),
-              )),
-            ],
-          )).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildPremiumTable(List<dynamic> contracts, intl.NumberFormat f) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: SingleChildScrollView(
+          child: DataTable(
+            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.02)),
+            dataRowHeight: 80,
+            columns: const [
+              DataColumn(label: Text('رقم العقد', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('العميل المستفيد', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('المركبة', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('القيمة الإجمالية', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('الحالة', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('الإجراءات', style: TextStyle(fontWeight: FontWeight.bold))),
+            ],
+            rows: contracts.map((c) => DataRow(
+              cells: [
+                DataCell(Text(c.contractNo, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, letterSpacing: 1))),
+                DataCell(Text(c.customer?['full_name'] ?? '-', style: const TextStyle(fontWeight: FontWeight.w500))),
+                DataCell(Text('${c.vehicle?['make'] ?? ''} ${c.vehicle?['model'] ?? ''}', style: const TextStyle(fontSize: 13))),
+                DataCell(Text('${f.format(c.totalContractValue)} ر.س', style: const TextStyle(fontWeight: FontWeight.bold))),
+                DataCell(_buildStatusBadge(c.status)),
+                DataCell(IconButton(
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primaryNavy),
+                  onPressed: () => context.push('/contracts/${c.id}'),
+                )),
+              ],
+            )).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumCards(List<dynamic> contracts, intl.NumberFormat f) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(24),
+      itemCount: contracts.length,
+      itemBuilder: (context, index) {
+        final c = contracts[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(20),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(c.contractNo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                _buildStatusBadge(c.status),
+              ],
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                Text('العميل: ${c.customer?['full_name'] ?? '-'}', style: const TextStyle(color: Colors.black87)),
+                Text('السيارة: ${c.vehicle?['make'] ?? ''} ${c.vehicle?['model'] ?? ''}', style: const TextStyle(fontSize: 12)),
+                const SizedBox(height: 8),
+                Text('${f.format(c.totalContractValue)} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 16)),
+              ],
+            ),
+            onTap: () => context.push('/contracts/${c.id}'),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
     Color color = Colors.grey;
     String label = status;
     if (status == 'active') { color = Colors.green; label = 'نشط'; }
     if (status == 'draft') { color = Colors.orange; label = 'مسودة'; }
-    if (status == 'closed') { color = Colors.blue; label = 'مكتمل'; }
+    if (status == 'closed') { color = Colors.blue; label = 'مغلق'; }
     if (status == 'defaulted') { color = Colors.red; label = 'متعثر'; }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }
@@ -231,9 +309,9 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.description_outlined, size: 48, color: Colors.grey.shade300),
+          Icon(Icons.description_outlined, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('لا توجد عقود مسجلة حالياً', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          const Text('لا توجد عقود مسجلة حالياً', style: TextStyle(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );
