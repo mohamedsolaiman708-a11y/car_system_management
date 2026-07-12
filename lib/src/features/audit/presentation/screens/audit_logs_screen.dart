@@ -89,12 +89,12 @@ class _PremiumAuditLogCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final eventType = log.eventType;
     final staffName = log.profile?['full_name'] ?? 'نظام آلي';
-    
+
     // استخراج اسم المستثمر بأسلوب "بريميوم"
-    final String? investorName = log.newValues?['المستثمر'] ?? 
-                                 log.newValues?['investor'] ?? 
-                                 log.newValues?['للمستثمر'] ??
-                                 log.newValues?['investor_name'];
+    final String? investorName = log.newValues?['المستثمر'] ??
+        log.newValues?['investor'] ??
+        log.newValues?['للمستثمر'] ??
+        log.newValues?['investor_name'];
 
     Color eventColor;
     IconData eventIcon;
@@ -142,15 +142,28 @@ class _PremiumAuditLogCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(_formatEventType(eventType),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
-                          const Spacer(),
-                          if (investorName != null) _buildPremiumInvestorBadge(investorName),
-                        ],
-                      ),
+                      // نوع العملية بلون مميز
+                      Text(_formatEventType(eventType),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: eventColor)),
+
+                      const SizedBox(height: 6),
+
+                      // اسم المستثمر - يظهر بشكل بارز جداً
+                      if (investorName != null)
+                        Row(
+                          children: [
+                            const Icon(Icons.account_balance_rounded, size: 14, color: AppColors.primaryNavy),
+                            const SizedBox(width: 6),
+                            Text(investorName,
+                                style: const TextStyle(fontSize: 15, color: AppColors.primaryNavy, fontWeight: FontWeight.w900)),
+                          ],
+                        )
+                      else
+                        const Text('عملية نظام عامة', style: TextStyle(fontSize: 12, color: Colors.grey)),
+
                       const SizedBox(height: 8),
+
+                      // الموظف المنفذ
                       Row(
                         children: [
                           Icon(Icons.person_pin_rounded, size: 14, color: Colors.grey.shade400),
@@ -177,28 +190,6 @@ class _PremiumAuditLogCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPremiumInvestorBadge(String name) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.accentGold.withValues(alpha: 0.2), AppColors.accentGold.withValues(alpha: 0.05)],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.stars_rounded, size: 14, color: AppColors.primaryNavy),
-          const SizedBox(width: 6),
-          Text(name, 
-            style: const TextStyle(fontSize: 11, color: AppColors.primaryNavy, fontWeight: FontWeight.w900)),
-        ],
       ),
     );
   }
@@ -277,10 +268,10 @@ class _PremiumAuditLogCard extends StatelessWidget {
   Widget _buildValueBox(String label, Map<String, dynamic> values, {bool isNew = false}) {
     // تصفية الحقول التقنية الزائدة إذا كان الاسم موجوداً
     final hasProperName = values.containsKey('المستثمر') || values.containsKey('investor') || values.containsKey('للمستثمر');
-    
+
     final filteredEntries = values.entries.where((e) {
       if (e.key == 'investor_id' && hasProperName) return false;
-      if (e.key == 'recorded_by_name' || e.key == 'performed_by') return false; 
+      if (e.key == 'recorded_by_name' || e.key == 'performed_by') return false;
       return true;
     }).toList();
 
@@ -307,14 +298,14 @@ class _PremiumAuditLogCard extends StatelessWidget {
                   Text(_translateKey(e.key), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text('${e.value}', 
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        color: isNew ? Colors.green.shade900 : Colors.black87, 
-                        fontSize: 14, 
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace'
-                      )
+                    child: Text('${e.value}',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                            color: isNew ? Colors.green.shade900 : Colors.black87,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace'
+                        )
                     ),
                   ),
                 ],
