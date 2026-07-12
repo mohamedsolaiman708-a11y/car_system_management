@@ -12,24 +12,12 @@ class PortalSelectionScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF070B14), // أسود ملكي عميق جداً
       body: Stack(
         children: [
-          // خلفية بتدرجات إبداعية (Abstract Background)
-          Positioned(
-            top: -100,
-            right: -100,
-            child: CircleAvatar(radius: 200, backgroundColor: AppColors.primaryNavy.withOpacity(0.3)),
-          ),
-          Positioned(
-            bottom: -50,
-            left: -50,
-            child: CircleAvatar(radius: 150, backgroundColor: AppColors.accentGold.withOpacity(0.05)),
-          ),
-          
           Center(
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // شعار العلامة التجارية مع تأثير الظل
+                  const SizedBox(height: 20),
                   const BrandLogo(scale: 1.2),
                   const SizedBox(height: 60),
                   
@@ -75,7 +63,7 @@ class PortalSelectionScreen extends StatelessWidget {
                   
                   const SizedBox(height: 80),
                   Text(
-                    'نظام السامي لإدارة تمويل السيارات © 2024',
+                    'نظام السامي لإدارة تمويل السيارات © 2026',
                     style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 10, letterSpacing: 2),
                   ),
                 ],

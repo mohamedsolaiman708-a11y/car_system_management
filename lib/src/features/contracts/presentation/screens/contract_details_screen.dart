@@ -8,9 +8,6 @@ import '../contract_timeline_controller.dart';
 import '../widgets/add_payment_dialog.dart';
 import '../../../documents/presentation/widgets/universal_document_manager.dart';
 import '../../../investors/presentation/widgets/fund_contract_dialog.dart';
-import '../../../investors/presentation/investor_controller.dart';
-import '../../../authentication/presentation/auth_controller.dart';
-import '../../../authentication/domain/user_role.dart';
 import '../../../../core/utils/app_theme.dart';
 
 class ContractDetailsScreen extends ConsumerWidget {
@@ -73,7 +70,14 @@ class ContractDetailsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
+        error: (err, stack) => Center(child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text('حدث خطأ في تحميل البيانات: $err'),
+          ],
+        )),
       ),
     );
   }
@@ -90,9 +94,9 @@ class ContractDetailsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: const Icon(Icons.assignment_turned_in_rounded, size: 48, color: AppColors.accentGold),
           ),
@@ -166,7 +170,7 @@ class ContractDetailsScreen extends ConsumerWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withOpacity(0.5))),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.5))),
       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
@@ -195,11 +199,12 @@ class _OverviewTab extends ConsumerWidget {
                   title: 'التفاصيل المالية للعقد',
                   icon: Icons.account_balance_rounded,
                   children: [
-                    _InfoRow('قيمة السيارة / أصل المبلغ', '${f.format(contract.principalAmount)} ر.س'),
+                    _InfoRow('قيمة السيارة (الأصل)', '${f.format(contract.principalAmount)} ر.س'),
                     _InfoRow('نسبة الربح السنوية', '${contract.financeProfitRate}%'),
                     _InfoRow('مدة التمويل بالشهور', '${contract.durationMonths} شهر'),
                     const Divider(height: 32),
-                    _InfoRow('إجمالي قيمة العقد (بالأرباح)', '${f.format(contract.totalContractValue)} ر.س', isBold: true, color: AppColors.primaryNavy),
+                    _InfoRow('الرسوم الإدارية والضريبة', '${f.format(contract.moroorFees + contract.tammFees + contract.insuranceFees + contract.vatAmount)} ر.س'),
+                    _InfoRow('إجمالي قيمة العقد', '${f.format(contract.totalContractValue)} ر.س', isBold: true, color: AppColors.primaryNavy),
                   ],
                 ),
               ),
@@ -212,6 +217,8 @@ class _OverviewTab extends ConsumerWidget {
                     _InfoRow('المركبة', '${contract.vehicle?['make'] ?? ""} ${contract.vehicle?['model'] ?? ""}'),
                     _InfoRow('رقم اللوحة', contract.vehicle?['license_plate'] ?? '-'),
                     _InfoRow('سنة الصنع', contract.vehicle?['year']?.toString() ?? '-'),
+                    const Divider(height: 32),
+                    _InfoRow('الكفيل', contract.guarantor1Name ?? 'لا يوجد كفيل'),
                   ],
                 ),
               ),
@@ -253,7 +260,7 @@ class _OverviewTab extends ConsumerWidget {
           const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () => _activate(context, ref),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.successGreen, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white),
             child: const Text('تفعيل العقد نهائياً'),
           ),
         ],
@@ -262,7 +269,30 @@ class _OverviewTab extends ConsumerWidget {
   }
 
   Future<void> _activate(BuildContext context, WidgetRef ref) async {
-    // منطق التفعيل كما هو
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تفعيل العقد'),
+        content: const Text('سيتم تفعيل العقد وتوليد جدول الأقساط. هل أنت متأكد؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم، تفعيل')),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في التفعيل: $e'), backgroundColor: Colors.red));
+        }
+      }
+    }
   }
 }
 
@@ -343,7 +373,7 @@ class _InstallmentsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ')),
+      error: (e, _) => Center(child: Text('خطأ في تحميل الأقساط: $e')),
     );
   }
 
@@ -356,7 +386,7 @@ class _InstallmentsTab extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
@@ -378,7 +408,7 @@ class _PaymentsTab extends ConsumerWidget {
             padding: const EdgeInsets.all(32),
             child: ElevatedButton.icon(
               onPressed: () => showDialog(context: context, builder: (context) => AddPaymentDialog(contract: contract)),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.successGreen, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 56)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 56)),
               icon: const Icon(Icons.add_card_rounded),
               label: const Text('تسجيل دفعة سداد جديدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
@@ -395,7 +425,7 @@ class _PaymentsTab extends ConsumerWidget {
                   final isReversed = p['status'] == 'reversed';
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(color: isReversed ? Colors.red.withOpacity(0.02) : Colors.white, borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: isReversed ? Colors.red.withValues(alpha: 0.02) : Colors.white, borderRadius: BorderRadius.circular(20)),
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(20),
                       leading: Icon(isReversed ? Icons.history_rounded : Icons.check_circle_rounded, color: isReversed ? Colors.red : Colors.green, size: 32),
@@ -408,7 +438,7 @@ class _PaymentsTab extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error')),
+            error: (e, _) => Center(child: Text('Error: $e')),
           ),
         ),
       ],
@@ -474,7 +504,7 @@ class _FundingTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error')),
+      error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
 
@@ -520,7 +550,7 @@ class _TimelineTab extends ConsumerWidget {
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error')),
+      error: (err, _) => Center(child: Text('Error: $err')),
     );
   }
 }

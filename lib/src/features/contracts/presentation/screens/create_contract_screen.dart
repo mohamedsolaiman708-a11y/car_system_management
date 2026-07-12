@@ -51,6 +51,24 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     _calculateTotals();
   }
 
+  @override
+  void dispose() {
+    _principalController.dispose();
+    _profitRateController.dispose();
+    _durationController.dispose();
+    _moroorFeesController.dispose();
+    _tammFeesController.dispose();
+    _insuranceFeesController.dispose();
+    _vatController.dispose();
+    _g1NameController.dispose();
+    _g1IdController.dispose();
+    _g1PhoneController.dispose();
+    _g1WorkController.dispose();
+    _witness1NameController.dispose();
+    _witness2NameController.dispose();
+    super.dispose();
+  }
+
   void _calculateTotals() {
     final principal = double.tryParse(_principalController.text) ?? 0;
     final rate = _contractType == 'installments' ? (double.tryParse(_profitRateController.text) ?? 0) : 0;
@@ -61,10 +79,12 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     final insurance = double.tryParse(_insuranceFeesController.text) ?? 0;
     final vat = double.tryParse(_vatController.text) ?? 0;
 
-    setState(() {
-      _totalValue = principal + (principal * (rate / 100)) + moroor + tamm + insurance + vat;
-      _monthlyInstallment = (_contractType == 'installments' && months > 0) ? _totalValue / months : 0;
-    });
+    if (mounted) {
+      setState(() {
+        _totalValue = principal + (principal * (rate / 100)) + moroor + tamm + insurance + vat;
+        _monthlyInstallment = (_contractType == 'installments' && months > 0) ? _totalValue / months : 0;
+      });
+    }
   }
 
   void _findSmartInvestorSuggestion(double carPrice) {
@@ -80,6 +100,8 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isLoading) return; // Prevent double submission
+
     if (!_formKey.currentState!.validate() || _selectedCustomerId == null || _selectedVehicleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى إكمال البيانات واختيار العميل والسيارة'), backgroundColor: Colors.red),
@@ -88,13 +110,14 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     }
 
     setState(() => _isLoading = true);
+    
     final data = {
       'customer_id': _selectedCustomerId,
       'inventory_item_id': _selectedVehicleId,
-      'principal_amount': double.parse(_principalController.text),
-      'finance_profit_rate': _contractType == 'installments' ? double.parse(_profitRateController.text) : 0,
+      'principal_amount': double.tryParse(_principalController.text) ?? 0.0,
+      'finance_profit_rate': _contractType == 'installments' ? (double.tryParse(_profitRateController.text) ?? 0.0) : 0.0,
       'total_contract_value': _totalValue,
-      'duration_months': _contractType == 'installments' ? int.parse(_durationController.text) : 0,
+      'duration_months': _contractType == 'installments' ? (int.tryParse(_durationController.text) ?? 0) : 0,
       'status': 'draft',
       'type': _contractType,
       'guarantor_1_name': _g1NameController.text.trim(),
@@ -103,24 +126,43 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       'guarantor_1_work': _g1WorkController.text.trim(),
       'witness_1': _witness1NameController.text.trim(),
       'witness_2': _witness2NameController.text.trim(),
-      'moroor_fees': double.parse(_moroorFeesController.text),
-      'tamm_fees': double.parse(_tammFeesController.text),
-      'insurance_fees': double.parse(_insuranceFeesController.text),
-      'vat_amount': double.parse(_vatController.text),
+      'moroor_fees': double.tryParse(_moroorFeesController.text) ?? 0.0,
+      'tamm_fees': double.tryParse(_tammFeesController.text) ?? 0.0,
+      'insurance_fees': double.tryParse(_insuranceFeesController.text) ?? 0.0,
+      'vat_amount': double.tryParse(_vatController.text) ?? 0.0,
     };
 
     try {
       await ref.read(contractControllerProvider.notifier).createContract(data);
-      if (mounted) {
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إصدار مسودة العقد بنجاح'), backgroundColor: Colors.green),
-        );
+      
+      final controllerState = ref.read(contractControllerProvider);
+      
+      if (controllerState.hasError) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('خطأ: ${controllerState.error}'), backgroundColor: Colors.red),
+          );
+        }
+      } else {
+        if (mounted) {
+          // Success navigation
+          ref.invalidate(contractsListProvider); // Refresh the list
+          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم إصدار مسودة العقد بنجاح'), backgroundColor: Colors.green),
+          );
+        }
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ غير متوقع: $e'), backgroundColor: Colors.red),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -137,7 +179,14 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
         title: const Text('إصدار وثيقة تعاقد ذكية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy))
+          ? const Center(child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppColors.primaryNavy),
+                SizedBox(height: 16),
+                Text('جاري إنشاء العقد وتوليد السجلات...', style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
+              ],
+            ))
           : SingleChildScrollView(
         child: Column(
           children: [
@@ -255,7 +304,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                     const SizedBox(height: 40),
                     
                     ElevatedButton(
-                      onPressed: _submit,
+                      onPressed: _isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryNavy,
                         minimumSize: const Size(double.infinity, 64),
