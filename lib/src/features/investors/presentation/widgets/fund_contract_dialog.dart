@@ -103,7 +103,7 @@ class _FundContractDialogState extends ConsumerState<FundContractDialog> {
     setState(() => _isSubmitting = true);
     final success = await ref.read(investorTransactionsControllerProvider(_selectedInvestorId!).notifier).allocateFunding(
       investorId: _selectedInvestorId!,
-      contract_id: widget.contract.id,
+      contractId: widget.contract.id,
       amount: double.parse(_amountController.text),
     );
 
