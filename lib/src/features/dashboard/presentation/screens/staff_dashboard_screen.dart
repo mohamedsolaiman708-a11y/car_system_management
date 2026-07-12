@@ -21,24 +21,31 @@ class StaffDashboardScreen extends ConsumerWidget {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F3F6),
+      backgroundColor: AppColors.bgGrey,
       body: statsAsync.when(
         data: (stats) => RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(staffStatsProvider);
             ref.invalidate(monthlyGrowthDataProvider);
           },
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              _buildSimpleHeader(user.fullName),
-              const SizedBox(height: 20),
-              _buildCompactStatsGrid(stats, f),
-              const SizedBox(height: 20),
-              _buildMainDataSection(stats, growthAsync, f, context),
-              const SizedBox(height: 20),
-              _buildQuickAccessSection(stats, context),
-              const SizedBox(height: 40),
+          child: CustomScrollView(
+            slivers: [
+              // هيدر فاخر بأسلوب "المركز القيادي"
+              SliverToBoxAdapter(
+                child: _buildExecutiveHeader(user.fullName, stats, f),
+              ),
+              
+              SliverPadding(
+                padding: const EdgeInsets.all(24),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildMainAnalyticsRow(stats, growthAsync, f, context),
+                    const SizedBox(height: 24),
+                    _buildOperationsRow(stats, context),
+                    const SizedBox(height: 40),
+                  ]),
+                ),
+              ),
             ],
           ),
         ),
@@ -48,83 +55,135 @@ class StaffDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSimpleHeader(String name) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildExecutiveHeader(String name, Map<String, dynamic> stats, intl.NumberFormat f) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.primaryNavy,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(32, 40, 32, 40),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('لوحة البيانات التنفيذية', 
+                      style: TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                    const SizedBox(height: 8),
+                    Text('أهلاً بك، $name', 
+                      style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                    Text('إليك ملخص مؤشرات الأداء المالي والتشغيلي لليوم', 
+                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+                  ],
+                ),
+                _buildLiveClock(),
+              ],
+            ),
+          ),
+          
+          // إحصائيات مدمجة داخل الهيدر (Floating Style)
+          Transform.translate(
+            offset: const Offset(0, 30),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Row(
+                children: [
+                  _buildHeaderStatCard('إجمالي العملاء', (stats['total_customers'] ?? 0).toString(), Icons.people_outline, Colors.blue),
+                  const SizedBox(width: 16),
+                  _buildHeaderStatCard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_outlined, Colors.orange),
+                  const SizedBox(width: 16),
+                  _buildHeaderStatCard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_outlined, Colors.green),
+                  const SizedBox(width: 16),
+                  _buildHeaderStatCard('أرصدة المستثمرين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_outlined, Colors.purple),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderStatCard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
+        ),
+        child: Row(
           children: [
-            Text('لوحة المؤشرات الرئيسية', 
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600, letterSpacing: 1.1)),
-            const SizedBox(height: 4),
-            Text('أهلاً بك، $name', 
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+                  Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
           ],
         ),
-        _buildDateBadge(),
-      ],
-    );
-  }
-
-  Widget _buildDateBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade300),
       ),
-      child: Text(intl.DateFormat('yyyy/MM/dd').format(DateTime.now()),
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryNavy)),
     );
   }
 
-  Widget _buildCompactStatsGrid(Map<String, dynamic> stats, intl.NumberFormat f) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth > 1200 ? 6 : (constraints.maxWidth > 800 ? 3 : 2);
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          childAspectRatio: 2.8,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          children: [
-            _ClassicStatItem('إجمالي العملاء', (stats['total_customers'] ?? 0).toString(), Icons.people_outline, Colors.blue),
-            _ClassicStatItem('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_outlined, Colors.orange),
-            _ClassicStatItem('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_outlined, Colors.green),
-            _ClassicStatItem('أرصدة المستثمرين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_outlined, Colors.purple),
-            _ClassicStatItem('الأقساط المستحقة', f.format(stats['total_due_installments'] ?? 0), Icons.payments_outlined, Colors.red),
-            _ClassicStatItem('سيولة الصندوق', f.format(stats['cash_liquidity'] ?? 0), Icons.savings_outlined, Colors.teal),
-          ],
-        );
-      },
+  Widget _buildLiveClock() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.access_time_rounded, color: AppColors.accentGold, size: 18),
+          const SizedBox(width: 12),
+          Text(intl.DateFormat('HH:mm').format(DateTime.now()), 
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        ],
+      ),
     );
   }
 
-  Widget _buildMainDataSection(Map<String, dynamic> stats, AsyncValue<List<Map<String, dynamic>>> growthAsync, intl.NumberFormat f, BuildContext context) {
+  Widget _buildMainAnalyticsRow(Map<String, dynamic> stats, AsyncValue<List<Map<String, dynamic>>> growthAsync, intl.NumberFormat f, BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // كارت الرسم البياني (Creative White Card)
         Expanded(
           flex: 2,
-          child: _ClassicPanel(
-            title: 'نمو الأرباح الشهرية',
-            height: 300,
+          child: _CreativeCard(
+            title: 'مؤشر النمو المالي',
+            subtitle: 'تحليل أرباح الـ 6 أشهر الماضية',
             child: growthAsync.when(
-              data: (data) => _SimpleLineChart(data: data),
+              data: (data) => _ModernSimpleChart(data: data),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => const SizedBox(),
+              error: (_, __) => const SizedBox(),
             ),
           ),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 24),
+        // كارت المتأخرات
         Expanded(
-          child: _ClassicPanel(
-            title: 'تنبيهات التحصيل',
-            height: 300,
+          child: _CreativeCard(
+            title: 'مخاطر التحصيل',
+            subtitle: 'الأقساط المتأخرة حسب المدة',
             child: _OverdueClassicList(stats: stats, f: f),
           ),
         ),
@@ -132,23 +191,25 @@ class StaffDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickAccessSection(Map<String, dynamic> stats, BuildContext context) {
+  Widget _buildOperationsRow(Map<String, dynamic> stats, BuildContext context) {
     final recentContracts = (stats['recent_contracts'] as List?) ?? [];
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           flex: 2,
-          child: _ClassicPanel(
-            title: 'أحدث العقود المبرمة',
-            child: _CompactContractsTable(contracts: recentContracts, context: context),
+          child: _CreativeCard(
+            title: 'أحدث العمليات التعاقدية',
+            subtitle: 'متابعة مباشرة لآخر العقود المبرمة',
+            child: _CompactContractsList(contracts: recentContracts, context: context),
           ),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 24),
         Expanded(
-          child: _ClassicPanel(
-            title: 'اختصارات سريعة',
-            child: _ActionsButtonsList(context: context),
+          child: _CreativeCard(
+            title: 'الوصول السريع',
+            subtitle: 'إجراءات تشغيلية فورية',
+            child: _QuickActionsList(context: context),
           ),
         ),
       ],
@@ -156,97 +217,59 @@ class StaffDashboardScreen extends ConsumerWidget {
   }
 }
 
-class _ClassicStatItem extends StatelessWidget {
-  final String title, value;
-  final Icon_Data = Icons.abc; // Just dummy to show structure
-  final IconData icon;
-  final Color color;
-  const _ClassicStatItem(this.title, this.value, this.icon, this.color);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(4)),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(title, style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
-                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClassicPanel extends StatelessWidget {
-  final String title;
+class _CreativeCard extends StatelessWidget {
+  final String title, subtitle;
   final Widget child;
-  final double? height;
-  const _ClassicPanel({required this.title, required this.child, this.height});
+  const _CreativeCard({required this.title, required this.subtitle, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-          const Divider(height: 24),
-          Expanded(child: child),
+          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+          Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider(height: 1)),
+          child,
         ],
       ),
     );
   }
 }
 
-class _SimpleLineChart extends StatelessWidget {
+class _ModernSimpleChart extends StatelessWidget {
   final List<Map<String, dynamic>> data;
-  const _SimpleLineChart({required this.data});
+  const _ModernSimpleChart({required this.data});
 
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) return const Center(child: Text('لا توجد بيانات'));
     final chartData = data.reversed.toList();
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
-        titlesData: const FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value['gross_profit'] as num?)?.toDouble() ?? 0.0)).toList(),
-            isCurved: false,
-            color: AppColors.primaryNavy,
-            barWidth: 2,
-            dotData: const FlDotData(show: true),
-            belowBarData: BarAreaData(show: true, color: AppColors.primaryNavy.withOpacity(0.02)),
-          ),
-        ],
+    return SizedBox(
+      height: 200,
+      child: LineChart(
+        LineChartData(
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          borderData: FlBorderData(show: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value['gross_profit'] as num?)?.toDouble() ?? 0.0)).toList(),
+              isCurved: true,
+              color: AppColors.accentGold,
+              barWidth: 4,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppColors.accentGold.withOpacity(0.2), AppColors.accentGold.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -262,9 +285,9 @@ class _OverdueClassicList extends StatelessWidget {
     return Column(
       children: [
         _buildRow('متأخر +90 يوم', f.format(stats['overdue_over_90'] ?? 0), Colors.red, stats['c_max'] ?? 0),
-        const Divider(height: 20),
+        const SizedBox(height: 16),
         _buildRow('متأخر 30-90 يوم', f.format(stats['overdue_60_90'] ?? 0), Colors.orange, stats['c_90'] ?? 0),
-        const Divider(height: 20),
+        const SizedBox(height: 16),
         _buildRow('أقل من 30 يوم', f.format(stats['overdue_under_30'] ?? 0), Colors.blue, stats['c_30'] ?? 0),
       ],
     );
@@ -274,84 +297,84 @@ class _OverdueClassicList extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            Text('$count حالة', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
+            Container(width: 4, height: 24, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                Text('$count حالة', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
+              ],
+            ),
           ],
         ),
-        Text('$value ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryNavy)),
+        Text('$value ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
       ],
     );
   }
 }
 
-class _CompactContractsTable extends StatelessWidget {
+class _CompactContractsList extends StatelessWidget {
   final List contracts;
   final BuildContext context;
-  const _CompactContractsTable({required this.contracts, required this.context});
+  const _CompactContractsList({required this.contracts, required this.context});
 
   @override
   Widget build(BuildContext context) {
-    if (contracts.isEmpty) return const Center(child: Text('لا توجد سجلات'));
-    return ListView.separated(
+    if (contracts.isEmpty) return const Center(child: Text('لا توجد عقود حديثة'));
+    return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: contracts.length > 4 ? 4 : contracts.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemCount: contracts.length > 3 ? 3 : contracts.length,
       itemBuilder: (context, index) {
         final c = contracts[index];
-        return ListTile(
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-          title: Text(c['contract_no'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          subtitle: Text(c['customers']?['full_name'] ?? '-', style: const TextStyle(fontSize: 11)),
-          trailing: Text('${c['total_contract_value'] ?? 0} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 12)),
-          onTap: () => context.push('/contracts/${c['id']}'),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(color: AppColors.bgGrey.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            dense: true,
+            leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.description_outlined, size: 16, color: AppColors.primaryNavy)),
+            title: Text(c['contract_no'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(c['customers']?['full_name'] ?? '-'),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+            onTap: () => context.push('/contracts/${c['id']}'),
+          ),
         );
       },
     );
   }
 }
 
-class _ActionsButtonsList extends StatelessWidget {
+class _QuickActionsList extends StatelessWidget {
   final BuildContext context;
-  const _ActionsButtonsList({required this.context});
+  const _QuickActionsList({required this.context});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _ClassicActionBtn('إصدار عقد جديد', Icons.add_task, () => context.push('/contracts/new')),
+        _ActionBtn('إصدار عقد تمويل', Icons.add_task_rounded, Colors.blue, () => context.push('/contracts/new')),
         const SizedBox(height: 8),
-        _ClassicActionBtn('إضافة عميل', Icons.person_add, () => context.push('/crm/new')),
+        _ActionBtn('تسجيل عميل جديد', Icons.person_add_rounded, Colors.green, () => context.push('/crm/new')),
         const SizedBox(height: 8),
-        _ClassicActionBtn('إضافة سيارة', Icons.add_road, () => context.push('/inventory/new')),
+        _ActionBtn('إضافة سيارة للمخزون', Icons.add_road_rounded, Colors.orange, () => context.push('/inventory/new')),
       ],
     );
   }
-}
 
-class _ClassicActionBtn extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  const _ClassicActionBtn(this.label, this.icon, this.onTap);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _ActionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: onTap,
-        icon: Icon(icon, size: 16),
-        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        icon: Icon(icon, size: 18, color: color),
+        label: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryNavy,
-          side: BorderSide(color: Colors.grey.shade300),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Colors.grey.shade200),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
