@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
 import '../../../crm/presentation/crm_controller.dart';
 import '../../../inventory/presentation/inventory_controller.dart';
+import '../../../inventory/domain/vehicle.dart';
 import '../contract_controller.dart';
 
 class CreateContractScreen extends ConsumerStatefulWidget {
@@ -356,7 +357,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
           fillColor: AppColors.bgGrey.withOpacity(0.5),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
-        items: list.map((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.fullName))).toList(),
+        items: (list as List).map((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.fullName))).toList(),
         onChanged: (val) => setState(() => _selectedCustomerId = val),
       ),
       loading: () => const LinearProgressIndicator(),
@@ -364,18 +365,31 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     );
   }
 
-  Widget _buildVehicleDropdown(AsyncValue asyncData) {
+  Widget _buildVehicleDropdown(AsyncValue<List<Vehicle>> asyncData) {
     return asyncData.when(
       data: (list) => DropdownButtonFormField<String>(
         decoration: InputDecoration(
           labelText: 'المركبة المختارة من المخزون',
           prefixIcon: const Icon(Icons.directions_car_rounded),
           filled: true,
-          fillColor: AppColors.bgGrey.withOpacity(0.5),
+          fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
-        items: list.map((v) => DropdownMenuItem<String>(value: v.id, child: Text('${v.make} ${v.model} - لوحة: ${v.licensePlate ?? "-"}'))).toList(),
-        onChanged: (val) => setState(() => _selectedVehicleId = val),
+        items: list.map((v) => DropdownMenuItem<String>(
+          value: v.id, 
+          child: Text('${v.make} ${v.model} - لوحة: ${v.licensePlate ?? "-"}')
+        )).toList(),
+        onChanged: (val) {
+          setState(() {
+            _selectedVehicleId = val;
+            if (val != null) {
+              // الأتمتة: جلب سعر السيارة المحددة ووضعه في خانة أصل المبلغ
+              final selectedVehicle = list.firstWhere((v) => v.id == val);
+              _principalController.text = selectedVehicle.purchasePrice.toString();
+              _calculateTotals(); // إعادة حساب القيم المالية فوراً
+            }
+          });
+        },
       ),
       loading: () => const LinearProgressIndicator(),
       error: (_, __) => const Text('Error loading vehicles'),
