@@ -8,6 +8,7 @@ import '../../features/authentication/presentation/widgets/brand_logo.dart';
 import '../../features/authentication/presentation/staff_controller.dart';
 import '../../features/investors/presentation/investor_controller.dart';
 import '../../features/notifications/presentation/notification_controller.dart';
+import '../../features/dashboard/presentation/dashboard_controller.dart';
 import '../utils/app_theme.dart';
 import '../utils/responsive_layout.dart';
 
@@ -104,6 +105,10 @@ class _MobileScaffold extends ConsumerWidget {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => context.push('/search'),
+          ),
           _NotificationButton(),
           const SizedBox(width: 8),
         ],
@@ -298,8 +303,29 @@ class _TopBar extends ConsumerWidget {
       child: Row(
         children: [
           _buildUserProfileMenu(context, ref, user, roleLabel),
-          const Spacer(),
-          _NotificationButton(), // زر التنبيهات الذكي
+          const SizedBox(width: 32),
+          // --- ميزة ذكية: شريط بحث عالمي سريع ---
+          Expanded(
+            child: Container(
+              height: 45,
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: TextField(
+                onTap: () => context.push('/search'), // الانتقال لصفحة البحث عند النقر
+                readOnly: true, // يفتح الواجهة الكاملة للبحث لسهولة النتائج
+                decoration: InputDecoration(
+                  hintText: 'البحث الذكي (عملاء، سيارات، عقود...)...',
+                  hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.primaryNavy),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F7FA),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 32),
+          _NotificationButton(),
           const SizedBox(width: 16),
           _buildDateDisplay(),
         ],

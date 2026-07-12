@@ -6,6 +6,7 @@ import '../../../../core/utils/app_theme.dart';
 import '../../../crm/presentation/crm_controller.dart';
 import '../../../inventory/presentation/inventory_controller.dart';
 import '../../../inventory/domain/vehicle.dart';
+import '../../../investors/presentation/investor_controller.dart';
 import '../contract_controller.dart';
 
 class CreateContractScreen extends ConsumerStatefulWidget {
@@ -21,6 +22,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
 
   String? _selectedCustomerId;
   String? _selectedVehicleId;
+  String? _suggestedInvestorName;
   String _contractType = 'installments';
 
   final _principalController = TextEditingController();
@@ -65,10 +67,22 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     });
   }
 
+  void _findSmartInvestorSuggestion(double carPrice) {
+    final investors = ref.read(investorListControllerProvider).valueOrNull;
+    if (investors != null && investors.isNotEmpty) {
+      try {
+        final suggestion = investors.firstWhere((inv) => inv.availableBalance >= carPrice);
+        setState(() => _suggestedInvestorName = suggestion.fullName);
+      } catch (e) {
+        setState(() => _suggestedInvestorName = 'لا يوجد مستثمر لديه سيولة كافية حالياً');
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _selectedCustomerId == null || _selectedVehicleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى إكمال البيانات الأساسية واختيار العميل والسيارة'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('يرجى إكمال البيانات واختيار العميل والسيارة'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -100,11 +114,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('تم إصدار مسودة العقد وتحديث حالة المركبة بنجاح'),
-            backgroundColor: AppColors.successGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
+          const SnackBar(content: Text('تم إصدار مسودة العقد بنجاح'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -120,16 +130,11 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     final vehiclesAsync = ref.watch(vehiclesListProvider(status: 'available'));
 
     return Scaffold(
-      backgroundColor: AppColors.bgGrey,
+      backgroundColor: const Color(0xFFF8F9FD),
       appBar: AppBar(
         backgroundColor: AppColors.primaryNavy,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('إصدار وثيقة تعاقد جديدة',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('إصدار وثيقة تعاقد ذكية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy))
@@ -138,13 +143,14 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
           children: [
             _buildFormHeader(),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+              padding: const EdgeInsets.all(24.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
                     _buildContractTypeSelector(),
                     const SizedBox(height: 24),
+                    
                     _buildSectionCard(
                       title: 'أطراف التعاقد والأصل الممول',
                       icon: Icons.handshake_rounded,
@@ -152,8 +158,29 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         _buildCustomerDropdown(customersAsync),
                         const SizedBox(height: 20),
                         _buildVehicleDropdown(vehiclesAsync),
+                        
+                        if (_suggestedInvestorName != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentGold.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.auto_awesome_rounded, color: AppColors.accentGold, size: 18),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text('الممول المقترح لهذه السيارة: $_suggestedInvestorName', 
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
+                    
                     const SizedBox(height: 24),
                     _buildSectionCard(
                       title: 'القيم المالية والرسوم الإدارية',
@@ -178,6 +205,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ),
                       ],
                     ),
+
                     if (_contractType == 'installments') ...[
                       const SizedBox(height: 24),
                       _buildSectionCard(
@@ -194,6 +222,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ],
                       ),
                     ],
+
                     const SizedBox(height: 24),
                     _buildSectionCard(
                       title: 'بيانات الكفيل الغارم والشهود',
@@ -209,6 +238,8 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                           ],
                         ),
                         const SizedBox(height: 20),
+                        _buildPremiumTextField(_g1WorkController, 'مقر عمل الكفيل', Icons.work_outline_rounded),
+                        const SizedBox(height: 20),
                         Row(
                           children: [
                             Expanded(child: _buildPremiumTextField(_witness1NameController, 'الشاهد الأول', Icons.people_outline_rounded)),
@@ -218,22 +249,22 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 32),
                     _buildExecutiveSummary(),
                     const SizedBox(height: 40),
+                    
                     ElevatedButton(
                       onPressed: _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryNavy,
-                        foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 64),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 8,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 4,
                       ),
-                      child: const Text('اعتماد وإصدار العقد للطباعة',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                      child: const Text('اعتماد وإصدار العقد للطباعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -247,22 +278,14 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildFormHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(32, 20, 32, 40),
-      decoration: const BoxDecoration(
-        color: AppColors.primaryNavy,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
-      ),
-      child: Column(
+      padding: const EdgeInsets.all(32),
+      color: AppColors.primaryNavy,
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('نظام إصدار الوثائق التمويلية',
-              style: TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-          const SizedBox(height: 8),
-          const Text('عقد مبايعة سيارة بنظام التقسيط',
-              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text('يرجى مراجعة كافة الشروط المالية قبل الاعتماد النهائي.',
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+          Text('تجهيز عقد جديد', style: TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text('أتمتة العملية المالية والقانونية', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -271,7 +294,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildContractTypeSelector() {
     return Container(
       padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
       child: Row(
         children: [
           _buildTypeOption('installments', 'بيع بالأجل (أقساط)', Icons.history_edu_rounded),
@@ -286,19 +309,15 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     return Expanded(
       child: InkWell(
         onTap: () { setState(() => _contractType = type); _calculateTotals(); },
-        borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryNavy : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(color: isSelected ? AppColors.primaryNavy : Colors.transparent, borderRadius: BorderRadius.circular(12)),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isSelected ? Colors.white : Colors.grey, size: 20),
-              const SizedBox(width: 10),
-              Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontWeight: FontWeight.bold, fontSize: 14)),
+              Icon(icon, color: isSelected ? Colors.white : Colors.grey, size: 18),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -308,23 +327,13 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
 
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
-      ),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.accentGold, size: 22),
-              const SizedBox(width: 16),
-              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-            ],
-          ),
-          const Divider(height: 48),
+          Row(children: [Icon(icon, color: AppColors.accentGold, size: 20), const SizedBox(width: 12), Text(title, style: const TextStyle(fontWeight: FontWeight.bold))]),
+          const Divider(height: 32),
           ...children,
         ],
       ),
@@ -338,11 +347,10 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 20, color: Colors.grey.shade400),
+        prefixIcon: Icon(icon, size: 18),
         filled: true,
-        fillColor: AppColors.bgGrey.withOpacity(0.5),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        fillColor: const Color(0xFFF8F9FA),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
   }
@@ -350,13 +358,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildCustomerDropdown(AsyncValue asyncData) {
     return asyncData.when(
       data: (list) => DropdownButtonFormField<String>(
-        decoration: InputDecoration(
-          labelText: 'العميل المشتري',
-          prefixIcon: const Icon(Icons.person_search_rounded),
-          filled: true,
-          fillColor: AppColors.bgGrey.withOpacity(0.5),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        ),
+        decoration: InputDecoration(labelText: 'العميل المشتري', prefixIcon: const Icon(Icons.person), filled: true, fillColor: const Color(0xFFF8F9FA), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
         items: (list as List).map((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.fullName))).toList(),
         onChanged: (val) => setState(() => _selectedCustomerId = val),
       ),
@@ -368,27 +370,16 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildVehicleDropdown(AsyncValue<List<Vehicle>> asyncData) {
     return asyncData.when(
       data: (list) => DropdownButtonFormField<String>(
-        decoration: InputDecoration(
-          labelText: 'المركبة المختارة من المخزون',
-          prefixIcon: const Icon(Icons.directions_car_rounded),
-          filled: true,
-          fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        ),
-        items: list.map((v) => DropdownMenuItem<String>(
-          value: v.id, 
-          child: Text('${v.make} ${v.model} - لوحة: ${v.licensePlate ?? "-"}')
-        )).toList(),
+        decoration: InputDecoration(labelText: 'المركبة المختارة', prefixIcon: const Icon(Icons.directions_car), filled: true, fillColor: const Color(0xFFF8F9FA), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+        items: list.map((v) => DropdownMenuItem<String>(value: v.id, child: Text('${v.make} ${v.model}'))).toList(),
         onChanged: (val) {
-          setState(() {
-            _selectedVehicleId = val;
-            if (val != null) {
-              // الأتمتة: جلب سعر السيارة المحددة ووضعه في خانة أصل المبلغ
-              final selectedVehicle = list.firstWhere((v) => v.id == val);
-              _principalController.text = selectedVehicle.purchasePrice.toString();
-              _calculateTotals(); // إعادة حساب القيم المالية فوراً
-            }
-          });
+          if (val != null) {
+            final v = list.firstWhere((x) => x.id == val);
+            _principalController.text = v.purchasePrice.toString();
+            _findSmartInvestorSuggestion(v.purchasePrice);
+            _calculateTotals();
+          }
+          setState(() => _selectedVehicleId = val);
         },
       ),
       loading: () => const LinearProgressIndicator(),
@@ -399,32 +390,14 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildExecutiveSummary() {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
     return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF1A294D), AppColors.primaryNavy]),
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: AppColors.primaryNavy.withOpacity(0.3), blurRadius: 20)],
-      ),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: AppColors.primaryNavy, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('إجمالي قيمة مديونية العقد', style: TextStyle(color: Colors.white70, fontSize: 16)),
-              Text('${f.format(_totalValue)} ر.س',
-                  style: const TextStyle(color: AppColors.accentGold, fontSize: 26, fontWeight: FontWeight.bold)),
-            ],
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('إجمالي قيمة مديونية العقد', style: TextStyle(color: Colors.white70)), Text('${f.format(_totalValue)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 24, fontWeight: FontWeight.bold))]),
           if (_contractType == 'installments') ...[
-            const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider(color: Colors.white10)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('قيمة القسط الشهري المتوقعة', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                Text('${f.format(_monthlyInstallment)} ر.س',
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-              ],
-            ),
+            const Divider(color: Colors.white10, height: 32),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('قيمة القسط الشهري', style: TextStyle(color: Colors.white70)), Text('${f.format(_monthlyInstallment)} ر.س', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))]),
           ],
         ],
       ),

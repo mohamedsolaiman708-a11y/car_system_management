@@ -25,7 +25,7 @@ class InvestorDetailsScreen extends ConsumerWidget {
         return DefaultTabController(
           length: 5,
           child: Scaffold(
-            backgroundColor: const Color(0xFFFBFBFD), // خلفية فاتحة جداً مريحة
+            backgroundColor: const Color(0xFFFBFBFD),
             appBar: AppBar(
               backgroundColor: Colors.white,
               elevation: 0,
@@ -108,7 +108,11 @@ class _FinancialTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // البطاقة المالية الجديدة (Balanced & Clean)
+          // --- ميزة "النبض الذكي" (Smart Insight) ---
+          _buildSmartInsightCard(),
+          const SizedBox(height: 24),
+
+          // البطاقة المالية
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(28),
@@ -205,7 +209,7 @@ class _FinancialTab extends ConsumerWidget {
                             color: isPositive ? Colors.green : Colors.red, size: 16),
                       ),
                       title: Text(tx.type.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      subtitle: Text(intl.DateFormat('yyyy/MM/dd • HH:mm').format(tx.createdAt),
+                      subtitle: Text(intl.DateFormat('dd/MM/yyyy • HH:mm').format(tx.createdAt),
                           style: const TextStyle(fontSize: 11, color: Colors.grey)),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -225,6 +229,40 @@ class _FinancialTab extends ConsumerWidget {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Text('خطأ: $err'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmartInsightCard() {
+    // منطق ذكي بسيط: إذا كان المتاح > الموظف، اقترح الاستثمار
+    bool isIdle = investor.availableBalance > investor.deployedCapital;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isIdle ? Colors.amber.shade50 : Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isIdle ? Colors.amber.shade200 : Colors.blue.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(isIdle ? Icons.auto_awesome_rounded : Icons.insights_rounded, 
+               color: isIdle ? Colors.amber.shade800 : Colors.blue.shade800),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(isIdle ? 'توصية ذكية' : 'تحليل المحفظة', 
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isIdle ? Colors.amber.shade900 : Colors.blue.shade900)),
+                Text(isIdle 
+                  ? 'لديك سيولة نقدية متاحة لم تُستثمر بعد. ننصح بتمويل عقود جديدة لرفع العائد المالي.'
+                  : 'محفظتك تعمل بكفاءة عالية. توزيع رأس المال متوازن مع العقود الحالية.',
+                  style: const TextStyle(fontSize: 11, color: Colors.black87, height: 1.4)),
+              ],
+            ),
           ),
         ],
       ),
