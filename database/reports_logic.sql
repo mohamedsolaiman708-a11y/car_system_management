@@ -59,37 +59,37 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
     RETURN QUERY
+    WITH monthly_gross AS (
+        SELECT 
+            to_char(p.payment_date, 'YYYY-MM') as m,
+            SUM(pa.amount_allocated * (inst.profit_component / inst.expected_amount)) as gross
+        FROM public.payments p
+        JOIN public.payment_allocations pa ON p.id = pa.payment_id
+        JOIN public.installments inst ON pa.installment_id = inst.id
+        JOIN public.financing_contracts con ON p.contract_id = con.id
+        LEFT JOIN public.contract_funding cf ON con.id = cf.contract_id
+        WHERE p.payment_date::DATE BETWEEN p_start_date AND p_end_date
+          AND (p_customer_id IS NULL OR con.customer_id = p_customer_id)
+          AND (p_investor_id IS NULL OR cf.investor_id = p_investor_id)
+        GROUP BY 1
+    ),
+    monthly_distributions AS (
+        SELECT 
+            to_char(it.created_at, 'YYYY-MM') as m,
+            SUM(it.amount) as amt
+        FROM public.investor_transactions it 
+        WHERE it.type = 'finance_profit_distribution' 
+          AND it.created_at::DATE BETWEEN p_start_date AND p_end_date
+          AND (p_investor_id IS NULL OR it.investor_id = p_investor_id)
+        GROUP BY 1
+    )
     SELECT 
-        to_char(p.payment_date, 'YYYY-MM') as period_text,
-        SUM(pa.amount_allocated * (inst.profit_component / inst.expected_amount)) as gross_profit,
-        
-        -- حصة المستثمر الموزعة فعلياً في هذه الفترة
-        COALESCE((
-            SELECT SUM(it.amount) 
-            FROM public.investor_transactions it 
-            WHERE it.type = 'finance_profit_distribution' 
-              AND to_char(it.created_at, 'YYYY-MM') = to_char(p.payment_date, 'YYYY-MM')
-              AND (p_investor_id IS NULL OR it.investor_id = p_investor_id)
-        ), 0) as investor_share,
-        
-        SUM(pa.amount_allocated * (inst.profit_component / inst.expected_amount)) - 
-        COALESCE((
-            SELECT SUM(it.amount) 
-            FROM public.investor_transactions it 
-            WHERE it.type = 'finance_profit_distribution' 
-              AND to_char(it.created_at, 'YYYY-MM') = to_char(p.payment_date, 'YYYY-MM')
-              AND (p_investor_id IS NULL OR it.investor_id = p_investor_id)
-        ), 0) as company_net_profit
-
-    FROM public.payments p
-    JOIN public.payment_allocations pa ON p.id = pa.payment_id
-    JOIN public.installments inst ON pa.installment_id = inst.id
-    JOIN public.financing_contracts con ON p.contract_id = con.id
-    LEFT JOIN public.contract_funding cf ON con.id = cf.contract_id
-    WHERE p.payment_date::DATE BETWEEN p_start_date AND p_end_date
-      AND (p_customer_id IS NULL OR con.customer_id = p_customer_id)
-      AND (p_investor_id IS NULL OR cf.investor_id = p_investor_id)
-    GROUP BY 1
+        COALESCE(g.m, d.m) as period_text,
+        COALESCE(g.gross, 0) as gross_profit,
+        COALESCE(d.amt, 0) as investor_share,
+        (COALESCE(g.gross, 0) - COALESCE(d.amt, 0)) as company_net_profit
+    FROM monthly_gross g
+    FULL OUTER JOIN monthly_distributions d ON g.m = d.m
     ORDER BY period_text DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

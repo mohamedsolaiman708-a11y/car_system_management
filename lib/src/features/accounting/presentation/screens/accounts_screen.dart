@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
 import '../accounting_controller.dart';
+import '../../domain/account.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -15,7 +16,7 @@ class AccountsScreen extends ConsumerWidget {
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // لون خلفية كلاسيكي هادئ
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -59,13 +60,13 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildExecutiveFinancialSummary(List<dynamic> accounts) {
+  Widget _buildExecutiveFinancialSummary(List<Account> accounts) {
     double assets = 0, liabilities = 0, equity = 0;
     for (var acc in accounts) {
-      final b = (acc.currentBalance as num?)?.toDouble() ?? 0;
-      if (acc.type.name == 'asset') assets += b;
-      if (acc.type.name == 'liability') liabilities += b;
-      if (acc.type.name == 'equity') equity += b;
+      final b = acc.currentBalance;
+      if (acc.type == 'asset') assets += b;
+      if (acc.type == 'liability') liabilities += b;
+      if (acc.type == 'equity') equity += b;
     }
     
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
@@ -80,7 +81,6 @@ class AccountsScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // الرسم البياني المصغر (Pie Chart) - لا يظهر إلا إذا وجد أرصدة
           if (hasData)
             SizedBox(
               width: 120,
@@ -139,7 +139,7 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildClassicAccountsTable(List<dynamic> accounts) {
+  Widget _buildClassicAccountsTable(List<Account> accounts) {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
     return Container(
       decoration: BoxDecoration(
@@ -158,12 +158,12 @@ class AccountsScreen extends ConsumerWidget {
           DataColumn(label: Text('الرصيد اللحظي', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
         ],
         rows: accounts.map((acc) {
-          final balance = (acc.currentBalance as num?)?.toDouble() ?? 0.0;
+          final balance = acc.currentBalance;
           return DataRow(
             cells: [
               DataCell(Text(acc.code, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.bold))),
               DataCell(Text(acc.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-              DataCell(_buildTypeBadge(acc.type.name)),
+              DataCell(_buildTypeBadge(acc.type)),
               DataCell(Text(f.format(balance), 
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: balance < 0 ? Colors.red : AppColors.primaryNavy))),
             ],
@@ -173,14 +173,14 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildClassicAccountsList(List<dynamic> accounts) {
+  Widget _buildClassicAccountsList(List<Account> accounts) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: accounts.length,
       itemBuilder: (context, index) {
         final acc = accounts[index];
-        final balance = (acc.currentBalance as num?)?.toDouble() ?? 0.0;
+        final balance = acc.currentBalance;
         return Card(
           elevation: 0, margin: const EdgeInsets.only(bottom: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: BorderSide(color: Colors.grey.shade200)),
