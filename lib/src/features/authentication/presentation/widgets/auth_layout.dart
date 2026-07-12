@@ -47,13 +47,13 @@ class AuthLayout extends StatelessWidget {
                     children: [
                       // اللوجو بحجم ملموم واحترافي
                       const BrandLogo(scale: 0.8),
-                      const SizedBox(height: 24), // تقليل المسافة من 48 لـ 24
+                      const SizedBox(height: 24), 
                       // كرت البيانات بتصميم زجاجي رشيق
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 24,
-                        ), // تقليل الـ Padding الداخلي
+                        ), 
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(24),
@@ -75,7 +75,7 @@ class AuthLayout extends StatelessWidget {
                             Text(
                               title,
                               style: const TextStyle(
-                                fontSize: 22, // تصغير العنوان
+                                fontSize: 22, 
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 fontFamily: 'Cairo',
@@ -93,11 +93,21 @@ class AuthLayout extends StatelessWidget {
                                 textAlign: TextAlign.center,
                               ),
                             ],
-                            const SizedBox(height: 24), // مسافة أقل قبل الفورمة
-                            // تغليف المدخلات بالثيم المودرن
+                            const SizedBox(height: 24), 
+                            // تغليف المدخلات بالثيم المودرن وتعديل لون الخط
                             Theme(
                               data: Theme.of(context).copyWith(
                                 inputDecorationTheme: _buildDarkInputTheme(),
+                                // هذا الجزء يضمن أن النص المكتوب سيكون أبيض
+                                textTheme: Theme.of(context).textTheme.copyWith(
+                                  bodyLarge: const TextStyle(color: Colors.white),
+                                  bodyMedium: const TextStyle(color: Colors.white),
+                                ),
+                                textSelectionTheme: const TextSelectionThemeData(
+                                  cursorColor: AppColors.accentGold,
+                                  selectionColor: AppColors.accentGold,
+                                  selectionHandleColor: AppColors.accentGold,
+                                ),
                               ),
                               child: child,
                             ),
@@ -121,12 +131,13 @@ class AuthLayout extends StatelessWidget {
       fillColor: Colors.white.withOpacity(0.05),
       hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
       labelStyle: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+      floatingLabelStyle: const TextStyle(color: AppColors.accentGold, fontSize: 14),
       prefixIconColor: AppColors.accentGold,
       suffixIconColor: AppColors.accentGold,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 12,
-      ), // حقول ملمومة أكثر
+      ), 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),

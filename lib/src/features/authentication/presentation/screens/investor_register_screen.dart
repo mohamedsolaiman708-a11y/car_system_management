@@ -44,8 +44,6 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
         );
 
     if (success && mounted) {
-      // إذا كان موظف، غالباً سيتم توجيهه للـ dashboard مباشرة بواسطة الـ redirect في الراوتر
-      // لأن الـ trigger سيفعله فوراً. أما المستثمر سيذهب لصفحة الانتظار.
       if (widget.type == 'staff') {
         context.go('/dashboard');
       } else {
@@ -58,6 +56,7 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final isStaff = widget.type == 'staff';
+    const inputStyle = TextStyle(color: Colors.white, fontSize: 15);
 
     return AuthLayout(
       title: isStaff ? 'إنشاء حساب موظف' : 'تسجيل مستثمر جديد',
@@ -71,20 +70,20 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
           children: [
             TextFormField(
               controller: _fullNameController,
+              style: inputStyle,
               decoration: const InputDecoration(
                 labelText: 'الاسم الكامل كما في الهوية',
                 prefixIcon: Icon(Icons.person_outline),
-                border: OutlineInputBorder(),
               ),
               validator: (val) => (val == null || val.isEmpty) ? 'هذا الحقل مطلوب' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
+              style: inputStyle,
               decoration: const InputDecoration(
                 labelText: 'البريد الإلكتروني',
                 prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (val) => (val == null || !val.contains('@')) ? 'يرجى إدخال بريد إلكتروني صحيح' : null,
@@ -96,9 +95,9 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
                 Expanded(
                   child: TextFormField(
                     controller: _phoneController,
+                    style: inputStyle,
                     decoration: const InputDecoration(
                       labelText: 'رقم الجوال',
-                      border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (val) => (val == null || val.isEmpty) ? 'مطلوب' : null,
@@ -108,9 +107,9 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
                 Expanded(
                   child: TextFormField(
                     controller: _nationalIdController,
+                    style: inputStyle,
                     decoration: const InputDecoration(
                       labelText: 'رقم الهوية',
-                      border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (val) => (val == null || val.length != 10) ? 'يجب أن يكون 10 أرقام' : null,
@@ -121,10 +120,10 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
+              style: inputStyle,
               decoration: const InputDecoration(
                 labelText: 'كلمة المرور',
                 prefixIcon: Icon(Icons.lock_outline),
-                border: OutlineInputBorder(),
               ),
               obscureText: true,
               validator: (val) => (val == null || val.length < 6) ? 'كلمة المرور قصيرة جداً' : null,
@@ -132,31 +131,33 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
             const SizedBox(height: 16),
             TextFormField(
               controller: _confirmPasswordController,
+              style: inputStyle,
               decoration: const InputDecoration(
                 labelText: 'تأكيد كلمة المرور',
                 prefixIcon: Icon(Icons.lock_reset),
-                border: OutlineInputBorder(),
               ),
               obscureText: true,
               validator: (val) => (val != _passwordController.text) ? 'كلمات المرور غير متطابقة' : null,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             ElevatedButton(
               onPressed: authState.isLoading ? null : _submit,
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 18),
                 backgroundColor: const Color(0xFF1B3A5B),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
               ),
               child: authState.isLoading
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Text(isStaff ? 'تفعيل الحساب والبدء' : 'إنشاء الحساب', 
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             TextButton(
               onPressed: () => context.go(isStaff ? '/auth/staff/login' : '/auth/investor/login'),
+              style: TextButton.styleFrom(foregroundColor: Colors.white70),
               child: const Text('لديك حساب بالفعل؟ سجل دخولك'),
             ),
           ],

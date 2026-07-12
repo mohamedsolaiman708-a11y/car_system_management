@@ -9,7 +9,7 @@ class PortalSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF070B14), // أسود ملكي عميق جداً
+      backgroundColor: const Color(0xFF070B14), 
       body: Stack(
         children: [
           Center(
@@ -33,11 +33,10 @@ class PortalSelectionScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'اختر الهوية المخصصة للمتابعة والوصول إلى الأدوات',
-                    style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
                   ),
                   const SizedBox(height: 60),
                   
-                  // كروت الاختيار بتصميم فاخر (Glassmorphism)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -61,10 +60,10 @@ class PortalSelectionScreen extends StatelessWidget {
                     ],
                   ),
                   
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 70),
                   Text(
                     'نظام السامي لإدارة تمويل السيارات © 2026',
-                    style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 10, letterSpacing: 2),
+                    style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, letterSpacing: 2),
                   ),
                 ],
               ),
@@ -116,7 +115,7 @@ class PortalSelectionScreen extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
             ),
             const SizedBox(height: 24),
             Icon(Icons.arrow_forward_rounded, color: color.withOpacity(0.3), size: 20),
