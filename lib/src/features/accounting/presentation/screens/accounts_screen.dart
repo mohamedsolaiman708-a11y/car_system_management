@@ -183,7 +183,7 @@ class AccountsScreen extends ConsumerWidget {
         final balance = (acc.currentBalance as num?)?.toDouble() ?? 0.0;
         return Card(
           elevation: 0, margin: const EdgeInsets.only(bottom: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.grey.shade200)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: BorderSide(color: Colors.grey.shade200)),
           child: ListTile(
             dense: true,
             title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.bold)),
