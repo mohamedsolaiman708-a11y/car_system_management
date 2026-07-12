@@ -88,7 +88,12 @@ class _PremiumAuditLogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final eventType = log.eventType;
-    final fullName = log.profile?['full_name'] ?? 'نظام آلي';
+    final staffName = log.profile?['full_name'] ?? 'نظام آلي';
+    
+    // استخراج اسم المستثمر بأسلوب "بريميوم"
+    final String? investorName = log.newValues?['المستثمر'] ?? 
+                                 log.newValues?['investor'] ?? 
+                                 log.newValues?['للمستثمر'];
 
     Color eventColor;
     IconData eventIcon;
@@ -140,16 +145,20 @@ class _PremiumAuditLogCard extends StatelessWidget {
                         children: [
                           Text(_formatEventType(eventType),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.bgGrey, borderRadius: BorderRadius.circular(6)),
-                            child: Text(log.tableName, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-                          ),
+                          if (investorName != null) ...[
+                            const SizedBox(width: 12),
+                            _buildPremiumInvestorBadge(investorName),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text('بواسطة: $fullName', style: const TextStyle(fontSize: 12, color: AppColors.primaryNavy)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.person_outline_rounded, size: 12, color: Colors.grey.shade400),
+                          const SizedBox(width: 4),
+                          Text('بواسطة: $staffName', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -172,6 +181,28 @@ class _PremiumAuditLogCard extends StatelessWidget {
     );
   }
 
+  Widget _buildPremiumInvestorBadge(String name) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.accentGold.withOpacity(0.2), AppColors.accentGold.withOpacity(0.05)],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.accentGold.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded, size: 10, color: AppColors.primaryNavy),
+          const SizedBox(width: 4),
+          Text(name, 
+            style: const TextStyle(fontSize: 10, color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
   String _formatEventType(String type) {
     return type
         .replaceAll('_', ' ')
@@ -182,7 +213,7 @@ class _PremiumAuditLogCard extends StatelessWidget {
         .replaceAll('CUSTOMER', 'عميل')
         .replaceAll('VEHICLE', 'سيارة')
         .replaceAll('PAYMENT', 'عملية دفع')
-        .replaceAll('INVESTOR DEPOSIT', 'إيداع رأس مال')
+        .replaceAll('INVESTOR DEPOSIT', 'إيداع مالي')
         .replaceAll('INVESTOR WITHDRAWAL', 'سحب مالي')
         .replaceAll('PROFIT DISTRIBUTION', 'توزيع أرباح');
   }
@@ -217,7 +248,7 @@ class _PremiumAuditLogCard extends StatelessWidget {
                           _buildValueBox('القيم السابقة', log.oldValues!),
                           const SizedBox(height: 20),
                         ],
-                        _buildValueBox('تفاصيل الإجراء الجديد', log.newValues ?? {}, isNew: true),
+                        _buildValueBox('بيانات الحركة الحالية', log.newValues ?? {}, isNew: true),
                       ],
                     ),
                   ),
@@ -244,6 +275,11 @@ class _PremiumAuditLogCard extends StatelessWidget {
   }
 
   Widget _buildValueBox(String label, Map<String, dynamic> values, {bool isNew = false}) {
+    final filteredEntries = values.entries.where((e) {
+      if (e.key == 'investor_id' && (values.containsKey('investor') || values.containsKey('المستثمر'))) return false;
+      return true;
+    }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -259,11 +295,13 @@ class _PremiumAuditLogCard extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: values.entries.map((e) => Padding(
+            children: filteredEntries.map((e) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${_translateKey(e.key)}: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text('${e.key}: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  const SizedBox(width: 8),
                   Expanded(child: Text('${e.value}', style: TextStyle(color: isNew ? Colors.green.shade900 : Colors.black87, fontSize: 12))),
                 ],
               ),
@@ -272,22 +310,5 @@ class _PremiumAuditLogCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _translateKey(String key) {
-    switch (key) {
-      case 'amount': return 'المبلغ';
-      case 'المبلغ': return 'المبلغ';
-      case 'description': return 'البيان';
-      case 'البيان': return 'البيان';
-      case 'performed_by': return 'الموظف المسؤول';
-      case 'بواسطة الموظف': return 'الموظف المسؤول';
-      case 'investor': return 'المستثمر';
-      case 'للمستثمر': return 'المستثمر';
-      case 'transaction_id': return 'رقم المعاملة';
-      case 'transaction_type': return 'نوع العملية';
-      case 'balance_after': return 'الرصيد بعد العملية';
-      default: return key;
-    }
   }
 }
