@@ -29,6 +29,8 @@ mixin _$InvestorTransaction {
   @JsonKey(name: 'reference_id')
   String? get referenceId => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  @JsonKey(name: 'recorded_by_name')
+  String? get recordedByName => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
 
@@ -56,6 +58,7 @@ abstract class $InvestorTransactionCopyWith<$Res> {
     InvestorTransactionType type,
     @JsonKey(name: 'reference_id') String? referenceId,
     String? description,
+    @JsonKey(name: 'recorded_by_name') String? recordedByName,
     @JsonKey(name: 'created_at') DateTime createdAt,
   });
 }
@@ -81,6 +84,7 @@ class _$InvestorTransactionCopyWithImpl<$Res, $Val extends InvestorTransaction>
     Object? type = null,
     Object? referenceId = freezed,
     Object? description = freezed,
+    Object? recordedByName = freezed,
     Object? createdAt = null,
   }) {
     return _then(
@@ -109,6 +113,10 @@ class _$InvestorTransactionCopyWithImpl<$Res, $Val extends InvestorTransaction>
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
                       as String?,
+            recordedByName: freezed == recordedByName
+                ? _value.recordedByName
+                : recordedByName // ignore: cast_nullable_to_non_nullable
+                      as String?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -135,6 +143,7 @@ abstract class _$$InvestorTransactionImplCopyWith<$Res>
     InvestorTransactionType type,
     @JsonKey(name: 'reference_id') String? referenceId,
     String? description,
+    @JsonKey(name: 'recorded_by_name') String? recordedByName,
     @JsonKey(name: 'created_at') DateTime createdAt,
   });
 }
@@ -159,6 +168,7 @@ class __$$InvestorTransactionImplCopyWithImpl<$Res>
     Object? type = null,
     Object? referenceId = freezed,
     Object? description = freezed,
+    Object? recordedByName = freezed,
     Object? createdAt = null,
   }) {
     return _then(
@@ -187,6 +197,10 @@ class __$$InvestorTransactionImplCopyWithImpl<$Res>
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
                   as String?,
+        recordedByName: freezed == recordedByName
+            ? _value.recordedByName
+            : recordedByName // ignore: cast_nullable_to_non_nullable
+                  as String?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -206,6 +220,7 @@ class _$InvestorTransactionImpl implements _InvestorTransaction {
     required this.type,
     @JsonKey(name: 'reference_id') this.referenceId,
     this.description,
+    @JsonKey(name: 'recorded_by_name') this.recordedByName,
     @JsonKey(name: 'created_at') required this.createdAt,
   });
 
@@ -227,12 +242,15 @@ class _$InvestorTransactionImpl implements _InvestorTransaction {
   @override
   final String? description;
   @override
+  @JsonKey(name: 'recorded_by_name')
+  final String? recordedByName;
+  @override
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   @override
   String toString() {
-    return 'InvestorTransaction(id: $id, investorId: $investorId, amount: $amount, type: $type, referenceId: $referenceId, description: $description, createdAt: $createdAt)';
+    return 'InvestorTransaction(id: $id, investorId: $investorId, amount: $amount, type: $type, referenceId: $referenceId, description: $description, recordedByName: $recordedByName, createdAt: $createdAt)';
   }
 
   @override
@@ -249,6 +267,8 @@ class _$InvestorTransactionImpl implements _InvestorTransaction {
                 other.referenceId == referenceId) &&
             (identical(other.description, description) ||
                 other.description == description) &&
+            (identical(other.recordedByName, recordedByName) ||
+                other.recordedByName == recordedByName) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
@@ -263,6 +283,7 @@ class _$InvestorTransactionImpl implements _InvestorTransaction {
     type,
     referenceId,
     description,
+    recordedByName,
     createdAt,
   );
 
@@ -291,6 +312,7 @@ abstract class _InvestorTransaction implements InvestorTransaction {
     required final InvestorTransactionType type,
     @JsonKey(name: 'reference_id') final String? referenceId,
     final String? description,
+    @JsonKey(name: 'recorded_by_name') final String? recordedByName,
     @JsonKey(name: 'created_at') required final DateTime createdAt,
   }) = _$InvestorTransactionImpl;
 
@@ -311,6 +333,9 @@ abstract class _InvestorTransaction implements InvestorTransaction {
   String? get referenceId;
   @override
   String? get description;
+  @override
+  @JsonKey(name: 'recorded_by_name')
+  String? get recordedByName;
   @override
   @JsonKey(name: 'created_at')
   DateTime get createdAt;

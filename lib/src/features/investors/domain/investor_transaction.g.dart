@@ -15,6 +15,7 @@ _$InvestorTransactionImpl _$$InvestorTransactionImplFromJson(
   type: $enumDecode(_$InvestorTransactionTypeEnumMap, json['type']),
   referenceId: json['reference_id'] as String?,
   description: json['description'] as String?,
+  recordedByName: json['recorded_by_name'] as String?,
   createdAt: DateTime.parse(json['created_at'] as String),
 );
 
@@ -27,6 +28,7 @@ Map<String, dynamic> _$$InvestorTransactionImplToJson(
   'type': _$InvestorTransactionTypeEnumMap[instance.type]!,
   'reference_id': instance.referenceId,
   'description': instance.description,
+  'recorded_by_name': instance.recordedByName,
   'created_at': instance.createdAt.toIso8601String(),
 };
 
