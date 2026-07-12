@@ -18,7 +18,7 @@ class SupabaseReportRepository implements ReportRepository {
     final response = await _client.rpc('get_revenue_report', params: {
       'p_start_date': startDate.toIso8601String().split('T')[0],
       'p_end_date': endDate.toIso8601String().split('T')[0],
-      if (investorId != null) 'p_investor_id': investorId,
+      'p_investor_id': investorId, // نرسلها دائماً حتى لو كانت null لحل مشكلة الـ Overloading
     });
     return List<Map<String, dynamic>>.from(response as List);
   }
@@ -33,8 +33,8 @@ class SupabaseReportRepository implements ReportRepository {
     final response = await _client.rpc('get_profit_report', params: {
       'p_start_date': startDate.toIso8601String().split('T')[0],
       'p_end_date': endDate.toIso8601String().split('T')[0],
-      if (investorId != null) 'p_investor_id': investorId,
-      if (customerId != null) 'p_customer_id': customerId,
+      'p_investor_id': investorId, // نرسلها دائماً
+      'p_customer_id': customerId, // نرسلها دائماً
     });
     return List<Map<String, dynamic>>.from(response as List);
   }
@@ -48,7 +48,7 @@ class SupabaseReportRepository implements ReportRepository {
     final response = await _client.rpc('get_cash_flow_report', params: {
       'p_start_date': startDate.toIso8601String().split('T')[0],
       'p_end_date': endDate.toIso8601String().split('T')[0],
-      if (investorId != null) 'p_investor_id': investorId,
+      'p_investor_id': investorId, // نرسلها دائماً
     });
     return List<Map<String, dynamic>>.from(response as List);
   }

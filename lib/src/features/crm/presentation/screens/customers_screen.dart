@@ -18,275 +18,142 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final customersAsync = ref.watch(
-      customersListProvider(searchQuery: searchQuery),
-    );
+    final customersAsync = ref.watch(customersListProvider(searchQuery: searchQuery));
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: AppColors.bgGrey,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(140),
-        child: Container(
-          color: AppColors.primaryNavy,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: _buildPremiumHeader(),
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('دليل العملاء والتمويل', 
+          style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 18)),
+        actions: [
+          if (isDesktop)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ElevatedButton.icon(
+                onPressed: () => context.push('/crm/customers/new'),
+                icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
+                label: const Text('إضافة عميل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryNavy,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
             ),
-          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: Colors.grey.shade200),
         ),
       ),
       body: Column(
         children: [
-          // شريط البحث والفلاتر
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: _buildModernSearchSection(),
-          ),
-          
+          _buildCompactSearchBar(),
           Expanded(
             child: customersAsync.when(
               data: (customers) => customers.isEmpty 
                 ? _buildEmptyState()
-                : isDesktop 
-                    ? _buildPremiumTable(customers)
-                    : _buildPremiumGrid(customers),
+                : _buildClassicTable(customers),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('حدث خطأ: $err')),
+              error: (err, _) => Center(child: Text('حدث خطأ في تحميل البيانات')),
             ),
           ),
         ],
       ),
-      floatingActionButton: !isDesktop
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/crm/customers/new'),
-              backgroundColor: AppColors.accentGold,
-              foregroundColor: AppColors.primaryNavy,
-              icon: const Icon(Icons.person_add_alt_1_rounded),
-              label: const Text('إضافة عميل', style: TextStyle(fontWeight: FontWeight.bold)),
-            )
-          : null,
     );
   }
 
-  Widget _buildPremiumHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'إدارة علاقات العملاء (CRM)',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'متابعة الملفات الشخصية، الجدارة الائتمانية، والنشاط التعاقدي',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
-            ),
-          ],
-        ),
-        if (ResponsiveLayout.isDesktop(context))
-          ElevatedButton.icon(
-            onPressed: () => context.push('/crm/customers/new'),
-            icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-            label: const Text('إضافة عميل جديد'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accentGold,
-              foregroundColor: AppColors.primaryNavy,
-              minimumSize: const Size(200, 54),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildModernSearchSection() {
+  Widget _buildCompactSearchBar() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10)],
-      ),
+      padding: const EdgeInsets.all(12),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              onChanged: (val) => setState(() => searchQuery = val),
-              decoration: InputDecoration(
-                hintText: 'بحث باسم العميل، الهوية، أو رقم الهاتف...',
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
-                filled: true,
-                fillColor: AppColors.bgGrey.withOpacity(0.5),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            child: Container(
+              height: 36,
+              decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(4)),
+              child: TextField(
+                onChanged: (val) => setState(() => searchQuery = val),
+                style: const TextStyle(fontSize: 13),
+                decoration: const InputDecoration(hintText: 'بحث...', prefixIcon: Icon(Icons.search, size: 14), border: InputBorder.none, contentPadding: EdgeInsets.zero),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          _buildToolButton(Icons.filter_list_rounded, 'تصفية', () {}),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           _buildExportMenu(),
         ],
       ),
     );
   }
 
-  Widget _buildPremiumTable(List<dynamic> customers) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: SingleChildScrollView(
-          child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.02)),
-            dataRowHeight: 80,
-            headingRowHeight: 60,
-            columns: const [
-              DataColumn(label: Text('ملف العميل', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
-              DataColumn(label: Text('رقم الهوية', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
-              DataColumn(label: Text('الاتصال', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
-              DataColumn(label: Text('المخاطر', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
-              DataColumn(label: Text('الإجراءات', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
-            ],
-            rows: customers.map((c) => DataRow(
-              cells: [
-                DataCell(Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: AppColors.primaryNavy.withOpacity(0.05),
-                      child: Text(c.fullName.isNotEmpty ? c.fullName[0] : '?',
-                          style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(c.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  ],
-                )),
-                DataCell(Text(c.nationalId, style: const TextStyle(letterSpacing: 1.2))),
-                DataCell(Row(
-                  children: [
-                    const Icon(Icons.phone_outlined, size: 14, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Text(c.phone),
-                  ],
-                )),
-                DataCell(_buildRiskBadge(c.riskRating)),
-                DataCell(IconButton(
-                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primaryNavy),
-                  onPressed: () => context.push('/crm/customers/${c.id}'),
-                )),
-              ],
-            )).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPremiumGrid(List<dynamic> customers) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      itemCount: customers.length,
-      itemBuilder: (context, index) {
-        final c = customers[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: CircleAvatar(
-              backgroundColor: AppColors.bgGrey,
-              child: Text(c.fullName.isNotEmpty ? c.fullName[0] : '?'),
-            ),
-            title: Text(c.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(c.phone),
-            trailing: _buildRiskBadge(c.riskRating),
-            onTap: () => context.push('/crm/customers/${c.id}'),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildRiskBadge(String rating) {
-    Color color = AppColors.successGreen;
-    String label = 'منخفضة';
-    if (rating == 'medium') { color = Colors.orange; label = 'متوسطة'; }
-    if (rating == 'high') { color = AppColors.errorRed; label = 'عالية'; }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _buildToolButton(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Icon(icon, size: 20, color: AppColors.primaryNavy),
-      ),
-    );
-  }
-
   Widget _buildExportMenu() {
     return PopupMenuButton<String>(
-      offset: const Offset(0, 50),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: const Icon(Icons.download_rounded, size: 20, color: AppColors.primaryNavy),
-      ),
-      onSelected: (val) => _handleExport(val),
+      tooltip: 'تصدير البيانات',
+      icon: const Icon(Icons.download_rounded, size: 18, color: AppColors.primaryNavy),
+      onSelected: _handleExport,
       itemBuilder: (context) => [
-        const PopupMenuItem(value: 'pdf', child: Text('تصدير بصيغة PDF')),
-        const PopupMenuItem(value: 'excel', child: Text('تصدير بصيغة Excel')),
+        const PopupMenuItem(value: 'pdf', child: Text('تصدير PDF')),
+        const PopupMenuItem(value: 'excel', child: Text('تصدير Excel')),
       ],
     );
   }
 
   Future<void> _handleExport(String format) async {
-    // منطق التصدير كما هو
+    final customers = ref.read(customersListProvider(searchQuery: searchQuery)).valueOrNull ?? [];
+    if (customers.isEmpty) return;
+
+    final exportService = ref.read(exportServiceProvider);
+    final columns = ['الاسم', 'رقم الهوية', 'الجوال', 'المخاطر'];
+    final exportData = customers.map((c) => {
+      'full_name': c.fullName,
+      'national_id': c.nationalId,
+      'phone': c.phone,
+      'risk': c.riskRating,
+    }).toList();
+
+    if (format == 'pdf') {
+      await exportService.exportToPdf(
+        title: 'قائمة العملاء',
+        columns: columns,
+        rows: exportData.map((e) => [e['full_name'], e['national_id'], e['phone'], e['risk']]).toList(),
+      );
+    } else {
+      await exportService.exportToExcel(fileName: 'العملاء', columns: columns, data: exportData, dataKeys: ['full_name', 'national_id', 'phone', 'risk']);
+    }
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person_search_rounded, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          const Text('لا يوجد عملاء مسجلون حالياً', style: TextStyle(color: Colors.grey, fontSize: 16)),
-        ],
+  Widget _buildClassicTable(List<dynamic> customers) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(4)),
+      child: SingleChildScrollView(
+        child: DataTable(
+          headingRowHeight: 40,
+          dataRowHeight: 50,
+          horizontalMargin: 16,
+          headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+          columns: const [
+            DataColumn(label: Text('الاسم', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('الهوية', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('الجوال', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('إجراء', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+          ],
+          rows: customers.map((c) => DataRow(
+            cells: [
+              DataCell(Text(c.fullName, style: const TextStyle(fontSize: 13))),
+              DataCell(Text(c.nationalId, style: const TextStyle(fontSize: 12))),
+              DataCell(Text(c.phone, style: const TextStyle(fontSize: 12))),
+              DataCell(IconButton(icon: const Icon(Icons.open_in_new_rounded, size: 16, color: Colors.blue), onPressed: () => context.push('/crm/customers/${c.id}'))),
+            ],
+          )).toList(),
+        ),
       ),
     );
   }
+
+  Widget _buildEmptyState() => const Center(child: Text('لا توجد بيانات', style: TextStyle(color: Colors.grey)));
 }

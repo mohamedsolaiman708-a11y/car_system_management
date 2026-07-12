@@ -39,133 +39,92 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1227),
-      body: Row(
-        children: [
-          if (MediaQuery.of(context).size.width > 900)
-            Expanded(
-              flex: 3,
-              child: Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/login_bg.jpg'), 
-                    fit: BoxFit.cover,
-                    opacity: 0.4,
-                  ),
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0A1227), Colors.transparent],
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft,
-                  ),
-                ),
-                child: const Center(
-                  child: BrandLogo(scale: 1.5),
-                ),
-              ),
-            ),
-          
-          Expanded(
-            flex: 2,
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(40),
-              child: Center(
-                child: SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (MediaQuery.of(context).size.width <= 900) ...[
-                          const BrandLogo(scale: 0.8), 
-                          const SizedBox(height: 40),
-                        ],
-                        const Text(
-                          'بوابة الموظفين',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryNavy,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'أهلاً بك مجدداً، يرجى تسجيل الدخول للمتابعة',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 40),
-                        TextField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'البريد الإلكتروني',
-                            prefixIcon: Icon(Icons.email_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'كلمة المرور',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            onPressed: () => context.push('/auth/forgot-password'),
-                            child: const Text('نسيت كلمة المرور؟'),
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        ElevatedButton(
-                          onPressed: authState.isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryNavy,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: authState.isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text('دخول النظام', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('لديك دعوة عمل؟'),
-                            TextButton(
-                              onPressed: () => context.push('/auth/register?type=staff'), // إرسال نوع "موظف"
-                              child: const Text('أنشئ حسابك الآن', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          onPressed: () => context.go('/portal-selection'),
-                          icon: const Icon(Icons.arrow_back),
-                          label: const Text('العودة لاختيار البوابة'),
-                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+      backgroundColor: const Color(0xFFF1F3F6), // خلفية كلاسيكية فاتحة
+      body: Center(
+        child: Container(
+          width: 450,
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15)],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const BrandLogo(scale: 0.8),
+              const SizedBox(height: 40),
+              const Text(
+                'بوابة الموظفين والعمليات',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryNavy),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'يرجى تسجيل الدخول للوصول إلى لوحة التحكم',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              _buildTextField(_emailController, 'البريد الإلكتروني', Icons.email_outlined),
+              const SizedBox(height: 20),
+              _buildTextField(_passwordController, 'كلمة المرور', Icons.lock_outline, isPassword: true),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => context.push('/auth/forgot-password'),
+                  child: const Text('نسيت كلمة المرور؟', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: authState.isLoading ? null : _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryNavy,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                child: authState.isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('دخول النظام', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: () => context.go('/portal-selection'),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.grey.shade300),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                child: const Text('العودة لاختيار البوابة', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isPassword = false}) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword && _obscurePassword,
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 13),
+        prefixIcon: Icon(icon, size: 18),
+        suffixIcon: isPassword ? IconButton(
+          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, size: 18),
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+        ) : null,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
     );
   }

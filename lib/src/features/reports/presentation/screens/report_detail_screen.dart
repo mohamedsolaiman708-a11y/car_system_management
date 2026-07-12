@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
-import '../../../../core/services/export_service.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/services/export_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ReportDetailScreen extends ConsumerWidget {
   final String title;
@@ -20,94 +20,100 @@ class ReportDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
-        appBar: AppBar(
-          title: Text(title),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_rounded),
-              tooltip: 'تصدير PDF',
-              onPressed: () => _exportPdf(ref),
-            ),
-            IconButton(
-              icon: const Icon(Icons.table_view_rounded), // أيقونة إكسل احترافية
-              tooltip: 'تصدير Excel',
-              onPressed: () => _exportExcel(ref),
-            ),
-            const SizedBox(width: 8),
-          ],
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primaryNavy),
+          onPressed: () => Navigator.pop(context),
         ),
-        body: data.isEmpty
-            ? const Center(child: Text('لا توجد بيانات متوفرة لهذا التقرير حالياً'))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.05)),
-                        columns: columns.map((c) => DataColumn(label: Text(c, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
-                        rows: data.map((item) {
-                          return DataRow(
-                            cells: dataKeys.map((key) {
-                              final val = _getProperty(item, key);
-                              return DataCell(Text(val.toString()));
-                            }).toList(),
-                          );
-                        }).toList(),
-                      ),
-                    ),
+        title: Text(title, style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 16)),
+        actions: [
+          _buildExportButton(context, ref),
+          const SizedBox(width: 16),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: Colors.grey.shade200),
+        ),
+      ),
+      body: data.isEmpty
+          ? const Center(child: Text('لا توجد بيانات لعرضها في هذا التقرير'))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    headingRowHeight: 45,
+                    dataRowHeight: 45,
+                    headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+                    columns: columns.map((col) => DataColumn(
+                      label: Text(col, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    )).toList(),
+                    rows: data.map((row) => DataRow(
+                      cells: dataKeys.map((key) {
+                        final value = _getNestedValue(row, key);
+                        return DataCell(
+                          Text(_formatValue(value, f), style: const TextStyle(fontSize: 12)),
+                        );
+                      }).toList(),
+                    )).toList(),
                   ),
                 ),
               ),
-      ),
+            ),
     );
   }
 
-  dynamic _getProperty(Map<String, dynamic> item, String key) {
-    // دعم الوصول للخصائص المتداخلة بذكاء
-    if (item == null) return '-';
-    if (!key.contains('.')) return item[key] ?? '-';
+  Widget _buildExportButton(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.print_rounded, color: AppColors.primaryNavy, size: 20),
+      tooltip: 'تصدير وطباعة',
+      onSelected: (val) => _handleExport(context, ref, val),
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'pdf', child: Text('تصدير بصيغة PDF')),
+        const PopupMenuItem(value: 'excel', child: Text('تصدير بصيغة Excel')),
+      ],
+    );
+  }
 
-    final parts = key.split('.');
-    dynamic current = item;
+  dynamic _getNestedValue(Map<String, dynamic> row, String path) {
+    if (!path.contains('.')) return row[path];
+    final parts = path.split('.');
+    dynamic current = row;
     for (var part in parts) {
       if (current is Map) {
         current = current[part];
       } else {
-        return '-';
+        return null;
       }
     }
-    return current ?? '-';
+    return current;
   }
 
-  void _exportPdf(WidgetRef ref) {
-    ref.read(exportServiceProvider).exportToPdf(
-      title: title,
-      columns: columns,
-      rows: data.map((item) => dataKeys.map((key) => _getProperty(item, key).toString()).toList()).toList(),
-    );
+  String _formatValue(dynamic value, intl.NumberFormat f) {
+    if (value == null) return '-';
+    if (value is num) return f.format(value);
+    return value.toString();
   }
 
-  void _exportExcel(WidgetRef ref) {
-    // تم التحديث ليتوافق مع خدمة التصدير الجديدة التي تعالج الـ Nested Data تلقائياً
-    ref.read(exportServiceProvider).exportToExcel(
-      fileName: title,
-      columns: columns,
-      data: data,
-      dataKeys: dataKeys,
-    );
+  Future<void> _handleExport(BuildContext context, WidgetRef ref, String format) async {
+    final exportService = ref.read(exportServiceProvider);
+    if (format == 'pdf') {
+      final rows = data.map((row) => dataKeys.map((key) => _formatValue(_getNestedValue(row, key), intl.NumberFormat())).toList()).toList();
+      await exportService.exportToPdf(title: title, columns: columns, rows: rows);
+    } else {
+      await exportService.exportToExcel(fileName: title, columns: columns, data: data, dataKeys: dataKeys);
+    }
   }
 }
