@@ -93,13 +93,13 @@ class _PremiumAuditLogCard extends StatelessWidget {
     Color eventColor;
     IconData eventIcon;
 
-    if (eventType.contains('CREATED')) {
+    if (eventType.contains('CREATED') || eventType.contains('DEPOSIT')) {
       eventColor = Colors.green;
       eventIcon = Icons.add_circle_outline_rounded;
     } else if (eventType.contains('UPDATED')) {
       eventColor = Colors.blue;
       eventIcon = Icons.edit_note_rounded;
-    } else if (eventType.contains('DELETED')) {
+    } else if (eventType.contains('DELETED') || eventType.contains('WITHDRAWAL')) {
       eventColor = Colors.red;
       eventIcon = Icons.delete_forever_rounded;
     } else {
@@ -181,7 +181,10 @@ class _PremiumAuditLogCard extends StatelessWidget {
         .replaceAll('CONTRACT', 'عقد')
         .replaceAll('CUSTOMER', 'عميل')
         .replaceAll('VEHICLE', 'سيارة')
-        .replaceAll('PAYMENT', 'عملية دفع');
+        .replaceAll('PAYMENT', 'عملية دفع')
+        .replaceAll('INVESTOR DEPOSIT', 'إيداع رأس مال')
+        .replaceAll('INVESTOR WITHDRAWAL', 'سحب مالي')
+        .replaceAll('PROFIT DISTRIBUTION', 'توزيع أرباح');
   }
 
   void _showLogDetails(BuildContext context, AuditLog log) {
@@ -198,15 +201,23 @@ class _PremiumAuditLogCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('تفاصيل العملية التقنية', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    const Icon(Icons.analytics_outlined, color: AppColors.primaryNavy),
+                    const SizedBox(width: 12),
+                    const Text('تفاصيل العملية الرقابية', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  ],
+                ),
                 const Divider(height: 32),
                 Flexible(
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        _buildValueBox('القيم السابقة', log.oldValues),
-                        const SizedBox(height: 20),
-                        _buildValueBox('القيم الجديدة', log.newValues, isNew: true),
+                        if (log.oldValues != null && log.oldValues!.isNotEmpty) ...[
+                          _buildValueBox('القيم السابقة', log.oldValues!),
+                          const SizedBox(height: 20),
+                        ],
+                        _buildValueBox('تفاصيل الإجراء الجديد', log.newValues ?? {}, isNew: true),
                       ],
                     ),
                   ),
@@ -215,8 +226,13 @@ class _PremiumAuditLogCard extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryNavy,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('إغلاق السجل'),
+                    child: const Text('إغلاق السجل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -227,7 +243,7 @@ class _PremiumAuditLogCard extends StatelessWidget {
     );
   }
 
-  Widget _buildValueBox(String label, Map<String, dynamic>? values, {bool isNew = false}) {
+  Widget _buildValueBox(String label, Map<String, dynamic> values, {bool isNew = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -237,16 +253,41 @@ class _PremiumAuditLogCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isNew ? Colors.green.withOpacity(0.02) : AppColors.bgGrey,
+            color: isNew ? Colors.green.withOpacity(0.05) : AppColors.bgGrey,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isNew ? Colors.green.withOpacity(0.1) : Colors.grey.shade200),
           ),
-          child: Text(
-            values?.entries.map((e) => '${e.key}: ${e.value}').join('\n') ?? 'لا يوجد بيانات',
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 11, height: 1.5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: values.entries.map((e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Row(
+                children: [
+                  Text('${_translateKey(e.key)}: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  Expanded(child: Text('${e.value}', style: TextStyle(color: isNew ? Colors.green.shade900 : Colors.black87, fontSize: 12))),
+                ],
+              ),
+            )).toList(),
           ),
         ),
       ],
     );
+  }
+
+  String _translateKey(String key) {
+    switch (key) {
+      case 'amount': return 'المبلغ';
+      case 'المبلغ': return 'المبلغ';
+      case 'description': return 'البيان';
+      case 'البيان': return 'البيان';
+      case 'performed_by': return 'الموظف المسؤول';
+      case 'بواسطة الموظف': return 'الموظف المسؤول';
+      case 'investor': return 'المستثمر';
+      case 'للمستثمر': return 'المستثمر';
+      case 'transaction_id': return 'رقم المعاملة';
+      case 'transaction_type': return 'نوع العملية';
+      case 'balance_after': return 'الرصيد بعد العملية';
+      default: return key;
+    }
   }
 }

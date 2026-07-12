@@ -68,6 +68,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       'p_investor_id': investorId,
       'p_amount': amount,
       'p_description': description,
+      'p_idempotency_key': null, // تمرير null لفك اشتباك الدوال في Postgres
     });
   }
 
@@ -77,6 +78,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       'p_investor_id': investorId,
       'p_amount': amount,
       'p_description': description,
+      'p_idempotency_key': null,
     });
   }
 
@@ -92,7 +94,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
     try {
-      // نجلب الكل بدون فلترة Join معقدة لضمان رؤية حسين لبيب ومحمد سليمان
       final response = await _client
           .from('profiles')
           .select('*, roles(slug)');
@@ -112,7 +113,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
           roleSlug = roleData[0]['slug'];
         }
 
-        // أي شخص حالته pending ودوره إما مستثمر أو غير محدد (كما في حالتك)
         final isInvestorType = roleSlug == null || roleSlug == 'investor';
         final isPendingStatus = status == 'pending' || status == 'waiting' || status == '';
         
@@ -177,6 +177,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       'p_investor_id': investorId,
       'p_amount': amount,
       'p_description': description,
+      'p_idempotency_key': null,
     });
   }
 

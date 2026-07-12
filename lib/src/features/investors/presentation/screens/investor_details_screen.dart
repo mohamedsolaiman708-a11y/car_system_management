@@ -109,7 +109,6 @@ class _FinancialTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // لوحة الأرصدة الرئيسية (Credit Card Style)
           Container(
             height: 180,
             decoration: BoxDecoration(
@@ -169,7 +168,6 @@ class _FinancialTab extends ConsumerWidget {
 
           const SizedBox(height: 32),
 
-          // شريط الأدوات التنفيذية
           Row(
             children: [
               const Text('سجل المعاملات', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
@@ -180,7 +178,6 @@ class _FinancialTab extends ConsumerWidget {
                   backgroundColor: AppColors.successGreen,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  minimumSize: const Size(0, 45),
                 ),
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('إيداع رأس مال'),
@@ -192,7 +189,6 @@ class _FinancialTab extends ConsumerWidget {
                   foregroundColor: AppColors.errorRed,
                   side: const BorderSide(color: AppColors.errorRed),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  minimumSize: const Size(0, 45),
                 ),
                 icon: const Icon(Icons.outbox_rounded),
                 label: const Text('سحب أرباح'),
@@ -202,7 +198,6 @@ class _FinancialTab extends ConsumerWidget {
 
           const SizedBox(height: 20),
 
-          // قائمة العمليات بتصميم فاخر
           transactionsAsync.when(
             data: (txs) {
               if (txs.isEmpty) {
@@ -234,7 +229,7 @@ class _FinancialTab extends ConsumerWidget {
                     final tx = txs[index];
                     final isPositive = tx.amount > 0;
                     return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       leading: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
@@ -244,9 +239,23 @@ class _FinancialTab extends ConsumerWidget {
                         child: Icon(isPositive ? Icons.south_west_rounded : Icons.north_east_rounded,
                             color: isPositive ? Colors.green : Colors.red, size: 20),
                       ),
-                      title: Text(tx.type.label, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(intl.DateFormat('dd MMMM yyyy • HH:mm', 'ar').format(tx.createdAt),
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      title: Row(
+                        children: [
+                          Text(tx.type.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 8),
+                          if (tx.description != null && tx.description!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(color: AppColors.bgGrey, borderRadius: BorderRadius.circular(6)),
+                              child: Text(tx.description!, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            ),
+                        ],
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(intl.DateFormat('dd MMMM yyyy • HH:mm', 'ar').format(tx.createdAt),
+                            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -254,8 +263,10 @@ class _FinancialTab extends ConsumerWidget {
                           Text('${isPositive ? "+" : ""}${f.format(tx.amount)} ر.س',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16,
                                   color: isPositive ? Colors.green : Colors.red)),
-                          if (tx.description != null && tx.description!.isNotEmpty)
-                            Text(tx.description!, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          const SizedBox(height: 2),
+                          // عرض اسم الموظف المسؤول عن العملية (الشفافية)
+                          Text('بواسطة: ${tx.recordedByName ?? "الإدارة"}', 
+                            style: const TextStyle(fontSize: 9, color: AppColors.primaryNavy, fontWeight: FontWeight.w500)),
                         ],
                       ),
                     );

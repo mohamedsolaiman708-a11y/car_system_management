@@ -13,6 +13,7 @@ class InvestorTransaction with _$InvestorTransaction {
     required InvestorTransactionType type,
     @JsonKey(name: 'reference_id') String? referenceId,
     String? description,
+    @JsonKey(name: 'recorded_by_name') String? recordedByName,
     @JsonKey(name: 'created_at') required DateTime createdAt,
   }) = _InvestorTransaction;
 
