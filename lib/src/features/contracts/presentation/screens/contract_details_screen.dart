@@ -306,8 +306,8 @@ class _InstallmentsTab extends ConsumerWidget {
               child: ListTile(
                 dense: true,
                 leading: CircleAvatar(radius: 14, backgroundColor: AppColors.bgGrey, child: Text('${index + 1}', style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 10))),
-                title: Text('تاريخ الاستحقاق: ${intl.DateFormat('dd/MM/yyyy').format(DateTime.parse(inst['due_date']))}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('المبلغ المطلوب: ${f.format(inst['expected_amount'])} ر.س', style: const TextStyle(fontSize: 12)),
+                title: Text('تاريخ الاستحقاق: ${intl.DateFormat(\'dd/MM/yyyy\').format(DateTime.parse(inst[\'due_date\']))}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text('المبلغ المطلوب: ${f.format(inst[\'expected_amount\'])} ر.س', style: const TextStyle(fontSize: 12)),
                 trailing: _buildInstallmentBadge(status),
               ),
             );
@@ -371,14 +371,14 @@ class _PaymentsTab extends ConsumerWidget {
                     child: ListTile(
                       dense: true,
                       leading: Icon(isReversed ? Icons.history_rounded : Icons.check_circle_rounded, color: isReversed ? Colors.red : Colors.green, size: 28),
-                      title: Text('${f.format(p['amount_total'])} ر.س', 
+                      title: Text(\'${f.format(p[\'amount_total\'])}\' ر.س, 
                         style: TextStyle(
                           fontWeight: FontWeight.bold, 
                           fontSize: 16,
                           decoration: isReversed ? TextDecoration.lineThrough : null,
                           color: isReversed ? Colors.grey : AppColors.primaryNavy,
                         )),
-                      subtitle: Text('بتاريخ: ${intl.DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(p['payment_date']))}', style: const TextStyle(fontSize: 11)),
+                      subtitle: Text(\'بتاريخ: ${intl.DateFormat(\'dd/MM/yyyy HH:mm\').format(DateTime.parse(p[\'payment_date\']))}\', style: const TextStyle(fontSize: 11)),
                       trailing: isReversed 
                         ? const Text('تم العكس', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)) 
                         : IconButton(
@@ -468,7 +468,7 @@ class _FundingTab extends ConsumerWidget {
                     alignment: Alignment.center,
                     children: [
                       SizedBox(width: 120, height: 120, child: CircularProgressIndicator(value: percent, strokeWidth: 10, backgroundColor: AppColors.bgGrey, color: isFullyFunded ? Colors.green : Colors.blue)),
-                      Text('${(percent * 100).toStringAsFixed(1)}%', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+                      Text(\'${(percent * 100).toStringAsFixed(1)}%\', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -518,7 +518,7 @@ class _FundingTab extends ConsumerWidget {
                 dense: true,
                 leading: const CircleAvatar(radius: 14, backgroundColor: AppColors.bgGrey, child: Icon(Icons.person_rounded, color: AppColors.primaryNavy, size: 16)),
                 title: Text(item['investors']?['full_name'] ?? 'مستثمر', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                trailing: Text('${f.format(item['amount_allocated'])} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 13)),
+                trailing: Text(\'${f.format(item[\'amount_allocated\'])}\' ر.س, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 13)),
               ),
             )),
           ],
@@ -532,13 +532,28 @@ class _FundingTab extends ConsumerWidget {
   Widget _buildMiniStat(String label, String value, Color color) => Column(children: [Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)), Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14))]);
 
   Future<void> _activate(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('تفعيل العقد'), content: const Text('سيتم تفعيل العقد وتوليد جدول الأقساط. هل أنت متأكد؟'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم، تفعيل'))]));
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تفعيل العقد'),
+        content: const Text('سيتم تفعيل العقد وتوليد جدول الأقساط. هل أنت متأكد؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم، تفعيل')),
+        ],
+      ),
+    );
+
     if (confirmed == true) {
       try {
-        await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
-        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
+        final success = await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
+        if (context.mounted && success) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
+        }
       } catch (e) {
-        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
+        }
       }
     }
   }
@@ -568,7 +583,7 @@ class _AccountingTab extends ConsumerWidget {
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
               child: ExpansionTile(
                 title: Text(entry.description ?? 'قيد محاسبي', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: Text('تاريخ: ${intl.DateFormat('dd/MM/yyyy').format(entry.createdAt)}', style: const TextStyle(fontSize: 11)),
+                subtitle: Text(\'تاريخ: ${intl.DateFormat(\'dd/MM/yyyy\').format(entry.createdAt)}\', style: const TextStyle(fontSize: 11)),
                 leading: const CircleAvatar(backgroundColor: AppColors.bgGrey, child: Icon(Icons.account_balance_wallet_outlined, size: 18, color: AppColors.primaryNavy)),
                 children: [
                   Padding(

@@ -26,14 +26,12 @@ class ContractController extends _$ContractController {
     });
     
     if (result.hasError) {
-      state = result;
+      state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
 
     // تحديث البيانات بعد النجاح
-    ref.invalidate(contractDetailsProvider(id));
-    ref.invalidate(contractInstallmentsProvider(id));
-    ref.invalidate(contractFundingProvider(id));
+    _refreshContractData(id);
     state = const AsyncData(null);
     return true;
   }
@@ -87,6 +85,7 @@ class ContractController extends _$ContractController {
     ref.invalidate(contractInstallmentsProvider(contractId));
     ref.invalidate(contractDetailsProvider(contractId));
     ref.invalidate(contractTimelineProvider(contractId));
+    ref.invalidate(contractFundingProvider(contractId));
   }
 }
 
