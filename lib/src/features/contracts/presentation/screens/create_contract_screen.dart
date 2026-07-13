@@ -117,7 +117,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       'principal_amount': double.tryParse(_principalController.text) ?? 0.0,
       'finance_profit_rate': _contractType == 'installments' ? (double.tryParse(_profitRateController.text) ?? 0.0) : 0.0,
       'total_contract_value': _totalValue,
-      'duration_months': _contractType == 'installments' ? (int.tryParse(_durationController.text) ?? 0) : 0,
+      'duration_months': _contractType == 'installments' ? (int.tryParse(_durationController.text) ?? 1) : 1,
       'status': 'draft',
       'type': _contractType,
       'guarantor_1_name': _g1NameController.text.trim(),
@@ -205,25 +205,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         _buildCustomerDropdown(customersAsync),
                         const SizedBox(height: 20),
                         _buildVehicleDropdown(vehiclesAsync),
-                        if (_suggestedInvestorName != null) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.accentGold.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.accentGold.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.auto_awesome_rounded, color: AppColors.accentGold, size: 18),
-                                const SizedBox(width: 10),
-                                Expanded(child: Text('الممول المقترح لهذه السيارة: $_suggestedInvestorName', 
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
-                              ],
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -231,7 +212,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                       title: 'القيم المالية والرسوم الإدارية',
                       icon: Icons.account_balance_wallet_rounded,
                       children: [
-                        _buildPremiumTextField(_principalController, 'قيمة المركبة (أصل المبلغ) *', Icons.payments_rounded, isNumber: true),
+                        _buildPremiumTextField(_principalController, 'قيمة المركبة (أصل المبلغ) *', Icons.payments_rounded, isNumber: true, isRequired: true),
                         const SizedBox(height: 20),
                         Row(
                           children: [
@@ -258,9 +239,9 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         children: [
                           Row(
                             children: [
-                              Expanded(child: _buildPremiumTextField(_profitRateController, 'نسبة الربح %', Icons.trending_up_rounded, isNumber: true)),
+                              Expanded(child: _buildPremiumTextField(_profitRateController, 'نسبة الربح %', Icons.trending_up_rounded, isNumber: true, isRequired: true)),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildPremiumTextField(_durationController, 'مدة التمويل (أشهر)', Icons.timer_rounded, isNumber: true)),
+                              Expanded(child: _buildPremiumTextField(_durationController, 'مدة التمويل (أشهر)', Icons.timer_rounded, isNumber: true, isRequired: true, minVal: 1)),
                             ],
                           ),
                         ],
@@ -282,14 +263,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ),
                         const SizedBox(height: 20),
                         _buildPremiumTextField(_g1WorkController, 'مقر عمل الكفيل', Icons.work_outline_rounded),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(child: _buildPremiumTextField(_witness1NameController, 'الشاهد الأول', Icons.people_outline_rounded)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildPremiumTextField(_witness2NameController, 'الشاهد الثاني', Icons.people_outline_rounded)),
-                          ],
-                        ),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -381,11 +354,20 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     );
   }
 
-  Widget _buildPremiumTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false}) {
+  Widget _buildPremiumTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, bool isRequired = false, double? minVal}) {
     return TextFormField(
       controller: controller,
       onChanged: (_) => _calculateTotals(),
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+      validator: (val) {
+        if (isRequired && (val == null || val.isEmpty)) return 'هذا الحقل مطلوب';
+        if (isNumber && val != null && val.isNotEmpty) {
+          final numVal = double.tryParse(val);
+          if (numVal == null) return 'يجب إدخال رقم صحيح';
+          if (minVal != null && numVal < minVal) return 'يجب أن يكون $minVal على الأقل';
+        }
+        return null;
+      },
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 18),
@@ -417,7 +399,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
           if (val != null) {
             final v = list.firstWhere((x) => x.id == val);
             _principalController.text = v.purchasePrice.toString();
-            _findSmartInvestorSuggestion(v.purchasePrice);
             _calculateTotals();
           }
           setState(() => _selectedVehicleId = val);

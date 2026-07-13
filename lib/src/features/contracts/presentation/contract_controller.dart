@@ -10,13 +10,19 @@ class ContractController extends _$ContractController {
   @override
   FutureOr<void> build() => null;
 
-  Future<void> createContract(Map<String, dynamic> data) async {
+  Future<bool> createContract(Map<String, dynamic> data) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(contractRepositoryProvider).createContract(data);
+    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).createContract(data));
+    
+    if (!result.hasError) {
       ref.invalidate(contractsListProvider);
       ref.invalidate(contractStatsProvider);
-    });
+      state = const AsyncData(null);
+      return true;
+    } else {
+      state = AsyncError(result.error!, result.stackTrace!);
+      return false;
+    }
   }
 
   Future<bool> activateContract(String id) async {
@@ -93,15 +99,8 @@ class ContractController extends _$ContractController {
 }
 
 @riverpod
-Future<List<Contract>> contractsList(
-  ContractsListRef ref, {
-  String? searchQuery,
-  String? status,
-}) {
-  return ref.watch(contractRepositoryProvider).getContracts(
-        searchQuery: searchQuery,
-        status: status,
-      );
+Future<List<Contract>> contractsList(ContractsListRef ref, {String? searchQuery, String? status}) {
+  return ref.watch(contractRepositoryProvider).getContracts(searchQuery: searchQuery, status: status);
 }
 
 @riverpod
