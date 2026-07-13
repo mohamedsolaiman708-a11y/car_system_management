@@ -8,6 +8,7 @@ import '../contract_timeline_controller.dart';
 import '../widgets/add_payment_dialog.dart';
 import '../../../documents/presentation/widgets/universal_document_manager.dart';
 import '../../../investors/presentation/widgets/fund_contract_dialog.dart';
+import '../../../accounting/presentation/accounting_controller.dart';
 import '../../../../core/utils/app_theme.dart';
 
 class ContractDetailsScreen extends ConsumerWidget {
@@ -43,7 +44,7 @@ class ContractDetailsScreen extends ConsumerWidget {
           if (contract == null) return const Center(child: Text('العقد غير موجود'));
 
           return DefaultTabController(
-            length: 6,
+            length: 7,
             child: Column(
               children: [
                 _buildPremiumHeader(contract),
@@ -55,6 +56,7 @@ class ContractDetailsScreen extends ConsumerWidget {
                       _InstallmentsTab(contractId: id),
                       _PaymentsTab(contract: contract),
                       _FundingTab(contract: contract),
+                      _AccountingTab(contractId: id),
                       _TimelineTab(contractId: id),
                       Padding(
                         padding: const EdgeInsets.all(24.0),
@@ -146,6 +148,7 @@ class ContractDetailsScreen extends ConsumerWidget {
           Tab(text: 'جدول السداد'),
           Tab(text: 'سجل المدفوعات'),
           Tab(text: 'محفظة التمويل'),
+          Tab(text: 'القيود المحاسبية'),
           Tab(text: 'سجل الأحداث'),
           Tab(text: 'المستندات'),
         ],
@@ -312,7 +315,7 @@ class _InstallmentsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ في تحميل الأقساط')),
+      error: (e, _) => const Center(child: Text('خطأ في تحميل الأقساط')),
     );
   }
 
@@ -389,7 +392,7 @@ class _PaymentsTab extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('خطأ في تحميل المدفوعات')),
+            error: (e, _) => const Center(child: Text('خطأ في تحميل المدفوعات')),
           ),
         ),
       ],
@@ -522,7 +525,7 @@ class _FundingTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error')),
+      error: (e, _) => const Center(child: Text('Error')),
     );
   }
 
@@ -538,6 +541,70 @@ class _FundingTab extends ConsumerWidget {
         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
       }
     }
+  }
+}
+
+class _AccountingTab extends ConsumerWidget {
+  final String contractId;
+  const _AccountingTab({required this.contractId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entriesAsync = ref.watch(journalEntriesControllerProvider);
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
+    return entriesAsync.when(
+      data: (entries) {
+        final contractEntries = entries.where((e) => e.sourceId == contractId).toList();
+        if (contractEntries.isEmpty) return const Center(child: Text('لا توجد قيود محاسبية مسجلة لهذا العقد بعد.'));
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: contractEntries.length,
+          itemBuilder: (context, index) {
+            final entry = contractEntries[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
+              child: ExpansionTile(
+                title: Text(entry.description ?? 'قيد محاسبي', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                subtitle: Text('تاريخ: ${intl.DateFormat('dd/MM/yyyy').format(entry.createdAt)}', style: const TextStyle(fontSize: 11)),
+                leading: const CircleAvatar(backgroundColor: AppColors.bgGrey, child: Icon(Icons.account_balance_wallet_outlined, size: 18, color: AppColors.primaryNavy)),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Row(
+                          children: [
+                            Expanded(flex: 3, child: Text('الحساب', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey))),
+                            Expanded(child: Text('مدين', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey))),
+                            Expanded(child: Text('دائن', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey))),
+                          ],
+                        ),
+                        const Divider(),
+                        ...(entry.lines ?? []).map((line) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(flex: 3, child: Text(line.accounts?['name'] ?? line.accounts?['code'] ?? '-', style: const TextStyle(fontSize: 11))),
+                              Expanded(child: Text(line.debit > 0 ? f.format(line.debit) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold))),
+                              Expanded(child: Text(line.credit > 0 ? f.format(line.credit) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold))),
+                            ],
+                          ),
+                        )).toList(),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => const Center(child: Text('خطأ في تحميل القيود')),
+    );
   }
 }
 
@@ -580,7 +647,7 @@ class _TimelineTab extends ConsumerWidget {
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error')),
+      error: (err, _) => const Center(child: Text('Error')),
     );
   }
 }

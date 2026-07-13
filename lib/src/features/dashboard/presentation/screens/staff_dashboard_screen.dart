@@ -31,25 +31,14 @@ class StaffDashboardScreen extends ConsumerWidget {
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // 1. Executive Header Section
+              // الهيدر الموحد الذي يجمع بين الخلفية والكروت لمنع التداخل
               SliverToBoxAdapter(
-                child: _buildExecutiveHeader(user.fullName),
+                child: _buildUnifiedHeader(user.fullName, stats, f),
               ),
 
-              // 2. Statistics Row (Floating Impact)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                  child: Transform.translate(
-                    offset: const Offset(0, -40),
-                    child: _buildKPISection(stats, f),
-                  ),
-                ),
-              ),
-
-              // 3. Main Dashboard Content
+              // محتوى الداشبورد
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _buildSectionHeader('توصيات النظام والذكاء المالي', Icons.auto_awesome_rounded),
@@ -57,59 +46,12 @@ class StaffDashboardScreen extends ConsumerWidget {
                     _buildInsightsGrid(stats, context),
                     const SizedBox(height: 32),
                     
-                    // Analytics Row
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: _DashboardCard(
-                            title: 'تحليل النمو المالي',
-                            subtitle: 'صافي الأرباح لآخر 6 أشهر',
-                            child: SizedBox(
-                              height: 250,
-                              child: growthAsync.when(
-                                data: (data) => _ModernGrowthChart(data: data),
-                                loading: () => const Center(child: CircularProgressIndicator()),
-                                error: (_, __) => const Center(child: Text('لا توجد بيانات كافية')),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: _DashboardCard(
-                            title: 'إدارة المخاطر',
-                            subtitle: 'توزيع المتأخرات المالية',
-                            child: _RiskAnalysisList(stats: stats, f: f),
-                          ),
-                        ),
-                      ],
-                    ),
+                    // تحليل البيانات
+                    _buildMainAnalyticsRow(stats, growthAsync, f),
                     const SizedBox(height: 24),
                     
-                    // Operations Row
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: _DashboardCard(
-                            title: 'آخر العمليات المبرمة',
-                            subtitle: 'متابعة فورية للعقود الجديدة',
-                            child: _RecentOperationsList(stats: stats, context: context),
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: _DashboardCard(
-                            title: 'إجراءات سريعة',
-                            subtitle: 'العمليات الأكثر تكراراً',
-                            child: _QuickActionsSection(context: context),
-                          ),
-                        ),
-                      ],
-                    ),
+                    // العمليات الأخيرة
+                    _buildBottomOperationsRow(stats, context),
                     const SizedBox(height: 60),
                   ]),
                 ),
@@ -123,50 +65,101 @@ class StaffDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildExecutiveHeader(String name) {
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryNavy,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [AppColors.primaryNavy, Color(0xFF1E293B)],
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(32, 60, 32, 0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildUnifiedHeader(String name, Map<String, dynamic> stats, intl.NumberFormat f) {
+    return SizedBox(
+      height: 260, // ارتفاع كافٍ يحتوي الهيدر والكروت الطافية
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // 1. الحاوية الكحلية (الخلفية)
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [AppColors.primaryNavy, Color(0xFF1B2A4A)],
+              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(32, 60, 32, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('نظام الإدارة الذكي', style: TextStyle(color: AppColors.accentGold.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      Text('أهلاً بك، $name', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text('إليك نظرة شاملة على أداء المنظومة اليوم', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                    ],
+                  ),
+                  _buildClockWidget(),
+                ],
+              ),
+            ),
+          ),
+          // 2. كروت الإحصائيات (KPIs) - تم ضبط الموقع لمنع التداخل مع النصوص
+          Positioned(
+            top: 150, // تبدأ من تحت النصوص بمسافة كافية
+            left: 24,
+            right: 24,
+            child: Row(
               children: [
-                Text('نظام الإدارة الذكي', style: TextStyle(color: AppColors.accentGold.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                const SizedBox(height: 4),
-                Text('أهلاً بك، $name', style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-                Text('إليك نظرة شاملة على أداء المنظومة اليوم', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                _buildKPICard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
+                const SizedBox(width: 12),
+                _buildKPICard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, Colors.green),
+                const SizedBox(width: 12),
+                _buildKPICard('سيولة الممولين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
               ],
             ),
-            _buildClock(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildKPISection(Map<String, dynamic> stats, intl.NumberFormat f) {
-    return Row(
-      children: [
-        _KPICard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
-        const SizedBox(width: 16),
-        _KPICard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, Colors.green),
-        const SizedBox(width: 16),
-        _KPICard('سيولة الممولين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
-      ],
+  Widget _buildKPICard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        height: 100,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.primaryNavy), overflow: TextOverflow.ellipsis),
+                  Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold), maxLines: 1),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -175,11 +168,67 @@ class StaffDashboardScreen extends ConsumerWidget {
     return Row(
       children: [
         if (investorCash > 500000)
-          Expanded(child: _InsightTile('سيولة فائضة', 'يوجد ${intl.NumberFormat.compact().format(investorCash)} ر.س جاهزة للتوظيف', Icons.trending_up_rounded, Colors.blue, () => context.push('/inventory/new'))),
+          Expanded(child: _InsightTile('سيولة فائضة', 'يوجد مبالغ جاهزة للتوظيف', Icons.trending_up_rounded, Colors.blue, () => context.push('/inventory/new'))),
         const SizedBox(width: 16),
-        Expanded(child: _InsightTile('المخزون الحالي', 'توجد سيارات بانتظار التخصيص للمستثمرين', Icons.inventory_2_rounded, Colors.purple, () => context.push('/inventory'))),
+        Expanded(child: _InsightTile('المخزون الحالي', 'سيارات بانتظار تخصيص تمويل', Icons.inventory_2_rounded, Colors.purple, () => context.push('/inventory'))),
         const SizedBox(width: 16),
-        Expanded(child: _InsightTile('التحصيل', 'راجع تقرير الأقساط المستحقة خلال هذا الأسبوع', Icons.payments_rounded, Colors.teal, () => context.push('/reports'))),
+        Expanded(child: _InsightTile('التحصيل', 'راجع أقساط هذا الأسبوع', Icons.payments_rounded, Colors.teal, () => context.push('/reports'))),
+      ],
+    );
+  }
+
+  Widget _buildMainAnalyticsRow(Map<String, dynamic> stats, AsyncValue<List<Map<String, dynamic>>> growthAsync, intl.NumberFormat f) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: _DashboardCard(
+            title: 'تحليل النمو المالي',
+            subtitle: 'صافي الأرباح لآخر 6 أشهر',
+            child: SizedBox(
+              height: 250,
+              child: growthAsync.when(
+                data: (data) => _ModernGrowthChart(data: data),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Center(child: Text('لا توجد بيانات كافية')),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _DashboardCard(
+            title: 'إدارة المخاطر',
+            subtitle: 'توزيع المتأخرات المالية',
+            child: _RiskAnalysisList(stats: stats, f: f),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomOperationsRow(Map<String, dynamic> stats, BuildContext context) {
+    final recent = (stats['recent_contracts'] as List?) ?? [];
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: _DashboardCard(
+            title: 'آخر العمليات المبرمة',
+            subtitle: 'متابعة فورية للعقود الجديدة',
+            child: _RecentOperationsList(contracts: recent, context: context),
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _DashboardCard(
+            title: 'إجراءات سريعة',
+            subtitle: 'العمليات الأكثر تكراراً',
+            child: _QuickActionsSection(context: context),
+          ),
+        ),
       ],
     );
   }
@@ -194,58 +243,17 @@ class StaffDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildClock() {
+  Widget _buildClockWidget() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.1))),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.access_time_filled_rounded, color: AppColors.accentGold, size: 16),
           const SizedBox(width: 8),
-          Text(intl.DateFormat('HH:mm').format(DateTime.now()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(intl.DateFormat('HH:mm').format(DateTime.now()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
         ],
-      ),
-    );
-  }
-}
-
-class _KPICard extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
-  const _KPICard(this.label, this.value, this.icon, this.color);
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primaryNavy), overflow: TextOverflow.ellipsis),
-                  Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -264,12 +272,12 @@ class _InsightTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.1))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [Icon(icon, color: color, size: 20), const SizedBox(width: 10), Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14))]),
+            Row(children: [Icon(icon, color: color, size: 20), const SizedBox(width: 10), Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13))]),
             const SizedBox(height: 12),
             Text(desc, style: const TextStyle(fontSize: 11, color: Colors.blueGrey, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
           ],
