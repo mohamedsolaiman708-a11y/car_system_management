@@ -55,7 +55,6 @@ class ContractDetailsScreen extends ConsumerWidget {
             icon: const Icon(Icons.edit_note_rounded, color: AppColors.accentGold),
             onPressed: () => context.push('/contracts/$id/edit'),
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: contractAsync.when(
@@ -159,7 +158,6 @@ class ContractDetailsScreen extends ConsumerWidget {
         tabAlignment: TabAlignment.start,
         indicatorColor: AppColors.accentGold,
         indicatorWeight: 3,
-        indicatorPadding: EdgeInsets.zero,
         labelColor: AppColors.accentGold,
         unselectedLabelColor: Colors.white54,
         labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),

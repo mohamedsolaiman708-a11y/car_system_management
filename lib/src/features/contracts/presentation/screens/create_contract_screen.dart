@@ -100,7 +100,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   }
 
   Future<void> _submit() async {
-    if (_isLoading) return; // Prevent double submission
+    if (_isLoading) return;
 
     if (!_formKey.currentState!.validate() || _selectedCustomerId == null || _selectedVehicleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -145,8 +145,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
         }
       } else {
         if (mounted) {
-          // Success navigation
-          ref.invalidate(contractsListProvider); // Refresh the list
+          ref.invalidate(contractsListProvider);
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('تم إصدار مسودة العقد بنجاح'), backgroundColor: Colors.green),
@@ -199,7 +198,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                   children: [
                     _buildContractTypeSelector(),
                     const SizedBox(height: 24),
-                    
                     _buildSectionCard(
                       title: 'أطراف التعاقد والأصل الممول',
                       icon: Icons.handshake_rounded,
@@ -207,15 +205,14 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         _buildCustomerDropdown(customersAsync),
                         const SizedBox(height: 20),
                         _buildVehicleDropdown(vehiclesAsync),
-                        
                         if (_suggestedInvestorName != null) ...[
                           const SizedBox(height: 16),
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.accentGold.withValues(alpha: 0.1),
+                              color: AppColors.accentGold.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.3)),
+                              border: Border.all(color: AppColors.accentGold.withOpacity(0.3)),
                             ),
                             child: Row(
                               children: [
@@ -229,7 +226,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ],
                       ],
                     ),
-                    
                     const SizedBox(height: 24),
                     _buildSectionCard(
                       title: 'القيم المالية والرسوم الإدارية',
@@ -254,7 +250,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ),
                       ],
                     ),
-
                     if (_contractType == 'installments') ...[
                       const SizedBox(height: 24),
                       _buildSectionCard(
@@ -271,7 +266,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ],
                       ),
                     ],
-
                     const SizedBox(height: 24),
                     _buildSectionCard(
                       title: 'بيانات الكفيل الغارم والشهود',
@@ -298,11 +292,9 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 32),
                     _buildExecutiveSummary(),
                     const SizedBox(height: 40),
-                    
                     ElevatedButton(
                       onPressed: _isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
@@ -343,7 +335,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildContractTypeSelector() {
     return Container(
       padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
       child: Row(
         children: [
           _buildTypeOption('installments', 'بيع بالأجل (أقساط)', Icons.history_edu_rounded),
@@ -377,7 +369,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.1))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

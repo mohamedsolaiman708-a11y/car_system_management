@@ -13,16 +13,16 @@ class ContractController extends _$ContractController {
   Future<void> createContract(Map<String, dynamic> data) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final contract = await ref.read(contractRepositoryProvider).createContract(data);
+      await ref.read(contractRepositoryProvider).createContract(data);
       ref.invalidate(contractsListProvider);
-      return null;
+      ref.invalidate(contractStatsProvider);
     });
   }
 
   Future<bool> activateContract(String id) async {
     if (state.isLoading) return false;
-    
     state = const AsyncLoading();
+    
     final result = await AsyncValue.guard(() async {
       await ref.read(contractRepositoryProvider).activateContract(id);
       _refreshContractData(id);
@@ -32,7 +32,6 @@ class ContractController extends _$ContractController {
       state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
-
     state = const AsyncData(null);
     return true;
   }
@@ -62,7 +61,6 @@ class ContractController extends _$ContractController {
       state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
-
     state = const AsyncData(null);
     return true;
   }
@@ -80,7 +78,6 @@ class ContractController extends _$ContractController {
       state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
-
     state = const AsyncData(null);
     return true;
   }
@@ -91,6 +88,7 @@ class ContractController extends _$ContractController {
     ref.invalidate(contractDetailsProvider(contractId));
     ref.invalidate(contractTimelineProvider(contractId));
     ref.invalidate(contractFundingProvider(contractId));
+    ref.invalidate(contractStatsProvider);
   }
 }
 
