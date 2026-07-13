@@ -72,10 +72,10 @@ class StaffDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildUnifiedHeader(
-    String name,
-    Map<String, dynamic> stats,
-    intl.NumberFormat f,
-  ) {
+      String name,
+      Map<String, dynamic> stats,
+      intl.NumberFormat f,
+      ) {
     return SizedBox(
       height: 260, // ارتفاع كافٍ يحتوي الهيدر والكروت الطافية
       child: Stack(
@@ -239,7 +239,7 @@ class StaffDashboardScreen extends ConsumerWidget {
               'يوجد مبالغ جاهزة للتوظيف',
               Icons.trending_up_rounded,
               Colors.blue,
-              () => context.push('/inventory/new'),
+                  () => context.push('/inventory/new'),
             ),
           ),
         const SizedBox(width: 16),
@@ -249,7 +249,7 @@ class StaffDashboardScreen extends ConsumerWidget {
             'سيارات بانتظار تخصيص تمويل',
             Icons.inventory_2_rounded,
             Colors.purple,
-            () => context.push('/inventory'),
+                () => context.push('/inventory'),
           ),
         ),
         const SizedBox(width: 16),
@@ -259,7 +259,7 @@ class StaffDashboardScreen extends ConsumerWidget {
             'راجع أقساط هذا الأسبوع',
             Icons.payments_rounded,
             Colors.teal,
-            () => context.push('/reports'),
+                () => context.push('/reports'),
           ),
         ),
       ],
@@ -267,10 +267,10 @@ class StaffDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildMainAnalyticsRow(
-    Map<String, dynamic> stats,
-    AsyncValue<List<Map<String, dynamic>>> growthAsync,
-    intl.NumberFormat f,
-  ) {
+      Map<String, dynamic> stats,
+      AsyncValue<List<Map<String, dynamic>>> growthAsync,
+      intl.NumberFormat f,
+      ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,7 +285,7 @@ class StaffDashboardScreen extends ConsumerWidget {
                 data: (data) => _ModernGrowthChart(data: data),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) =>
-                    const Center(child: Text('لا توجد بيانات كافية')),
+                const Center(child: Text('لا توجد بيانات كافية')),
               ),
             ),
           ),
@@ -303,9 +303,9 @@ class StaffDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildBottomOperationsRow(
-    Map<String, dynamic> stats,
-    BuildContext context,
-  ) {
+      Map<String, dynamic> stats,
+      BuildContext context,
+      ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -502,10 +502,10 @@ class _ModernGrowthChart extends StatelessWidget {
                 .entries
                 .map(
                   (e) => FlSpot(
-                    e.key.toDouble(),
-                    (e.value['gross_profit'] as num?)?.toDouble() ?? 0.0,
-                  ),
-                )
+                e.key.toDouble(),
+                (e.value['gross_profit'] as num?)?.toDouble() ?? 0.0,
+              ),
+            )
                 .toList(),
             isCurved: true,
             color: AppColors.primaryNavy,
@@ -627,41 +627,41 @@ class _RecentOperationsList extends StatelessWidget {
           .take(4)
           .map(
             (c) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ListTile(
-                dense: true,
-                leading: const CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.description_outlined,
-                    color: AppColors.primaryNavy,
-                    size: 18,
-                  ),
-                ),
-                title: Text(
-                  c['contract_no'] ?? '-',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                subtitle: Text(
-                  c['customers']?['full_name'] ?? '-',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Colors.grey,
-                ),
-                onTap: () => context.push('/contracts/${c['id']}'),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ListTile(
+            dense: true,
+            leading: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(
+                Icons.description_outlined,
+                color: AppColors.primaryNavy,
+                size: 18,
               ),
             ),
-          )
+            title: Text(
+              c['contract_no'] ?? '-',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            subtitle: Text(
+              c['customers']?['full_name'] ?? '-',
+              style: const TextStyle(fontSize: 12),
+            ),
+            trailing: const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: Colors.grey,
+            ),
+            onTap: () => context.push('/contracts/${c['id']}'),
+          ),
+        ),
+      )
           .toList(),
     );
   }
@@ -679,32 +679,32 @@ class _QuickActionsSection extends StatelessWidget {
           'إصدار عقد جديد',
           Icons.add_moderator_rounded,
           Colors.blue,
-          () => context.push('/contracts/new'),
+              () => context.push('/contracts/new'),
         ),
         const SizedBox(height: 12),
         _ActionBtn(
           'إضافة مستثمر',
           Icons.person_add_rounded,
           AppColors.accentGold,
-          () => context.push('/investors'),
+              () => context.push('/investors'),
         ),
         const SizedBox(height: 12),
         _ActionBtn(
           'تسجيل مركبة',
           Icons.add_road_rounded,
           Colors.orange,
-          () => context.push('/inventory/new'),
+              () => context.push('/inventory/new'),
         ),
       ],
     );
   }
 
   Widget _ActionBtn(
-    String label,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
+      String label,
+      IconData icon,
+      Color color,
+      VoidCallback onTap,
+      ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),

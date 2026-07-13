@@ -14,17 +14,29 @@ class ContractController extends _$ContractController {
 
   Future<void> createContract(Map<String, dynamic> data) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).createContract(data));
+    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).createContract(data));
+    state = result;
   }
 
-  Future<void> activateContract(String id) async {
+  Future<bool> activateContract(String id) async {
+    // حماية لمنع تكرار الضغط
+    if (state.isLoading) return false;
+    
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).activateContract(id));
-    ref.invalidate(contractDetailsProvider(id));
-    ref.invalidate(contractInstallmentsProvider(id));
+    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).activateContract(id));
+    
+    if (!result.hasError) {
+      ref.invalidate(contractDetailsProvider(id));
+      ref.invalidate(contractInstallmentsProvider(id));
+      ref.invalidate(contractFundingProvider(id));
+      state = const AsyncData(null);
+      return true;
+    } else {
+      state = result;
+      return false;
+    }
   }
 
-  /// تنفيذ عملية تحصيل دفعة من العميل
   Future<bool> processPayment({
     required String contractId,
     required double amount,
@@ -32,7 +44,9 @@ class ContractController extends _$ContractController {
     String? reference,
     String? idempotencyKey,
   }) async {
+    if (state.isLoading) return false;
     state = const AsyncLoading();
+    
     final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).processPayment(
       contractId: contractId,
       amount: amount,
@@ -43,22 +57,24 @@ class ContractController extends _$ContractController {
     
     if (!result.hasError) {
       _refreshContractData(contractId);
+      state = const AsyncData(null);
       return true;
     }
     state = result;
     return false;
   }
 
-  /// عكس (إلغاء) دفعة مالية مسجلة
   Future<bool> reversePayment(String contractId, String paymentId, String reason) async {
+    if (state.isLoading) return false;
     state = const AsyncLoading();
-    // استدعاء RPC عكس الدفع في قاعدة البيانات
+    
     final result = await AsyncValue.guard(() => 
       ref.read(contractRepositoryProvider).reversePayment(paymentId, reason)
     );
     
     if (!result.hasError) {
       _refreshContractData(contractId);
+      state = const AsyncData(null);
       return true;
     }
     state = result;
