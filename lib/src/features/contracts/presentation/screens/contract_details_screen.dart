@@ -23,12 +23,13 @@ class ContractDetailsScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.primaryNavy,
         elevation: 0,
+        toolbarHeight: 50, // تقليل ارتفاع التولبار
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
           onPressed: () => context.pop(),
         ),
         title: const Text('مركز إدارة العقود',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_note_rounded, color: AppColors.accentGold),
@@ -70,37 +71,30 @@ class ContractDetailsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, stack) => Center(child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text('حدث خطأ في تحميل البيانات: $err'),
-          ],
-        )),
+        error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
       ),
     );
   }
 
   Widget _buildPremiumHeader(Contract contract) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
+      padding: const EdgeInsets.fromLTRB(32, 16, 32, 24), // تقليل الـ Padding بشكل كبير
       decoration: const BoxDecoration(
         color: AppColors.primaryNavy,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
-            child: const Icon(Icons.assignment_turned_in_rounded, size: 48, color: AppColors.accentGold),
+            child: const Icon(Icons.assignment_turned_in_rounded, size: 36, color: AppColors.accentGold),
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,23 +102,23 @@ class ContractDetailsScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Text('عقد رقم: ${contract.contractNo}',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1)),
-                    const SizedBox(width: 16),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(width: 12),
                     _buildStatusBadge(contract.status),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_rounded, color: Colors.white54, size: 14),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.calendar_today_rounded, color: Colors.white54, size: 12),
+                    const SizedBox(width: 6),
                     Text('تاريخ التعميد: ${contract.startDate != null ? intl.DateFormat('dd/MM/yyyy').format(contract.startDate!) : "قيد المراجعة"}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                    const SizedBox(width: 24),
-                    const Icon(Icons.person_outline_rounded, color: Colors.white54, size: 14),
-                    const SizedBox(width: 8),
+                        style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                    const SizedBox(width: 20),
+                    const Icon(Icons.person_outline_rounded, color: Colors.white54, size: 12),
+                    const SizedBox(width: 6),
                     Text('العميل: ${contract.customer?['full_name'] ?? "-"}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                        style: const TextStyle(color: Colors.white70, fontSize: 11)),
                   ],
                 ),
               ],
@@ -143,10 +137,10 @@ class ContractDetailsScreen extends ConsumerWidget {
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         indicatorColor: AppColors.accentGold,
-        indicatorWeight: 4,
+        indicatorWeight: 3,
         labelColor: AppColors.accentGold,
         unselectedLabelColor: Colors.white54,
-        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         tabs: [
           Tab(text: 'ملخص الاتفاقية'),
           Tab(text: 'جدول السداد'),
@@ -169,9 +163,9 @@ class ContractDetailsScreen extends ConsumerWidget {
       case 'defaulted': color = Colors.red; label = 'متعثر'; break;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.5))),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withOpacity(0.5))),
+      child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -184,115 +178,42 @@ class _OverviewTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        children: [
-          if (contract.status == 'draft' || contract.status == 'pending_funding')
-            _buildActionAlert(context, ref),
-
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 2,
-                child: _PremiumInfoSection(
-                  title: 'التفاصيل المالية للعقد',
-                  icon: Icons.account_balance_rounded,
-                  children: [
-                    _InfoRow('قيمة السيارة (الأصل)', '${f.format(contract.principalAmount)} ر.س'),
-                    _InfoRow('نسبة الربح السنوية', '${contract.financeProfitRate}%'),
-                    _InfoRow('مدة التمويل بالشهور', '${contract.durationMonths} شهر'),
-                    const Divider(height: 32),
-                    _InfoRow('الرسوم الإدارية والضريبة', '${f.format(contract.moroorFees + contract.tammFees + contract.insuranceFees + contract.vatAmount)} ر.س'),
-                    _InfoRow('إجمالي قيمة العقد', '${f.format(contract.totalContractValue)} ر.س', isBold: true, color: AppColors.primaryNavy),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: _PremiumInfoSection(
-                  title: 'بيانات الأصول',
-                  icon: Icons.directions_car_filled_rounded,
-                  children: [
-                    _InfoRow('المركبة', '${contract.vehicle?['make'] ?? ""} ${contract.vehicle?['model'] ?? ""}'),
-                    _InfoRow('رقم اللوحة', contract.vehicle?['license_plate'] ?? '-'),
-                    _InfoRow('سنة الصنع', contract.vehicle?['year']?.toString() ?? '-'),
-                    const Divider(height: 32),
-                    _InfoRow('الكفيل', contract.guarantor1Name ?? 'لا يوجد كفيل'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionAlert(BuildContext context, WidgetRef ref) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 32),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.blue.shade100),
-      ),
+      padding: const EdgeInsets.all(24), // تقليل الـ Padding
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_rounded, color: Colors.blue, size: 32),
-          const SizedBox(width: 20),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            flex: 2,
+            child: _PremiumInfoSection(
+              title: 'التفاصيل المالية للعقد',
+              icon: Icons.account_balance_rounded,
               children: [
-                Text('بانتظار تخصيص الممولين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
-                Text('يجب اكتمال تمويل أصل المبلغ قبل تفعيل العقد وتوليد الأقساط.', style: TextStyle(fontSize: 13, color: Colors.blueGrey)),
+                _InfoRow('قيمة السيارة (الأصل)', '${f.format(contract.principalAmount)} ر.س'),
+                _InfoRow('نسبة الربح السنوية', '${contract.financeProfitRate}%'),
+                _InfoRow('مدة التمويل بالشهور', '${contract.durationMonths} شهر'),
+                const Divider(height: 24),
+                _InfoRow('الرسوم الإدارية والضريبة', '${f.format(contract.moroorFees + contract.tammFees + contract.insuranceFees + contract.vatAmount)} ر.س'),
+                _InfoRow('إجمالي قيمة العقد', '${f.format(contract.totalContractValue)} ر.س', isBold: true, color: AppColors.primaryNavy),
               ],
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: () => showDialog(context: context, builder: (context) => FundContractDialog(contract: contract)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade800, foregroundColor: Colors.white),
-            icon: const Icon(Icons.add_moderator_rounded),
-            label: const Text('تخصيص تمويل'),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () => _activate(context, ref),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white),
-            child: const Text('تفعيل العقد نهائياً'),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _PremiumInfoSection(
+              title: 'بيانات الأصول',
+              icon: Icons.directions_car_filled_rounded,
+              children: [
+                _InfoRow('المركبة', '${contract.vehicle?['make'] ?? ""} ${contract.vehicle?['model'] ?? ""}'),
+                _InfoRow('رقم اللوحة', contract.vehicle?['license_plate'] ?? '-'),
+                _InfoRow('سنة الصنع', contract.vehicle?['year']?.toString() ?? '-'),
+                const Divider(height: 24),
+                _InfoRow('الكفيل', contract.guarantor1Name ?? 'لا يوجد كفيل'),
+              ],
+            ),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _activate(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تفعيل العقد'),
-        content: const Text('سيتم تفعيل العقد وتوليد جدول الأقساط. هل أنت متأكد؟'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم، تفعيل')),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في التفعيل: $e'), backgroundColor: Colors.red));
-        }
-      }
-    }
   }
 }
 
@@ -305,13 +226,13 @@ class _PremiumInfoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32)),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(icon, color: AppColors.accentGold, size: 22), const SizedBox(width: 12), Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold))]),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider(height: 1)),
+          Row(children: [Icon(icon, color: AppColors.accentGold, size: 18), const SizedBox(width: 10), Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold))]),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider(height: 1)),
           ...children,
         ],
       ),
@@ -328,12 +249,12 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.w600, color: color ?? AppColors.primaryNavy, fontSize: isBold ? 16 : 14)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.w600, color: color ?? AppColors.primaryNavy, fontSize: isBold ? 14 : 13)),
         ],
       ),
     );
@@ -353,19 +274,19 @@ class _InstallmentsTab extends ConsumerWidget {
       data: (list) {
         if (list.isEmpty) return const Center(child: Text('لا يوجد أقساط مولدة. بانتظار تفعيل العقد.'));
         return ListView.builder(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           itemCount: list.length,
           itemBuilder: (context, index) {
             final inst = list[index];
             final status = inst['status'];
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                leading: CircleAvatar(backgroundColor: AppColors.bgGrey, child: Text('${index + 1}', style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold))),
+                dense: true,
+                leading: CircleAvatar(radius: 14, backgroundColor: AppColors.bgGrey, child: Text('${index + 1}', style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 10))),
                 title: Text('تاريخ الاستحقاق: ${intl.DateFormat('dd/MM/yyyy').format(DateTime.parse(inst['due_date']))}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('المبلغ المطلوب: ${f.format(inst['expected_amount'])} ر.س', style: const TextStyle(fontSize: 13)),
+                subtitle: Text('المبلغ المطلوب: ${f.format(inst['expected_amount'])} ر.س', style: const TextStyle(fontSize: 12)),
                 trailing: _buildInstallmentBadge(status),
               ),
             );
@@ -373,7 +294,7 @@ class _InstallmentsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ في تحميل الأقساط: $e')),
+      error: (e, _) => Center(child: Text('خطأ')),
     );
   }
 
@@ -385,9 +306,9 @@ class _InstallmentsTab extends ConsumerWidget {
     else { color = Colors.blueGrey; label = 'بانتظار السداد'; }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -405,12 +326,12 @@ class _PaymentsTab extends ConsumerWidget {
       children: [
         if (contract.status == 'active')
           Padding(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(24),
             child: ElevatedButton.icon(
               onPressed: () => showDialog(context: context, builder: (context) => AddPaymentDialog(contract: contract)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 56)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 50)),
               icon: const Icon(Icons.add_card_rounded),
-              label: const Text('تسجيل دفعة سداد جديدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              label: const Text('تسجيل دفعة سداد جديدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
         Expanded(
@@ -418,27 +339,27 @@ class _PaymentsTab extends ConsumerWidget {
             data: (list) {
               if (list.isEmpty) return const Center(child: Text('لم يتم استلام أي دفعات لهذا العقد بعد.'));
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 itemCount: list.length,
                 itemBuilder: (context, index) {
                   final p = list[index];
                   final isReversed = p['status'] == 'reversed';
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(color: isReversed ? Colors.red.withValues(alpha: 0.02) : Colors.white, borderRadius: BorderRadius.circular(20)),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(color: isReversed ? Colors.red.withOpacity(0.02) : Colors.white, borderRadius: BorderRadius.circular(16)),
                     child: ListTile(
-                      contentPadding: const EdgeInsets.all(20),
-                      leading: Icon(isReversed ? Icons.history_rounded : Icons.check_circle_rounded, color: isReversed ? Colors.red : Colors.green, size: 32),
-                      title: Text('${f.format(p['amount_total'])} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                      subtitle: Text('بتاريخ: ${intl.DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(p['payment_date']))}'),
-                      trailing: isReversed ? const Text('تم العكس', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)) : const Icon(Icons.print_rounded, color: Colors.grey),
+                      dense: true,
+                      leading: Icon(isReversed ? Icons.history_rounded : Icons.check_circle_rounded, color: isReversed ? Colors.red : Colors.green, size: 28),
+                      title: Text('${f.format(p['amount_total'])} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      subtitle: Text('بتاريخ: ${intl.DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(p['payment_date']))}', style: const TextStyle(fontSize: 11)),
+                      trailing: isReversed ? const Text('تم العكس', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)) : const Icon(Icons.print_rounded, color: Colors.grey, size: 18),
                     ),
                   );
                 },
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) => Center(child: Text('Error')),
           ),
         ),
       ],
@@ -459,25 +380,26 @@ class _FundingTab extends ConsumerWidget {
       data: (fundingList) {
         double totalFunded = fundingList.fold(0, (sum, item) => sum + (item['amount_allocated'] as num).toDouble());
         final percent = contract.principalAmount > 0 ? (totalFunded / contract.principalAmount) : 0.0;
+        final bool isFullyFunded = percent >= 0.999;
 
         return ListView(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           children: [
             Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32)),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
               child: Column(
                 children: [
-                  const Text('مؤشر اكتمال التمويل', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 16),
+                  const Text('مؤشر اكتمال التمويل', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 13)),
+                  const SizedBox(height: 12),
                   Stack(
                     alignment: Alignment.center,
                     children: [
-                      SizedBox(width: 150, height: 150, child: CircularProgressIndicator(value: percent, strokeWidth: 12, backgroundColor: AppColors.bgGrey, color: percent >= 1 ? Colors.green : Colors.blue)),
-                      Text('${(percent * 100).toStringAsFixed(1)}%', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+                      SizedBox(width: 120, height: 120, child: CircularProgressIndicator(value: percent, strokeWidth: 10, backgroundColor: AppColors.bgGrey, color: isFullyFunded ? Colors.green : Colors.blue)),
+                      Text('${(percent * 100).toStringAsFixed(1)}%', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -485,30 +407,69 @@ class _FundingTab extends ConsumerWidget {
                       _buildMiniStat('المستهدف', f.format(contract.principalAmount), AppColors.primaryNavy),
                     ],
                   ),
+                  if (contract.status == 'draft' || contract.status == 'pending_funding') ...[
+                    const Divider(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => showDialog(context: context, builder: (context) => FundContractDialog(contract: contract)),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                            icon: const Icon(Icons.add_circle_outline, size: 18),
+                            label: const Text('إضافة ممول', style: TextStyle(fontSize: 13)),
+                          ),
+                        ),
+                        if (isFullyFunded) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _activate(context, ref),
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                              icon: const Icon(Icons.flash_on, size: 18),
+                              label: const Text('تفعيل العقد', style: TextStyle(fontSize: 13)),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            const Text('قائمة شركاء التمويل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            const Text('قائمة شركاء التمويل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            const SizedBox(height: 12),
             ...fundingList.map((item) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
               child: ListTile(
-                leading: const CircleAvatar(backgroundColor: AppColors.bgGrey, child: Icon(Icons.person_rounded, color: AppColors.primaryNavy)),
-                title: Text(item['investors']?['full_name'] ?? 'مستثمر', style: const TextStyle(fontWeight: FontWeight.bold)),
-                trailing: Text('${f.format(item['amount_allocated'])} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                dense: true,
+                leading: const CircleAvatar(radius: 14, backgroundColor: AppColors.bgGrey, child: Icon(Icons.person_rounded, color: AppColors.primaryNavy, size: 16)),
+                title: Text(item['investors']?['full_name'] ?? 'مستثمر', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                trailing: Text('${f.format(item['amount_allocated'])} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 13)),
               ),
             )),
           ],
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => Center(child: Text('Error')),
     );
   }
 
-  Widget _buildMiniStat(String label, String value, Color color) => Column(children: [Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)), Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16))]);
+  Widget _buildMiniStat(String label, String value, Color color) => Column(children: [Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)), Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14))]);
+
+  Future<void> _activate(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('تفعيل العقد'), content: const Text('سيتم تفعيل العقد وتوليد جدول الأقساط. هل أنت متأكد؟'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم، تفعيل'))]));
+    if (confirmed == true) {
+      try {
+        await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
+      } catch (e) {
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
+      }
+    }
+  }
 }
 
 class _TimelineTab extends ConsumerWidget {
@@ -520,7 +481,7 @@ class _TimelineTab extends ConsumerWidget {
     final timelineAsync = ref.watch(contractTimelineProvider(contractId));
     return timelineAsync.when(
       data: (logs) => ListView.builder(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(32),
         itemCount: logs.length,
         itemBuilder: (context, index) {
           final log = logs[index];
@@ -529,18 +490,18 @@ class _TimelineTab extends ConsumerWidget {
               children: [
                 Column(
                   children: [
-                    Container(width: 14, height: 14, decoration: BoxDecoration(color: AppColors.accentGold, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2))),
+                    Container(width: 12, height: 12, decoration: BoxDecoration(color: AppColors.accentGold, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2))),
                     if (index != logs.length - 1) Expanded(child: Container(width: 2, color: Colors.grey.shade200)),
                   ],
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(log.eventType, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 15)),
-                      Text(intl.DateFormat('dd/MM/yyyy HH:mm').format(log.occurredAt), style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                      const SizedBox(height: 32),
+                      Text(log.eventType, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 14)),
+                      Text(intl.DateFormat('dd/MM/yyyy HH:mm').format(log.occurredAt), style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -550,7 +511,7 @@ class _TimelineTab extends ConsumerWidget {
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) => Center(child: Text('Error')),
     );
   }
 }
