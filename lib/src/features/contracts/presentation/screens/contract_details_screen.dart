@@ -17,6 +17,25 @@ class ContractDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // مراقبة حالة الـ Controller بشكل مركزي لإظهار الرسائل
+    ref.listen<AsyncValue<void>>(
+      contractControllerProvider,
+      (previous, next) {
+        next.whenOrNull(
+          error: (error, _) => ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('خطأ: $error'), backgroundColor: Colors.red),
+          ),
+          data: (_) {
+            if (previous?.isLoading == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('تمت العملية بنجاح')),
+              );
+            }
+          },
+        );
+      },
+    );
+
     final contractAsync = ref.watch(contractDetailsProvider(id));
 
     return Scaffold(
@@ -140,6 +159,7 @@ class ContractDetailsScreen extends ConsumerWidget {
         tabAlignment: TabAlignment.start,
         indicatorColor: AppColors.accentGold,
         indicatorWeight: 3,
+        indicatorPadding: EdgeInsets.zero,
         labelColor: AppColors.accentGold,
         unselectedLabelColor: Colors.white54,
         labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
@@ -427,7 +447,6 @@ class _PaymentsTab extends ConsumerWidget {
                 final success = await ref.read(contractControllerProvider.notifier).reversePayment(contract.id, paymentId, reasonController.text.trim());
                 if (context.mounted && success) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم عكس العملية بنجاح')));
                 }
               },
               child: const Text('تأكيد العكس'),
@@ -446,6 +465,7 @@ class _FundingTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fundingAsync = ref.watch(contractFundingProvider(contract.id));
+    final controllerState = ref.watch(contractControllerProvider);
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return fundingAsync.when(
@@ -485,7 +505,7 @@ class _FundingTab extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => showDialog(context: context, builder: (context) => FundContractDialog(contract: contract)),
+                            onPressed: controllerState.isLoading ? null : () => showDialog(context: context, builder: (context) => FundContractDialog(contract: contract)),
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                             icon: const Icon(Icons.add_circle_outline, size: 18),
                             label: const Text('إضافة ممول', style: TextStyle(fontSize: 13)),
@@ -495,9 +515,11 @@ class _FundingTab extends ConsumerWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => _activate(context, ref),
+                              onPressed: controllerState.isLoading ? null : () => _activate(context, ref),
                               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                              icon: const Icon(Icons.flash_on, size: 18),
+                              icon: controllerState.isLoading 
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.flash_on, size: 18),
                               label: const Text('تفعيل العقد', style: TextStyle(fontSize: 13)),
                             ),
                           ),
@@ -545,16 +567,7 @@ class _FundingTab extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      try {
-        final success = await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
-        if (context.mounted && success) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
-        }
-      }
+      await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
     }
   }
 }
