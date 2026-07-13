@@ -532,7 +532,7 @@ class _FundingTab extends ConsumerWidget {
     final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('تفعيل العقد'), content: const Text('سيتم تفعيل العقد وتوليد جدول الأقساط. هل أنت متأكد؟'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم، تفعيل'))]));
     if (confirmed == true) {
       try {
-        await ref.read(contractControllerProvider.notifier).activateContract(id);
+        await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
       } catch (e) {
         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
