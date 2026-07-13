@@ -14,27 +14,28 @@ class ContractController extends _$ContractController {
 
   Future<void> createContract(Map<String, dynamic> data) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).createContract(data));
-    state = result;
+    state = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).createContract(data));
   }
 
   Future<bool> activateContract(String id) async {
-    // حماية لمنع تكرار الضغط
     if (state.isLoading) return false;
     
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).activateContract(id));
+    final result = await AsyncValue.guard(() async {
+      await ref.read(contractRepositoryProvider).activateContract(id);
+    });
     
-    if (!result.hasError) {
-      ref.invalidate(contractDetailsProvider(id));
-      ref.invalidate(contractInstallmentsProvider(id));
-      ref.invalidate(contractFundingProvider(id));
-      state = const AsyncData(null);
-      return true;
-    } else {
+    if (result.hasError) {
       state = result;
       return false;
     }
+
+    // تحديث البيانات بعد النجاح
+    ref.invalidate(contractDetailsProvider(id));
+    ref.invalidate(contractInstallmentsProvider(id));
+    ref.invalidate(contractFundingProvider(id));
+    state = const AsyncData(null);
+    return true;
   }
 
   Future<bool> processPayment({
