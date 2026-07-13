@@ -21,7 +21,7 @@ class StaffDashboardScreen extends ConsumerWidget {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: AppColors.bgGrey,
+      backgroundColor: const Color(0xFFF6F8FA),
       body: statsAsync.when(
         data: (stats) => RefreshIndicator(
           onRefresh: () async {
@@ -29,110 +29,218 @@ class StaffDashboardScreen extends ConsumerWidget {
             ref.invalidate(monthlyGrowthDataProvider);
           },
           child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
             slivers: [
-              // هيدر فاخر بأسلوب "المركز القيادي"
+              // 1. Executive Header Section
               SliverToBoxAdapter(
-                child: _buildExecutiveHeader(user.fullName, stats, f),
+                child: _buildExecutiveHeader(user.fullName),
               ),
-              
+
+              // 2. Statistics Row (Floating Impact)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+                  child: Transform.translate(
+                    offset: const Offset(0, -40),
+                    child: _buildKPISection(stats, f),
+                  ),
+                ),
+              ),
+
+              // 3. Main Dashboard Content
               SliverPadding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _buildMainAnalyticsRow(stats, growthAsync, f, context),
+                    _buildSectionHeader('توصيات النظام والذكاء المالي', Icons.auto_awesome_rounded),
+                    const SizedBox(height: 16),
+                    _buildInsightsGrid(stats, context),
+                    const SizedBox(height: 32),
+                    
+                    // Analytics Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _DashboardCard(
+                            title: 'تحليل النمو المالي',
+                            subtitle: 'صافي الأرباح لآخر 6 أشهر',
+                            child: SizedBox(
+                              height: 250,
+                              child: growthAsync.when(
+                                data: (data) => _ModernGrowthChart(data: data),
+                                loading: () => const Center(child: CircularProgressIndicator()),
+                                error: (_, __) => const Center(child: Text('لا توجد بيانات كافية')),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: _DashboardCard(
+                            title: 'إدارة المخاطر',
+                            subtitle: 'توزيع المتأخرات المالية',
+                            child: _RiskAnalysisList(stats: stats, f: f),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 24),
-                    _buildOperationsRow(stats, context),
-                    const SizedBox(height: 40),
+                    
+                    // Operations Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _DashboardCard(
+                            title: 'آخر العمليات المبرمة',
+                            subtitle: 'متابعة فورية للعقود الجديدة',
+                            child: _RecentOperationsList(stats: stats, context: context),
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: _DashboardCard(
+                            title: 'إجراءات سريعة',
+                            subtitle: 'العمليات الأكثر تكراراً',
+                            child: _QuickActionsSection(context: context),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 60),
                   ]),
                 ),
               ),
             ],
           ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
         error: (err, _) => Center(child: Text('Error: $err')),
       ),
     );
   }
 
-  Widget _buildExecutiveHeader(String name, Map<String, dynamic> stats, intl.NumberFormat f) {
+  Widget _buildExecutiveHeader(String name) {
     return Container(
+      height: 200,
       width: double.infinity,
       decoration: const BoxDecoration(
         color: AppColors.primaryNavy,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [AppColors.primaryNavy, Color(0xFF1E293B)],
+        ),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 40, 32, 40),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 60, 32, 0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('لوحة البيانات التنفيذية', 
-                      style: TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                    const SizedBox(height: 8),
-                    Text('أهلاً بك، $name', 
-                      style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                    Text('إليك ملخص مؤشرات الأداء المالي والتشغيلي لليوم', 
-                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
-                  ],
-                ),
-                _buildLiveClock(),
+                Text('نظام الإدارة الذكي', style: TextStyle(color: AppColors.accentGold.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                const SizedBox(height: 4),
+                Text('أهلاً بك، $name', style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                Text('إليك نظرة شاملة على أداء المنظومة اليوم', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
               ],
             ),
-          ),
-          
-          // إحصائيات مدمجة داخل الهيدر (Floating Style)
-          Transform.translate(
-            offset: const Offset(0, 30),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Row(
-                children: [
-                  _buildHeaderStatCard('إجمالي العملاء', (stats['total_customers'] ?? 0).toString(), Icons.people_outline, Colors.blue),
-                  const SizedBox(width: 16),
-                  _buildHeaderStatCard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_outlined, Colors.orange),
-                  const SizedBox(width: 16),
-                  _buildHeaderStatCard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_outlined, Colors.green),
-                  const SizedBox(width: 16),
-                  _buildHeaderStatCard('أرصدة المستثمرين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_outlined, Colors.purple),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-        ],
+            _buildClock(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeaderStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildKPISection(Map<String, dynamic> stats, intl.NumberFormat f) {
+    return Row(
+      children: [
+        _KPICard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
+        const SizedBox(width: 16),
+        _KPICard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, Colors.green),
+        const SizedBox(width: 16),
+        _KPICard('سيولة الممولين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
+      ],
+    );
+  }
+
+  Widget _buildInsightsGrid(Map<String, dynamic> stats, BuildContext context) {
+    final double investorCash = (stats['investor_balances'] as num?)?.toDouble() ?? 0;
+    return Row(
+      children: [
+        if (investorCash > 500000)
+          Expanded(child: _InsightTile('سيولة فائضة', 'يوجد ${intl.NumberFormat.compact().format(investorCash)} ر.س جاهزة للتوظيف', Icons.trending_up_rounded, Colors.blue, () => context.push('/inventory/new'))),
+        const SizedBox(width: 16),
+        Expanded(child: _InsightTile('المخزون الحالي', 'توجد سيارات بانتظار التخصيص للمستثمرين', Icons.inventory_2_rounded, Colors.purple, () => context.push('/inventory'))),
+        const SizedBox(width: 16),
+        Expanded(child: _InsightTile('التحصيل', 'راجع تقرير الأقساط المستحقة خلال هذا الأسبوع', Icons.payments_rounded, Colors.teal, () => context.push('/reports'))),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primaryNavy, size: 20),
+        const SizedBox(width: 12),
+        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+      ],
+    );
+  }
+
+  Widget _buildClock() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      child: Row(
+        children: [
+          const Icon(Icons.access_time_filled_rounded, color: AppColors.accentGold, size: 16),
+          const SizedBox(width: 8),
+          Text(intl.DateFormat('HH:mm').format(DateTime.now()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+}
+
+class _KPICard extends StatelessWidget {
+  final String label, value;
+  final IconData icon;
+  final Color color;
+  const _KPICard(this.label, this.value, this.icon, this.color);
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(20),
+        height: 100,
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 22),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+              child: Icon(icon, color: color, size: 24),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-                  Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primaryNavy), overflow: TextOverflow.ellipsis),
+                  Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -141,102 +249,52 @@ class StaffDashboardScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildLiveClock() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+class _InsightTile extends StatelessWidget {
+  final String title, desc;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _InsightTile(this.title, this.desc, this.icon, this.color, this.onTap);
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.1))),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [Icon(icon, color: color, size: 20), const SizedBox(width: 10), Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14))]),
+            const SizedBox(height: 12),
+            Text(desc, style: const TextStyle(fontSize: 11, color: Colors.blueGrey, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.access_time_rounded, color: AppColors.accentGold, size: 18),
-          const SizedBox(width: 12),
-          Text(intl.DateFormat('HH:mm').format(DateTime.now()), 
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMainAnalyticsRow(Map<String, dynamic> stats, AsyncValue<List<Map<String, dynamic>>> growthAsync, intl.NumberFormat f, BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // كارت الرسم البياني (Creative White Card)
-        Expanded(
-          flex: 2,
-          child: _CreativeCard(
-            title: 'مؤشر النمو المالي',
-            subtitle: 'تحليل أرباح الـ 6 أشهر الماضية',
-            child: growthAsync.when(
-              data: (data) => _ModernSimpleChart(data: data),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const SizedBox(),
-            ),
-          ),
-        ),
-        const SizedBox(width: 24),
-        // كارت المتأخرات
-        Expanded(
-          child: _CreativeCard(
-            title: 'مخاطر التحصيل',
-            subtitle: 'الأقساط المتأخرة حسب المدة',
-            child: _OverdueClassicList(stats: stats, f: f),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOperationsRow(Map<String, dynamic> stats, BuildContext context) {
-    final recentContracts = (stats['recent_contracts'] as List?) ?? [];
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: _CreativeCard(
-            title: 'أحدث العمليات التعاقدية',
-            subtitle: 'متابعة مباشرة لآخر العقود المبرمة',
-            child: _CompactContractsList(contracts: recentContracts, context: context),
-          ),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: _CreativeCard(
-            title: 'الوصول السريع',
-            subtitle: 'إجراءات تشغيلية فورية',
-            child: _QuickActionsList(context: context),
-          ),
-        ),
-      ],
     );
   }
 }
 
-class _CreativeCard extends StatelessWidget {
+class _DashboardCard extends StatelessWidget {
   final String title, subtitle;
   final Widget child;
-  const _CreativeCard({required this.title, required this.subtitle, required this.child});
+  const _DashboardCard({required this.title, required this.subtitle, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))],
-      ),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 30, offset: const Offset(0, 10))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-          Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider(height: 1)),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+          Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider(height: 1, color: Color(0xFFF1F1F1))),
           child,
         ],
       ),
@@ -244,51 +302,48 @@ class _CreativeCard extends StatelessWidget {
   }
 }
 
-class _ModernSimpleChart extends StatelessWidget {
+class _ModernGrowthChart extends StatelessWidget {
   final List<Map<String, dynamic>> data;
-  const _ModernSimpleChart({required this.data});
+  const _ModernGrowthChart({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    if (data.isEmpty) return const Center(child: Text('لا توجد بيانات'));
+    if (data.isEmpty) return const Center(child: Text('لا توجد بيانات كافية للتحليل'));
     final chartData = data.reversed.toList();
-    return SizedBox(
-      height: 200,
-      child: LineChart(
-        LineChartData(
-          gridData: const FlGridData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value['gross_profit'] as num?)?.toDouble() ?? 0.0)).toList(),
-              isCurved: true,
-              color: AppColors.accentGold,
-              barWidth: 4,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppColors.accentGold.withOpacity(0.2), AppColors.accentGold.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-            ),
-          ],
-        ),
+    return LineChart(
+      LineChartData(
+        gridData: const FlGridData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value['gross_profit'] as num?)?.toDouble() ?? 0.0)).toList(),
+            isCurved: true,
+            color: AppColors.primaryNavy,
+            barWidth: 6,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppColors.primaryNavy.withOpacity(0.2), AppColors.primaryNavy.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _OverdueClassicList extends StatelessWidget {
+class _RiskAnalysisList extends StatelessWidget {
   final Map<String, dynamic> stats;
   final intl.NumberFormat f;
-  const _OverdueClassicList({required this.stats, required this.f});
+  const _RiskAnalysisList({required this.stats, required this.f});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildRow('متأخر +90 يوم', f.format(stats['overdue_over_90'] ?? 0), Colors.red, stats['c_max'] ?? 0),
-        const SizedBox(height: 16),
-        _buildRow('متأخر 30-90 يوم', f.format(stats['overdue_60_90'] ?? 0), Colors.orange, stats['c_90'] ?? 0),
-        const SizedBox(height: 16),
-        _buildRow('أقل من 30 يوم', f.format(stats['overdue_under_30'] ?? 0), Colors.blue, stats['c_30'] ?? 0),
+        _buildRow('متأخرات حرجة', f.format(stats['overdue_over_90'] ?? 0), Colors.red, stats['c_max'] ?? 0),
+        const SizedBox(height: 20),
+        _buildRow('تحت المتابعة', f.format(stats['overdue_60_90'] ?? 0), Colors.orange, stats['c_90'] ?? 0),
+        const SizedBox(height: 20),
+        _buildRow('مستحقات قريبة', f.format(stats['overdue_under_30'] ?? 0), Colors.blue, stats['c_30'] ?? 0),
       ],
     );
   }
@@ -297,85 +352,57 @@ class _OverdueClassicList extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(width: 4, height: 24, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                Text('$count حالة', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ],
-        ),
-        Text('$value ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Row(children: [Container(width: 4, height: 32, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))), const SizedBox(width: 16), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)), Text('$count حالة', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold))])]),
+        Text('$value ر.س', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primaryNavy)),
       ],
     );
   }
 }
 
-class _CompactContractsList extends StatelessWidget {
-  final List contracts;
+class _RecentOperationsList extends StatelessWidget {
+  final Map<String, dynamic> stats;
   final BuildContext context;
-  const _CompactContractsList({required this.contracts, required this.context});
+  const _RecentOperationsList({required this.stats, required this.context});
 
   @override
   Widget build(BuildContext context) {
-    if (contracts.isEmpty) return const Center(child: Text('لا توجد عقود حديثة'));
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: contracts.length > 3 ? 3 : contracts.length,
-      itemBuilder: (context, index) {
-        final c = contracts[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(color: AppColors.bgGrey.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            dense: true,
-            leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.description_outlined, size: 16, color: AppColors.primaryNavy)),
-            title: Text(c['contract_no'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(c['customers']?['full_name'] ?? '-'),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
-            onTap: () => context.push('/contracts/${c['id']}'),
-          ),
-        );
-      },
+    final recent = (stats['recent_contracts'] as List?) ?? [];
+    if (recent.isEmpty) return const Center(child: Text('لا توجد عقود مسجلة بعد'));
+    return Column(
+      children: recent.take(4).map((c) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
+        child: ListTile(dense: true, leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.description_outlined, color: AppColors.primaryNavy, size: 18)), title: Text(c['contract_no'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), subtitle: Text(c['customers']?['full_name'] ?? '-', style: const TextStyle(fontSize: 12)), trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey), onTap: () => context.push('/contracts/${c['id']}')),
+      )).toList(),
     );
   }
 }
 
-class _QuickActionsList extends StatelessWidget {
+class _QuickActionsSection extends StatelessWidget {
   final BuildContext context;
-  const _QuickActionsList({required this.context});
+  const _QuickActionsSection({required this.context});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _ActionBtn('إصدار عقد تمويل', Icons.add_task_rounded, Colors.blue, () => context.push('/contracts/new')),
-        const SizedBox(height: 8),
-        _ActionBtn('تسجيل عميل جديد', Icons.person_add_rounded, Colors.green, () => context.push('/crm/new')),
-        const SizedBox(height: 8),
-        _ActionBtn('إضافة سيارة للمخزون', Icons.add_road_rounded, Colors.orange, () => context.push('/inventory/new')),
+        _ActionBtn('إصدار عقد جديد', Icons.add_moderator_rounded, Colors.blue, () => context.push('/contracts/new')),
+        const SizedBox(height: 12),
+        _ActionBtn('إضافة مستثمر', Icons.person_add_rounded, AppColors.accentGold, () => context.push('/investors')),
+        const SizedBox(height: 12),
+        _ActionBtn('تسجيل مركبة', Icons.add_road_rounded, Colors.orange, () => context.push('/inventory/new')),
       ],
     );
   }
 
   Widget _ActionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 18, color: color),
-        label: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.grey.shade200),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+        child: Row(children: [Icon(icon, color: color, size: 20), const SizedBox(width: 16), Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryNavy)), const Spacer(), const Icon(Icons.add, size: 16, color: Colors.grey)]),
       ),
     );
   }

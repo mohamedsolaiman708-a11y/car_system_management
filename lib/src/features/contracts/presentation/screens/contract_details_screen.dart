@@ -23,7 +23,7 @@ class ContractDetailsScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.primaryNavy,
         elevation: 0,
-        toolbarHeight: 50, // تقليل ارتفاع التولبار
+        toolbarHeight: 50,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
           onPressed: () => context.pop(),
@@ -78,7 +78,7 @@ class ContractDetailsScreen extends ConsumerWidget {
 
   Widget _buildPremiumHeader(Contract contract) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(32, 16, 32, 24), // تقليل الـ Padding بشكل كبير
+      padding: const EdgeInsets.fromLTRB(32, 16, 32, 24),
       decoration: const BoxDecoration(
         color: AppColors.primaryNavy,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
@@ -176,9 +176,11 @@ class _OverviewTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final installmentsAsync = ref.watch(contractInstallmentsProvider(contract.id));
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24), // تقليل الـ Padding
+      padding: const EdgeInsets.all(24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -193,7 +195,22 @@ class _OverviewTab extends ConsumerWidget {
                 _InfoRow('مدة التمويل بالشهور', '${contract.durationMonths} شهر'),
                 const Divider(height: 24),
                 _InfoRow('الرسوم الإدارية والضريبة', '${f.format(contract.moroorFees + contract.tammFees + contract.insuranceFees + contract.vatAmount)} ر.س'),
-                _InfoRow('إجمالي قيمة العقد', '${f.format(contract.totalContractValue)} ر.س', isBold: true, color: AppColors.primaryNavy),
+                _InfoRow('إجمالي قيمة مديونية العقد', '${f.format(contract.totalContractValue)} ر.س'),
+                
+                installmentsAsync.when(
+                  data: (list) {
+                    final paid = list.where((i) => i['status'] == 'paid').fold(0.0, (sum, i) => sum + (i['expected_amount'] as num).toDouble());
+                    final remaining = contract.totalContractValue - paid;
+                    return Column(
+                      children: [
+                        const Divider(height: 24),
+                        _InfoRow('المبلغ المتبقي للسداد', '${f.format(remaining)} ر.س', isBold: true, color: Colors.red.shade700),
+                      ],
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
               ],
             ),
           ),
@@ -207,7 +224,8 @@ class _OverviewTab extends ConsumerWidget {
                 _InfoRow('رقم اللوحة', contract.vehicle?['license_plate'] ?? '-'),
                 _InfoRow('سنة الصنع', contract.vehicle?['year']?.toString() ?? '-'),
                 const Divider(height: 24),
-                _InfoRow('الكفيل', contract.guarantor1Name ?? 'لا يوجد كفيل'),
+                _InfoRow('الكفيل الغارم', contract.guarantor1Name ?? 'لا يوجد كفيل'),
+                _InfoRow('هوية الكفيل', contract.guarantor1Id ?? '-'),
               ],
             ),
           ),
@@ -294,7 +312,7 @@ class _InstallmentsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ')),
+      error: (e, _) => Center(child: Text('خطأ في تحميل الأقساط')),
     );
   }
 
@@ -350,19 +368,70 @@ class _PaymentsTab extends ConsumerWidget {
                     child: ListTile(
                       dense: true,
                       leading: Icon(isReversed ? Icons.history_rounded : Icons.check_circle_rounded, color: isReversed ? Colors.red : Colors.green, size: 28),
-                      title: Text('${f.format(p['amount_total'])} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      title: Text('${f.format(p['amount_total'])} ر.س', 
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold, 
+                          fontSize: 16,
+                          decoration: isReversed ? TextDecoration.lineThrough : null,
+                          color: isReversed ? Colors.grey : AppColors.primaryNavy,
+                        )),
                       subtitle: Text('بتاريخ: ${intl.DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(p['payment_date']))}', style: const TextStyle(fontSize: 11)),
-                      trailing: isReversed ? const Text('تم العكس', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)) : const Icon(Icons.print_rounded, color: Colors.grey, size: 18),
+                      trailing: isReversed 
+                        ? const Text('تم العكس', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)) 
+                        : IconButton(
+                            icon: const Icon(Icons.history_rounded, color: Colors.orange, size: 20),
+                            onPressed: () => _showReversalDialog(context, ref, p['id']),
+                            tooltip: 'عكس العملية',
+                          ),
                     ),
                   );
                 },
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error')),
+            error: (e, _) => Center(child: Text('خطأ في تحميل المدفوعات')),
           ),
         ),
       ],
+    );
+  }
+
+  void _showReversalDialog(BuildContext context, WidgetRef ref, String paymentId) {
+    final reasonController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('عكس العملية المالية'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('سيتم إلغاء أثر هذه الدفعة وإعادة فتح الأقساط وتصحيح أرصدة الممولين. هذا الإجراء لا يمكن التراجع عنه.'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(labelText: 'سبب العكس (إلزامي)', border: OutlineInputBorder()),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              onPressed: () async {
+                if (reasonController.text.trim().isEmpty) return;
+                final success = await ref.read(contractControllerProvider.notifier).reversePayment(contract.id, paymentId, reasonController.text.trim());
+                if (context.mounted && success) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم عكس العملية بنجاح')));
+                }
+              },
+              child: const Text('تأكيد العكس'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -463,7 +532,7 @@ class _FundingTab extends ConsumerWidget {
     final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('تفعيل العقد'), content: const Text('سيتم تفعيل العقد وتوليد جدول الأقساط. هل أنت متأكد؟'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم، تفعيل'))]));
     if (confirmed == true) {
       try {
-        await ref.read(contractControllerProvider.notifier).activateContract(contract.id);
+        await ref.read(contractControllerProvider.notifier).activateContract(id);
         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل العقد بنجاح')));
       } catch (e) {
         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
