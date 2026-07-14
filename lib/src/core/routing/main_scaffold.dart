@@ -195,7 +195,6 @@ class _Sidebar extends ConsumerWidget {
                     ),
                   _SidebarLink(Icons.admin_panel_settings_rounded, 'إدارة فريق العمل', '/staff-management', isCollapsed),
                   _SidebarLink(Icons.security_rounded, 'سجلات الرقابة', '/audit-logs', isCollapsed),
-                  _SidebarLink(Icons.cloud_sync_rounded, 'النسخ الاحتياطي', '/backups', isCollapsed),
                   _SidebarLink(Icons.settings_suggest_rounded, 'إعدادات النظام', '/settings', isCollapsed),
                 ] else
                   _SidebarLink(Icons.settings_rounded, 'الإعدادات الشخصية', '/settings', isCollapsed),

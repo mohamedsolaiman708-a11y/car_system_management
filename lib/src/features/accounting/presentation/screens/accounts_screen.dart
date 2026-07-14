@@ -17,21 +17,21 @@ class AccountsScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(200), // زيادة الارتفاع لضمان ظهور العنوان بوضوح
-          child: Container(
-            color: AppColors.primaryNavy,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
-                child: _buildHeader(context, accountsAsync),
-              ),
+        appBar: AppBar(
+          toolbarHeight: 140,
+          backgroundColor: AppColors.primaryNavy,
+          automaticallyImplyLeading: false,
+          elevation: 0,
+          flexibleSpace: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
+              child: _buildHeader(context, accountsAsync),
             ),
           ),
         ),
         body: accountsAsync.when(
           data: (accounts) => _buildAccountsGrid(accounts, f),
-          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+          loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
           error: (err, _) => Center(child: Text('خطأ: $err')),
         ),
       ),
@@ -44,16 +44,17 @@ class AccountsScreen extends ConsumerWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'شجرة الحسابات المالية', // العنوان الرئيسي بارز وواضح
+              'شجرة الحسابات المالية',
               style: TextStyle(
                 fontSize: 28, 
-                fontWeight: FontWeight.bold, 
+                fontWeight: FontWeight.w900, 
                 color: Colors.white,
                 letterSpacing: 0.5,
               ),
@@ -75,7 +76,7 @@ class AccountsScreen extends ConsumerWidget {
             );
           },
           icon: const Icon(Icons.add_chart_rounded, size: 20),
-          label: const Text('إضافة حساب جديد'),
+          label: const Text('إضافة حساب جديد', style: TextStyle(fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.accentGold,
             foregroundColor: AppColors.primaryNavy,

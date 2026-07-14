@@ -20,23 +20,20 @@ class InvestorsScreen extends ConsumerWidget {
         initialIndex: initialIndex,
         child: Scaffold(
           backgroundColor: AppColors.bgGrey,
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(200), // زيادة الارتفاع لضمان ظهور العنوان
-            child: Container(
-              color: AppColors.primaryNavy,
-              child: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
-                      child: _buildHeader(context, ref),
-                    ),
-                    const Spacer(),
-                    _buildTabBar(),
-                  ],
-                ),
+          appBar: AppBar(
+            toolbarHeight: 140,
+            backgroundColor: AppColors.primaryNavy,
+            automaticallyImplyLeading: false,
+            elevation: 0,
+            flexibleSpace: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
+                child: _buildHeader(context, ref),
               ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: _buildTabBar(),
             ),
           ),
           body: const TabBarView(
@@ -65,15 +62,17 @@ class InvestorsScreen extends ConsumerWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'إدارة المستثمرين والشركاء', // العنوان الرئيسي
+              'إدارة المستثمرين والشركاء',
               style: TextStyle(
                 fontSize: 28, 
-                fontWeight: FontWeight.bold, 
+                fontWeight: FontWeight.w900, 
                 color: Colors.white,
                 letterSpacing: 0.5,
               ),
@@ -139,7 +138,6 @@ class InvestorsScreen extends ConsumerWidget {
   }
 }
 
-// ... بقية الأكواد (ActiveInvestorsList, PendingInvestorsList, etc.) تظل كما هي
 class ActiveInvestorsList extends ConsumerWidget {
   const ActiveInvestorsList({super.key});
 

@@ -16,12 +16,14 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   String searchQuery = '';
   String? selectedRole;
 
+  // تعريف الرتب المعتمدة فقط في النظام
+  final List<String> _allowedRoles = ['admin', 'sales', 'accountant'];
+
   String _translateRole(String slugOrName) {
     final mapping = {
       'admin': 'مدير نظام',
       'accountant': 'محاسب مالي',
       'sales': 'مسؤول مبيعات',
-      'manager': 'مدير عمليات',
     };
     return mapping[slugOrName.toLowerCase().trim()] ?? slugOrName;
   }
@@ -35,15 +37,15 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(200), // ارتفاع فخم لإظهار العنوان والإحصائيات
-          child: Container(
-            color: AppColors.primaryNavy,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
-                child: _buildHeader(context, staffAsync),
-              ),
+        appBar: AppBar(
+          toolbarHeight: 180,
+          backgroundColor: AppColors.primaryNavy,
+          automaticallyImplyLeading: false,
+          elevation: 0,
+          flexibleSpace: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+              child: _buildHeader(context, staffAsync),
             ),
           ),
         ),
@@ -94,13 +96,14 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'إدارة فريق العمل والكوادر', // العنوان الرئيسي بارز
+              'إدارة فريق العمل والكوادر',
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
             ),
             const SizedBox(height: 16),
@@ -193,18 +196,22 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
       ),
       child: rolesAsync.maybeWhen(
-        data: (roles) => DropdownButtonHideUnderline(
-          child: DropdownButton<String?>(
-            value: selectedRole,
-            hint: const Text('تصفية حسب الرتبة', style: TextStyle(fontSize: 14)),
-            icon: const Icon(Icons.filter_list_rounded, color: AppColors.primaryNavy),
-            onChanged: (val) => setState(() => selectedRole = val),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('كافة الرتب')),
-              ...roles.where((r) => r['slug'] != 'investor').map((r) => DropdownMenuItem(value: r['slug'].toString(), child: Text(_translateRole(r['slug'])))),
-            ],
-          ),
-        ),
+        data: (roles) {
+          // فلترة الرتب المتاحة في القائمة المنسدلة
+          final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
+          return DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: selectedRole,
+              hint: const Text('تصفية حسب الرتبة', style: TextStyle(fontSize: 14)),
+              icon: const Icon(Icons.filter_list_rounded, color: AppColors.primaryNavy),
+              onChanged: (val) => setState(() => selectedRole = val),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('كافة الرتب')),
+                ...filteredRoles.map((r) => DropdownMenuItem(value: r['slug'].toString(), child: Text(_translateRole(r['slug'])))),
+              ],
+            ),
+          );
+        },
         orElse: () => const SizedBox(),
       ),
     );
@@ -307,15 +314,20 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
         }
         else if (value.startsWith('role_')) notifier.updateRole(member.id, value.substring(5));
       },
-      itemBuilder: (context) => [
-        const PopupMenuItem(value: 'edit_name', child: Row(children: [Icon(Icons.edit_rounded, size: 18), SizedBox(width: 12), Text('تعديل البيانات')])),
-        if (member.status == 'pending')
-          const PopupMenuItem(value: 'approve', child: Row(children: [Icon(Icons.verified_rounded, size: 18, color: Colors.green), SizedBox(width: 12), Text('اعتماد الموظف')])),
-        PopupMenuItem(value: 'toggle', child: Row(children: [Icon(member.isActive ? Icons.block_rounded : Icons.check_circle_rounded, size: 18, color: member.isActive ? Colors.red : Colors.green), SizedBox(width: 12), Text(member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب')])),
-        const PopupMenuItem(value: 'reset_password', child: Row(children: [Icon(Icons.vpn_key_rounded, size: 18), SizedBox(width: 12), Text('إعادة تعيين المرور')])),
-        const PopupMenuDivider(),
-        ...roles.where((r) => ['accountant', 'sales'].contains(r['slug'])).map((r) => PopupMenuItem(value: 'role_${r['id']}', child: Text('تغيير لـ ${_translateRole(r['slug'])}'))),
-      ],
+      itemBuilder: (context) {
+        // فلترة الرتب المتاحة في خيارات تغيير الرتبة
+        final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
+        
+        return [
+          const PopupMenuItem(value: 'edit_name', child: Row(children: [Icon(Icons.edit_rounded, size: 18), SizedBox(width: 12), Text('تعديل البيانات')])),
+          if (member.status == 'pending')
+            const PopupMenuItem(value: 'approve', child: Row(children: [Icon(Icons.verified_rounded, size: 18, color: Colors.green), SizedBox(width: 12), Text('اعتماد الموظف')])),
+          PopupMenuItem(value: 'toggle', child: Row(children: [Icon(member.isActive ? Icons.block_rounded : Icons.check_circle_rounded, size: 18, color: member.isActive ? Colors.red : Colors.green), SizedBox(width: 12), Text(member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب')])),
+          const PopupMenuItem(value: 'reset_password', child: Row(children: [Icon(Icons.vpn_key_rounded, size: 18), SizedBox(width: 12), Text('إعادة تعيين المرور')])),
+          const PopupMenuDivider(),
+          ...filteredRoles.where((r) => r['slug'] != member.role.name).map((r) => PopupMenuItem(value: 'role_${r['id']}', child: Text('تغيير لـ ${_translateRole(r['slug'])}'))),
+        ];
+      },
     );
   }
 
@@ -332,13 +344,13 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (controller.text.isNotEmpty) {
-                  ref.read(staffListControllerProvider.notifier).updateName(member.id, controller.text);
-                  Navigator.pop(context);
+                  await ref.read(staffListControllerProvider.notifier).updateName(member.id, controller.text);
+                  if (context.mounted) Navigator.pop(context);
                 }
               },
-              child: const Text('تحديث البيانات'),
+              child: const Text('حفظ'),
             ),
           ],
         ),
@@ -347,69 +359,78 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   }
 
   void _showAddStaffDialog(BuildContext context) {
-    final nameController = TextEditingController();
     final emailController = TextEditingController();
-    String? selectedRoleId;
-    
+    final nameController = TextEditingController();
+    String? roleId;
+
     showDialog(
       context: context,
-      builder: (context) => Consumer(
-        builder: (context, ref, child) {
-          final rolesAsync = ref.watch(availableRolesProvider);
-          return Directionality(
-            textDirection: TextDirection.rtl,
-            child: AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: const Text('دعوة موظف جديد للفريق', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: AppColors.primaryNavy)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('سيتم إرسال دعوة رسمية عبر البريد الإلكتروني للوصول إلى المنظومة المالية', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                    const SizedBox(height: 24),
-                    TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline_rounded))),
-                    const SizedBox(height: 16),
-                    TextField(controller: emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني المهني', prefixIcon: Icon(Icons.email_outlined))),
-                    const SizedBox(height: 16),
-                    rolesAsync.when(
-                      data: (roles) => DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(labelText: 'الصلاحية والوظيفة المخططة', prefixIcon: Icon(Icons.work_outline_rounded)),
-                        items: roles.where((r) => ['accountant', 'sales'].contains(r['slug'])).map((r) => DropdownMenuItem(value: r['id'].toString(), child: Text(_translateRole(r['slug'])))).toList(),
-                        onChanged: (val) => selectedRoleId = val,
-                      ),
-                      loading: () => const LinearProgressIndicator(),
-                      error: (_, __) => const Text('خطأ في تحميل الأدوار'),
-                    ),
-                  ],
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: const Text('دعوة موظف جديد للفريق', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('سيتم إرسال دعوة رسمية للبريد الإلكتروني الموضح أدناه لإكمال عملية التسجيل.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 20),
+                  TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
+                  const SizedBox(height: 16),
+                  TextField(controller: emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني', prefixIcon: Icon(Icons.email_outlined))),
+                  const SizedBox(height: 16),
+                  ref.watch(availableRolesProvider).maybeWhen(
+                    data: (roles) {
+                      final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
+                      return DropdownButtonFormField<String>(
+                        value: roleId,
+                        decoration: const InputDecoration(labelText: 'الرتبة الوظيفية', prefixIcon: Icon(Icons.work_outline)),
+                        items: filteredRoles.map((r) => DropdownMenuItem(value: r['id'].toString(), child: Text(_translateRole(r['slug'])))).toList(),
+                        onChanged: (val) => setState(() => roleId = val),
+                      );
+                    },
+                    orElse: () => const CircularProgressIndicator(),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (nameController.text.isNotEmpty && emailController.text.isNotEmpty && selectedRoleId != null) {
-                      await ref.read(staffListControllerProvider.notifier).inviteStaff(email: emailController.text, fullName: nameController.text, roleId: selectedRoleId!);
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  },
-                  child: const Text('إرسال الدعوة الرسمية'),
-                ),
-              ],
             ),
-          );
-        },
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+              ElevatedButton(
+                onPressed: () async {
+                  if (emailController.text.isNotEmpty && nameController.text.isNotEmpty && roleId != null) {
+                    final success = await ref.read(staffListControllerProvider.notifier).inviteStaff(
+                      email: emailController.text,
+                      fullName: nameController.text,
+                      roleId: roleId!,
+                    );
+                    if (success && context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الدعوة بنجاح')));
+                    }
+                  }
+                },
+                child: const Text('إرسال الدعوة الآن'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState() => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.supervised_user_circle_rounded, size: 100, color: Colors.grey.shade200),
-        const SizedBox(height: 24),
-        const Text('لم يتم العثور على موظفين في قاعدة البيانات', style: TextStyle(color: Colors.grey, fontSize: 18, fontWeight: FontWeight.w500)),
-      ],
-    ),
-  );
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person_search_rounded, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 20),
+          Text('لا يوجد موظفين يطابقون معايير البحث', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+        ],
+      ),
+    );
+  }
 }
