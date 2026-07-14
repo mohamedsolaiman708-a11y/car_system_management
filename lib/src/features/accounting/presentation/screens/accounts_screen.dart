@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../domain/account.dart';
 import '../accounting_controller.dart';
-import '../widgets/create_account_dialog.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accountsAsync = ref.watch(accountsProvider);
+    // استخدام الاسم الصحيح للـ Provider
+    final accountsAsync = ref.watch(chartOfAccountsControllerProvider);
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return Directionality(
@@ -39,10 +40,12 @@ class AccountsScreen extends ConsumerWidget {
                       ],
                     ),
                     ElevatedButton.icon(
-                      onPressed: () => showDialog(
-                        context: context,
-                        builder: (context) => const CreateAccountDialog(),
-                      ),
+                      onPressed: () {
+                        // تنبيه مؤقت لحين إضافة Dialog إنشاء الحساب
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('سيتم تفعيل إضافة الحساب قريباً')),
+                        );
+                      },
                       icon: const Icon(Icons.add_chart_rounded, size: 18),
                       label: const Text('إضافة حساب'),
                       style: ElevatedButton.styleFrom(
@@ -68,7 +71,7 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAccountsGrid(List<Map<String, dynamic>> accounts, intl.NumberFormat f) {
+  Widget _buildAccountsGrid(List<Account> accounts, intl.NumberFormat f) {
     if (accounts.isEmpty) return _buildEmptyState();
 
     return GridView.builder(
@@ -82,8 +85,8 @@ class AccountsScreen extends ConsumerWidget {
       itemCount: accounts.length,
       itemBuilder: (context, index) {
         final acc = accounts[index];
-        final balance = (acc['balance'] as num?)?.toDouble() ?? 0.0;
-        final type = acc['type'] ?? 'asset';
+        final balance = acc.currentBalance;
+        final type = acc.type;
         
         return Container(
           decoration: BoxDecoration(
@@ -110,14 +113,14 @@ class AccountsScreen extends ConsumerWidget {
                             color: AppColors.primaryNavy.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(acc['code'] ?? '', 
+                          child: Text(acc.code, 
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryNavy)),
                         ),
                         _buildTypeBadge(type),
                       ],
                     ),
                     const Spacer(),
-                    Text(acc['name'] ?? '', 
+                    Text(acc.name, 
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
                     const SizedBox(height: 12),
                     Row(
