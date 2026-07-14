@@ -30,7 +30,8 @@ class SupabaseAccountingRepository implements AccountingRepository {
   }) async {
     var query = _client
         .from('journal_entries')
-        .select('*, journal_entry_lines(*, accounts(name, code))');
+    // استخدمنا alias باسم lines ليتوافق مع الموديل الموجود حالياً
+        .select('*, lines:journal_entry_lines(*, accounts(name, code))');
 
     if (startDate != null) {
       query = query.gte('entry_date', startDate.toIso8601String());
