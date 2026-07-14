@@ -48,6 +48,7 @@ class ContractController extends _$ContractController {
     required String method,
     String? reference,
     String? idempotencyKey,
+    String? notes,
   }) async {
     if (state.isLoading) return false;
     state = const AsyncLoading();
@@ -59,6 +60,7 @@ class ContractController extends _$ContractController {
         method: method,
         reference: reference,
         idempotencyKey: idempotencyKey,
+        notes: notes,
       );
       _refreshContractData(contractId);
     });
