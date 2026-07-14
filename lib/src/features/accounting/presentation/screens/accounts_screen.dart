@@ -10,7 +10,7 @@ class AccountsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // استخدام الاسم الصحيح للـ Provider
+    // تم تصحيح اسم الـ Provider إلى الاسم المولد من ريفربود
     final accountsAsync = ref.watch(chartOfAccountsControllerProvider);
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
@@ -41,9 +41,9 @@ class AccountsScreen extends ConsumerWidget {
                     ),
                     ElevatedButton.icon(
                       onPressed: () {
-                        // تنبيه مؤقت لحين إضافة Dialog إنشاء الحساب
+                        // تم تعطيل الـ Dialog مؤقتاً لحين التأكد من وجوده أو إنشائه
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('سيتم تفعيل إضافة الحساب قريباً')),
+                          const SnackBar(content: Text('خاصية إضافة حساب ستتوفر قريباً')),
                         );
                       },
                       icon: const Icon(Icons.add_chart_rounded, size: 18),
