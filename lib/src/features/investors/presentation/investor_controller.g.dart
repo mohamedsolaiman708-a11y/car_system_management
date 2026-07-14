@@ -176,7 +176,7 @@ final investorListControllerProvider =
 
 typedef _$InvestorListController = AutoDisposeAsyncNotifier<List<Investor>>;
 String _$investorDetailsControllerHash() =>
-    r'2b1f8d20ee6e7d1729d2944bf810bc0a8796e7b4';
+    r'eec48056a516347b0447ed9d2bb980fbecde0a7c';
 
 abstract class _$InvestorDetailsController
     extends BuildlessAutoDisposeAsyncNotifier<Investor?> {
