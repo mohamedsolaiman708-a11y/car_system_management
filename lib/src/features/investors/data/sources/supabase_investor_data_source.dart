@@ -14,18 +14,25 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   Future<List<Map<String, dynamic>>> getInvestors() async {
     final response = await _client
         .from('investors')
-        .select()
+        .select('*, available_balance:available_bal, deployed_capital:deployed_capi, total_profit_earned:total_profit_')
         .order('full_name', ascending: true);
     return List<Map<String, dynamic>>.from(response);
   }
 
   @override
   Future<Map<String, dynamic>?> getInvestorById(String id) async {
-    return await _client
-        .from('investors')
-        .select()
-        .eq('id', id)
-        .maybeSingle();
+    final user = _client.auth.currentUser;
+    
+    // محاولة البحث بالـ ID أو الإيميل مع استخدام Aliases لتطابق الموديل
+    var query = _client.from('investors').select('*, available_balance:available_bal, deployed_capital:deployed_capi, total_profit_earned:total_profit_');
+    
+    var response = await query.eq('id', id).maybeSingle();
+    
+    if (response == null && user != null && user.email != null) {
+      response = await query.eq('email', user.email!).maybeSingle();
+    }
+    
+    return response;
   }
 
   @override
@@ -68,7 +75,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       'p_investor_id': investorId,
       'p_amount': amount,
       'p_description': description,
-      'p_idempotency_key': null, // تمرير null لفك اشتباك الدوال في Postgres
+      'p_idempotency_key': null,
     });
   }
 
@@ -109,8 +116,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
         String? roleSlug;
         if (roleData is Map) {
           roleSlug = roleData['slug'];
-        } else if (roleData is List && roleData.isNotEmpty) {
-          roleSlug = roleData[0]['slug'];
         }
 
         final isInvestorType = roleSlug == null || roleSlug == 'investor';

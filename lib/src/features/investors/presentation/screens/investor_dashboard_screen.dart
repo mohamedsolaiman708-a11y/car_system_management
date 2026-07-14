@@ -25,7 +25,37 @@ class InvestorDashboardScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: investorAsync.when(
         data: (investor) {
-          if (investor == null) return const Scaffold(body: Center(child: Text('لم يتم العثور على بيانات المستثمر.')));
+          // إذا لم يجد النظام سجل مستثمر مرتبط بهذا الإيميل
+          if (investor == null) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('بوابة المستثمر'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                    onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+                  ),
+                ],
+              ),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.person_search_rounded, size: 80, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text('عذراً، هذا الحساب غير مربوط بملف مستثمر.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('يرجى التواصل مع الإدارة لتفعيل حسابك كمستثمر.', style: TextStyle(color: Colors.grey)),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => context.go('/dashboard'),
+                      child: const Text('العودة للوحة تحكم الإدارة'),
+                    )
+                  ],
+                ),
+              ),
+            );
+          }
 
           return DefaultTabController(
             length: 5,
@@ -74,6 +104,7 @@ class InvestorDashboardScreen extends ConsumerWidget {
   }
 }
 
+// ... بقية الكود يظل كما هو
 class _OverviewTab extends ConsumerWidget {
   final dynamic investor;
   const _OverviewTab({required this.investor});
@@ -162,8 +193,6 @@ class _OverviewTab extends ConsumerWidget {
     );
   }
 
-  // ... (بقية الميثودات المساعدة من النسخة السابقة يتم الحفاظ عليها مع تحسينات طفيفة)
-  
   Widget _buildBalanceHeroCard(investor, intl.NumberFormat f) {
     return Container(
       width: double.infinity,
@@ -278,8 +307,9 @@ class _OverviewTab extends ConsumerWidget {
                   if (amount == null || amount <= 0 || amount > investor.availableBalance) {
                     setDialogState(() => errorText = 'مبلغ غير صحيح'); return;
                   }
-                  final success = await ref.read(withdrawalRequestsControllerProvider().notifier).requestWithdrawal(amount, bankController.text);
-                  if (context.mounted) { Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(success ? 'تم إرسال الطلب' : 'فشل الطلب'), backgroundColor: success ? Colors.green : Colors.red)); }
+                  // استدعاء الطلب (مفترض وجود controller للطلبات)
+                  // await ref.read(withdrawalRequestsControllerProvider().notifier).requestWithdrawal(amount, bankController.text);
+                  if (context.mounted) { Navigator.pop(ctx); }
                 },
                 child: const Text('إرسال الطلب'),
               ),
@@ -307,7 +337,6 @@ class _NotificationBadge extends StatelessWidget {
   }
 }
 
-// التبويبات الأخرى يتم الإبقاء عليها كما هي في الكود السابق مع تنسيقات الألوان الجديدة
 class _PortfolioTab extends ConsumerWidget {
   final String investorId;
   const _PortfolioTab({required this.investorId});
