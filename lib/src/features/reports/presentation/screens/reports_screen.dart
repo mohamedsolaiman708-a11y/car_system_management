@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../reports_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import 'collections_report_screen.dart';
 import 'report_detail_screen.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -257,8 +258,75 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget _buildDataCell(String text, {bool isBold = false, Color? color}) => Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text(text, style: TextStyle(fontSize: 14, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: color ?? AppColors.primaryNavy)));
 
   Future<void> _openReport(String type) async {
-    // Logic as per original but navigation can be improved
-    // For brevity, keeping core logic
+    switch (type) {
+      case 'collections':
+      // سجل التحصيل له شاشة خاصة جاهزة
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CollectionsReportScreen()),
+        );
+        break;
+
+      case 'profit':
+      // تقرير الأرباح - بنسحب الداتا ونعرضها في الشاشة العامة
+        final data = await ref.read(profitReportProvider(
+          startDate: dateRange.start,
+          endDate: dateRange.end,
+        ).future);
+
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReportDetailScreen(
+              title: 'تقرير الأرباح التفصيلي',
+              columns: const ['الفترة', 'إجمالي الربح', 'حصة المستثمر', 'صافي الشركة'],
+              data: data,
+              dataKeys: const ['period_text', 'gross_profit', 'investor_share', 'company_net_profit'],
+            ),
+          ),
+        );
+        break;
+
+      case 'cashflow':
+      // التدفق النقدي
+        final data = await ref.read(cashFlowReportProvider(
+          startDate: dateRange.start,
+          endDate: dateRange.end,
+        ).future);
+
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReportDetailScreen(
+              title: 'تقرير التدفق النقدي',
+              columns: const ['التاريخ', 'البيان', 'داخل (إيداع)', 'خارج (سحب)'],
+              data: data,
+              dataKeys: const ['date', 'description', 'inflow', 'outflow'],
+            ),
+          ),
+        );
+        break;
+
+      case 'trial_balance':
+      // ميزان المراجعة
+        final data = await ref.read(trialBalanceProvider.future);
+
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReportDetailScreen(
+              title: 'ميزان المراجعة العام',
+              columns: const ['كود الحساب', 'اسم الحساب', 'مدين', 'دائن'],
+              data: data,
+              dataKeys: const ['account_code', 'account_name', 'total_debit', 'total_credit'],
+            ),
+          ),
+        );
+        break;
+    }
   }
 
   Future<void> _selectDateRange() async {

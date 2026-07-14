@@ -10,7 +10,8 @@ import '../../../../core/utils/app_theme.dart';
 
 class InvestorDetailsScreen extends ConsumerWidget {
   final String id;
-  const InvestorDetailsScreen({super.key, required this.id});
+  final int initialTab;
+  const InvestorDetailsScreen({super.key, required this.id, this.initialTab = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,6 +25,7 @@ class InvestorDetailsScreen extends ConsumerWidget {
 
         return DefaultTabController(
           length: 5,
+          initialIndex: initialTab,
           child: Scaffold(
             backgroundColor: const Color(0xFFFBFBFD),
             appBar: AppBar(
@@ -108,11 +110,9 @@ class _FinancialTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- ميزة "النبض الذكي" (Smart Insight) ---
           _buildSmartInsightCard(),
           const SizedBox(height: 24),
 
-          // البطاقة المالية
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(28),
@@ -120,7 +120,7 @@ class _FinancialTab extends ConsumerWidget {
               color: AppColors.primaryNavy,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
-                BoxShadow(color: AppColors.primaryNavy.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))
+                BoxShadow(color: AppColors.primaryNavy.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))
               ],
             ),
             child: Column(
@@ -132,7 +132,7 @@ class _FinancialTab extends ConsumerWidget {
                 Text('${f.format(investor.availableBalance)} ر.س',
                     style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 32),
-                Container(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+                Container(height: 1, color: Colors.white.withOpacity(0.05)),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -147,7 +147,6 @@ class _FinancialTab extends ConsumerWidget {
 
           const SizedBox(height: 32),
 
-          // أزرار العمليات
           Row(
             children: [
               Expanded(
@@ -177,7 +176,6 @@ class _FinancialTab extends ConsumerWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
           const SizedBox(height: 16),
 
-          // سجل العمليات
           transactionsAsync.when(
             data: (txs) {
               if (txs.isEmpty) {
@@ -190,13 +188,13 @@ class _FinancialTab extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+                  border: Border.all(color: Colors.grey.withOpacity(0.1)),
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: txs.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.withValues(alpha: 0.05)),
+                  separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.withOpacity(0.05)),
                   itemBuilder: (context, index) {
                     final tx = txs[index];
                     final isPositive = tx.amount > 0;
@@ -204,7 +202,7 @@ class _FinancialTab extends ConsumerWidget {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       leading: CircleAvatar(
                         radius: 18,
-                        backgroundColor: (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.08),
+                        backgroundColor: (isPositive ? Colors.green : Colors.red).withOpacity(0.08),
                         child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded,
                             color: isPositive ? Colors.green : Colors.red, size: 16),
                       ),
@@ -236,7 +234,6 @@ class _FinancialTab extends ConsumerWidget {
   }
 
   Widget _buildSmartInsightCard() {
-    // منطق ذكي بسيط: إذا كان المتاح > الموظف، اقترح الاستثمار
     bool isIdle = investor.availableBalance > investor.deployedCapital;
     
     return Container(
@@ -324,7 +321,7 @@ class _ContractsTab extends ConsumerWidget {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
             child: Row(
               children: [
                 const Icon(Icons.description_outlined, color: AppColors.primaryNavy),
@@ -357,7 +354,7 @@ class _WithdrawalRequestsTab extends ConsumerWidget {
         itemCount: requests.length,
         itemBuilder: (context, index) {
           final req = requests[index];
-          return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
+          return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.withOpacity(0.1))),
             child: ListTile(title: Text('سحب: ${req['amount']} ر.س'), subtitle: Text('الحالة: ${req['status']}'),),
           );
         },
@@ -380,7 +377,7 @@ class _ProjectionsTab extends ConsumerWidget {
         itemCount: list.length,
         itemBuilder: (context, index) {
           final item = list[index];
-          return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
+          return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.withOpacity(0.1))),
             child: ListTile(title: Text('تحصيل متوقع في ${item['due_date']}'), trailing: Text('${item['total_expected']} ر.س', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),),
           );
         },

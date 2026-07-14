@@ -10,7 +10,8 @@ class AppNotification with _$AppNotification {
     @JsonKey(name: 'profile_id') required String profileId,
     required String title,
     required String content,
-    String? type, // 'info', 'warning', 'success', 'error'
+    String? type,
+    Map<String, dynamic>? metadata, // إضافة حقل البيانات الإضافية
     @JsonKey(name: 'is_read') required bool isRead,
     @JsonKey(name: 'created_at') required DateTime createdAt,
   }) = _AppNotification;

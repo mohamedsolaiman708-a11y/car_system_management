@@ -60,7 +60,7 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
   }) async {
     final repository = ref.read(investorRepositoryProvider);
     state = const AsyncLoading();
-    
+
     final result = await AsyncValue.guard(() async {
       if (type == InvestorTransactionType.deposit) {
         await repository.processDeposit(investorId, amount, description ?? '');
@@ -68,7 +68,7 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
         await repository.processWithdrawal(investorId, amount, description ?? '');
       } else {
         await repository.addTransaction(InvestorTransaction(
-          id: '', 
+          id: '',
           investorId: investorId,
           amount: amount,
           type: type,
@@ -196,8 +196,8 @@ class WithdrawalRequestsController extends _$WithdrawalRequestsController {
 
   Future<bool> requestWithdrawal(double amount, String bankDetails) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() => 
-      ref.read(investorRepositoryProvider).requestWithdrawal(amount, bankDetails)
+    final result = await AsyncValue.guard(() =>
+        ref.read(investorRepositoryProvider).requestWithdrawal(amount, bankDetails)
     );
     return !result.hasError;
   }

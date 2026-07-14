@@ -164,14 +164,30 @@ class _PremiumNotificationTile extends ConsumerWidget {
       ref.read(notificationControllerProvider.notifier).markAsRead(notification.id);
     }
     
+    // التوجيه الذكي باستخدام البيانات الإضافية (Metadata)
+    final meta = notification.metadata;
+    if (meta != null && meta['route'] != null) {
+      final route = meta['route'] as String;
+      final tab = meta['tab']?.toString();
+      
+      // إذا كان هناك تبويب محدد في الـ Metadata، نضيفه للرابط
+      if (tab != null) {
+        context.push('$route?tab=$tab');
+      } else {
+        context.push(route);
+      }
+      return;
+    }
+
+    // منطق احتياطي (Fallback) يعتمد على تحليل النص لو الـ Metadata مش موجودة
     final title = notification.title;
     final content = notification.content;
 
-    if (title.contains('انضمام مستثمر') || content.contains('طلب انضمام جديد')) {
+    if (title.contains('سحب') || content.contains('طلب سحب')) {
+      context.push('/investors?tab=2'); 
+    } else if (title.contains('انضمام') || content.contains('انضمام')) {
       context.push('/investors?tab=1');
-    } else if (title.contains('سحب') || content.contains('طلب سحب')) {
-      context.push('/investors?tab=2');
-    } else if (title.contains('عقد') || content.contains('عقد جديد')) {
+    } else if (title.contains('عقد') || content.contains('عقد')) {
       context.push('/contracts');
     }
   }

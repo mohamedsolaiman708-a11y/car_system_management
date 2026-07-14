@@ -192,7 +192,14 @@ GoRouter goRouter(GoRouterRef ref) {
               return InvestorsScreen(initialIndex: tab);
             },
             routes: [
-              GoRoute(path: ':id', builder: (context, state) => InvestorDetailsScreen(id: state.pathParameters['id']!)),
+              GoRoute(
+                path: ':id', 
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
+                  return InvestorDetailsScreen(id: id, initialTab: tab);
+                }
+              ),
             ],
           ),
 
