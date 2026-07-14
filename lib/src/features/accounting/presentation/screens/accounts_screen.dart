@@ -18,13 +18,13 @@ class AccountsScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
-          toolbarHeight: 140,
+          toolbarHeight: 160,
           backgroundColor: AppColors.primaryNavy,
           automaticallyImplyLeading: false,
           elevation: 0,
           flexibleSpace: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
+              padding: const EdgeInsets.fromLTRB(32, 20, 32, 0),
               child: _buildHeader(context, accountsAsync),
             ),
           ),
@@ -59,7 +59,12 @@ class AccountsScreen extends ConsumerWidget {
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            Text(
+              'مراقبة الأرصدة الحالية، هيكلة الحسابات، والنشاط المالي العام.',
+              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 _buildQuickStat('إجمالي الحسابات المعرفة', count.toString()),
