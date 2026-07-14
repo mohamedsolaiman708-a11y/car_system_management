@@ -21,14 +21,15 @@ class InvestorsScreen extends ConsumerWidget {
         child: Scaffold(
           backgroundColor: AppColors.bgGrey,
           appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(180),
+            preferredSize: const Size.fromHeight(200), // زيادة الارتفاع لضمان ظهور العنوان
             child: Container(
               color: AppColors.primaryNavy,
               child: SafeArea(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                      padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
                       child: _buildHeader(context, ref),
                     ),
                     const Spacer(),
@@ -69,15 +70,20 @@ class InvestorsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'مركز المستثمرين والشركاء',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+              'إدارة المستثمرين والشركاء', // العنوان الرئيسي
+              style: TextStyle(
+                fontSize: 28, 
+                fontWeight: FontWeight.bold, 
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildQuickStat('إجمالي رؤوس الأموال', f.format(totalCapital)),
+                _buildQuickStat('إجمالي المحافظ الاستثمارية', f.format(totalCapital)),
                 const SizedBox(width: 40),
-                _buildQuickStat('عدد المستثمرين', count.toString()),
+                _buildQuickStat('عدد الشركاء النشطين', count.toString()),
               ],
             ),
           ],
@@ -87,14 +93,15 @@ class InvestorsScreen extends ConsumerWidget {
             onPressed: () => showDialog(
                 context: context,
                 builder: (context) => const CreateInvestorDialog()),
-            icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+            icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
             label: const Text('إضافة مستثمر جديد'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accentGold,
               foregroundColor: AppColors.primaryNavy,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
+              elevation: 4,
+              shadowColor: Colors.black.withOpacity(0.3),
             ),
           ),
       ],
@@ -105,9 +112,9 @@ class InvestorsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.5)),
+        Text(value, style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 18)),
       ],
     );
   }
@@ -117,12 +124,12 @@ class InvestorsScreen extends ConsumerWidget {
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       labelColor: Colors.white,
-      unselectedLabelColor: Colors.white38,
+      unselectedLabelColor: Colors.white30,
       indicatorColor: AppColors.accentGold,
       indicatorWeight: 4,
       indicatorSize: TabBarIndicatorSize.label,
-      labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-      padding: EdgeInsets.symmetric(horizontal: 16),
+      labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      padding: EdgeInsets.symmetric(horizontal: 24),
       tabs: [
         Tab(text: 'المستثمرون النشطون'),
         Tab(text: 'طلبات الانضمام'),
@@ -132,6 +139,7 @@ class InvestorsScreen extends ConsumerWidget {
   }
 }
 
+// ... بقية الأكواد (ActiveInvestorsList, PendingInvestorsList, etc.) تظل كما هي
 class ActiveInvestorsList extends ConsumerWidget {
   const ActiveInvestorsList({super.key});
 
@@ -166,7 +174,18 @@ class ActiveInvestorsList extends ConsumerWidget {
                     padding: const EdgeInsets.all(20),
                     child: Row(
                       children: [
-                        _buildInvestorAvatar(inv.fullName),
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryNavy.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Center(
+                            child: Text(inv.fullName.isNotEmpty ? inv.fullName[0] : '?', 
+                              style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
+                          ),
+                        ),
                         const SizedBox(width: 20),
                         Expanded(
                           child: Column(
@@ -193,21 +212,6 @@ class ActiveInvestorsList extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
         error: (e, _) => Center(child: Text('خطأ في تحميل البيانات: $e')),
-      ),
-    );
-  }
-
-  Widget _buildInvestorAvatar(String name) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: AppColors.primaryNavy.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Text(name.isNotEmpty ? name[0] : '?', 
-          style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
       ),
     );
   }

@@ -53,16 +53,9 @@ import '../../features/settings/presentation/settings_controller.dart';
 
 // Audit Logs
 import '../../features/audit/presentation/screens/audit_logs_screen.dart';
-import '../../features/audit/presentation/screens/disaster_recovery_screen.dart';
 
 // Reports
 import '../../features/reports/presentation/screens/reports_screen.dart';
-
-// Background Jobs
-import '../../features/jobs/presentation/screens/jobs_screen.dart';
-
-// Backup & Restore
-import '../../features/backup/presentation/screens/backup_screen.dart';
 
 // Help Center
 import '../../features/help/presentation/screens/help_center_screen.dart';
@@ -222,9 +215,6 @@ GoRouter goRouter(GoRouterRef ref) {
           
           GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
           GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
-          GoRoute(path: '/background-jobs', builder: (context, state) => const BackgroundJobsScreen()),
-          GoRoute(path: '/backups', builder: (context, state) => const BackupScreen()),
-          GoRoute(path: '/disaster-recovery', builder: (context, state) => const DisasterRecoveryScreen()),
           GoRoute(path: '/help-center', builder: (context, state) => const HelpCenterScreen()),
         ],
       ),

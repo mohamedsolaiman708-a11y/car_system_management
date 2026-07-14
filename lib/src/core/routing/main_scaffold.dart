@@ -105,10 +105,6 @@ class _MobileScaffold extends ConsumerWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search_rounded),
-            onPressed: () => context.push('/search'),
-          ),
           _NotificationButton(),
           const SizedBox(width: 8),
         ],
@@ -200,8 +196,6 @@ class _Sidebar extends ConsumerWidget {
                   _SidebarLink(Icons.admin_panel_settings_rounded, 'إدارة فريق العمل', '/staff-management', isCollapsed),
                   _SidebarLink(Icons.security_rounded, 'سجلات الرقابة', '/audit-logs', isCollapsed),
                   _SidebarLink(Icons.cloud_sync_rounded, 'النسخ الاحتياطي', '/backups', isCollapsed),
-                  _SidebarLink(Icons.health_and_safety_rounded, 'التعافي من الكوارث', '/disaster-recovery', isCollapsed),
-                  _SidebarLink(Icons.terminal_rounded, 'المهام المجدولة', '/background-jobs', isCollapsed),
                   _SidebarLink(Icons.settings_suggest_rounded, 'إعدادات النظام', '/settings', isCollapsed),
                 ] else
                   _SidebarLink(Icons.settings_rounded, 'الإعدادات الشخصية', '/settings', isCollapsed),
@@ -303,28 +297,7 @@ class _TopBar extends ConsumerWidget {
       child: Row(
         children: [
           _buildUserProfileMenu(context, ref, user, roleLabel),
-          const SizedBox(width: 32),
-          // --- ميزة ذكية: شريط بحث عالمي سريع ---
-          Expanded(
-            child: Container(
-              height: 45,
-              constraints: const BoxConstraints(maxWidth: 500),
-              child: TextField(
-                onTap: () => context.push('/search'), // الانتقال لصفحة البحث عند النقر
-                readOnly: true, // يفتح الواجهة الكاملة للبحث لسهولة النتائج
-                decoration: InputDecoration(
-                  hintText: 'البحث الذكي (عملاء، سيارات، عقود...)...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
-                  prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.primaryNavy),
-                  filled: true,
-                  fillColor: const Color(0xFFF5F7FA),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 32),
+          const Spacer(), // يعطي مساحة كاملة في المنتصف بعد حذف البحث
           _NotificationButton(),
           const SizedBox(width: 16),
           _buildDateDisplay(),
