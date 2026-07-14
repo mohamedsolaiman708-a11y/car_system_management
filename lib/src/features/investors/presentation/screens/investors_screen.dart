@@ -13,13 +13,6 @@ class InvestorsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // تحديث تلقائي عند حدوث تغيير في الطلبات المعلقة
-    ref.listen(pendingInvestorsControllerProvider, (previous, next) {
-      if (previous?.isLoading == true && !next.isLoading && !next.hasError) {
-        ref.invalidate(investorListControllerProvider);
-      }
-    });
-
     return DefaultTabController(
       length: 3,
       initialIndex: initialIndex,
@@ -63,10 +56,7 @@ class InvestorsScreen extends ConsumerWidget {
           children: [
             const Text(
               'إدارة المحافظ الاستثمارية',
-              style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             Text(
               'متابعة رؤوس الأموال، الأرباح، والطلبات المعلقة',
@@ -93,16 +83,16 @@ class InvestorsScreen extends ConsumerWidget {
   }
 
   Widget _buildTabBar() {
-    return TabBar(
+    return const TabBar(
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       labelColor: AppColors.accentGold,
       unselectedLabelColor: Colors.white54,
       indicatorColor: AppColors.accentGold,
       indicatorWeight: 4,
-      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      tabs: const [
+      labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      tabs: [
         Tab(text: 'المستثمرون النشطون'),
         Tab(text: 'طلبات الانضمام'),
         Tab(text: 'طلبات السحب'),
@@ -111,9 +101,6 @@ class InvestorsScreen extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// قائمة المستثمرين النشطين (Premium Style)
-// ─────────────────────────────────────────────
 class ActiveInvestorsList extends ConsumerWidget {
   const ActiveInvestorsList({super.key});
 
@@ -127,7 +114,7 @@ class ActiveInvestorsList extends ConsumerWidget {
       child: investorsAsync.when(
         data: (investors) {
           if (investors.isEmpty) {
-            return _buildEmptyState('لا يوجد مستثمرون نشطون حالياً', Icons.people_outline_rounded);
+            return _buildEmptyScrollable(context, 'لا يوجد مستثمرون نشطون حالياً', Icons.people_outline_rounded);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(24),
@@ -180,7 +167,7 @@ class ActiveInvestorsList extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('خطأ في تحميل البيانات')),
+        error: (e, _) => Center(child: Text('خطأ في تحميل البيانات: $e')),
       ),
     );
   }
@@ -195,24 +182,8 @@ class ActiveInvestorsList extends ConsumerWidget {
       ],
     );
   }
-
-  Widget _buildEmptyState(String msg, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(msg, style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-        ],
-      ),
-    );
-  }
 }
 
-// ─────────────────────────────────────────────
-// قائمة طلبات الانضمام (Smart Card Style)
-// ─────────────────────────────────────────────
 class PendingInvestorsList extends ConsumerWidget {
   const PendingInvestorsList({super.key});
 
@@ -224,29 +195,73 @@ class PendingInvestorsList extends ConsumerWidget {
       onRefresh: () => ref.refresh(pendingInvestorsControllerProvider.future),
       child: pendingAsync.when(
         data: (requests) => requests.isEmpty
-            ? _buildEmptyState('لا توجد طلبات انضمام معلقة حالياً')
+            ? _buildEmptyScrollable(context, 'لا توجد طلبات انضمام معلقة حالياً', Icons.mark_email_read_outlined)
             : ListView.builder(
                 padding: const EdgeInsets.all(24),
                 itemCount: requests.length,
                 itemBuilder: (context, index) => _PendingInvestorCard(req: requests[index]),
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text('خطأ في تحميل الطلبات')),
+        error: (e, _) => Center(child: Text('خطأ في تحميل الطلبات: $e')),
       ),
     );
   }
+}
 
-  Widget _buildEmptyState(String msg) {
-    return Center(
-        child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.mark_email_read_outlined, size: 80, color: Colors.grey.shade300),
-        const SizedBox(height: 16),
-        Text(msg, style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-      ],
-    ));
+class WithdrawalRequestsList extends ConsumerWidget {
+  const WithdrawalRequestsList({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // التعديل: نطلب كل البيانات بدون فلترة في المزود لضمان جلب الداتا من الداتابيز
+    final requestsAsync = ref.watch(withdrawalRequestsControllerProvider());
+
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(withdrawalRequestsControllerProvider().future),
+      child: requestsAsync.when(
+        data: (allRequests) {
+          // فلترة الطلبات المعلقة (pending) فقط هنا في الـ UI
+          final requests = allRequests.where((r) => 
+            r['status'].toString().toLowerCase() == 'pending'
+          ).toList();
+
+          if (requests.isEmpty) {
+            return _buildEmptyScrollable(context, 'لا توجد طلبات سحب معلقة حالياً', Icons.account_balance_wallet_outlined);
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(24),
+            itemCount: requests.length,
+            itemBuilder: (context, index) => _WithdrawalRequestCard(req: requests[index]),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Text('خطأ في تحميل طلبات السحب: $e', textAlign: TextAlign.center),
+        )),
+      ),
+    );
   }
+}
+
+Widget _buildEmptyScrollable(BuildContext context, String msg, IconData icon) {
+  return LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: constraints.maxHeight,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 80, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            Text(msg, style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _PendingInvestorCard extends ConsumerStatefulWidget {
@@ -322,48 +337,7 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
     if (mounted) setState(() => _isLoading = false);
   }
 
-  Future<void> _reject() async {
-    // منطق الرفض كما هو
-  }
-}
-
-// ─────────────────────────────────────────────
-// قائمة طلبات السحب
-// ─────────────────────────────────────────────
-class WithdrawalRequestsList extends ConsumerWidget {
-  const WithdrawalRequestsList({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final requestsAsync = ref.watch(withdrawalRequestsControllerProvider(status: 'pending'));
-
-    return RefreshIndicator(
-      onRefresh: () => ref.refresh(withdrawalRequestsControllerProvider(status: 'pending').future),
-      child: requestsAsync.when(
-        data: (requests) => requests.isEmpty
-            ? _buildEmptyState('لا توجد طلبات سحب حالياً')
-            : ListView.builder(
-                padding: const EdgeInsets.all(24),
-                itemCount: requests.length,
-                itemBuilder: (context, index) => _WithdrawalRequestCard(req: requests[index]),
-              ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text('خطأ')),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String msg) {
-    return Center(
-        child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.account_balance_wallet_outlined, size: 80, color: Colors.grey.shade300),
-        const SizedBox(height: 16),
-        Text(msg, style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-      ],
-    ));
-  }
+  Future<void> _reject() async { }
 }
 
 class _WithdrawalRequestCard extends ConsumerStatefulWidget {
@@ -382,6 +356,7 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
     final req = widget.req;
     final amount = (req['amount'] as num?)?.toDouble() ?? 0;
     final investorName = req['investors']?['full_name'] ?? 'مستثمر';
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -389,14 +364,14 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.errorRed.withOpacity(0.1)),
+        border: Border.all(color: Colors.red.withOpacity(0.1)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.errorRed.withOpacity(0.05), shape: BoxShape.circle),
-            child: const Icon(Icons.outbox_rounded, color: AppColors.errorRed),
+            decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), shape: BoxShape.circle),
+            child: const Icon(Icons.outbox_rounded, color: Colors.red),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -404,7 +379,7 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(investorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                Text('قيمة السحب: $amount ر.س', style: const TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
+                Text('قيمة السحب: ${f.format(amount)} ر.س', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -423,7 +398,7 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
 
   Future<void> _approve() async {
     setState(() => _isLoading = true);
-    await ref.read(withdrawalRequestsControllerProvider(status: 'pending').notifier).approveRequest(widget.req['id']);
+    await ref.read(withdrawalRequestsControllerProvider().notifier).approveRequest(widget.req['id']);
     if (mounted) setState(() => _isLoading = false);
   }
 }

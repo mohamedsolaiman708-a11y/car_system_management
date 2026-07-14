@@ -11,11 +11,7 @@ import '../../../../core/utils/app_theme.dart';
 class InvestorDetailsScreen extends ConsumerWidget {
   final String id;
   final int initialTab;
-  const InvestorDetailsScreen({
-    super.key,
-    required this.id,
-    this.initialTab = 0,
-  });
+  const InvestorDetailsScreen({super.key, required this.id, this.initialTab = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,9 +20,7 @@ class InvestorDetailsScreen extends ConsumerWidget {
     return investorAsync.when(
       data: (investor) {
         if (investor == null) {
-          return const Scaffold(
-            body: Center(child: Text('المستثمر غير موجود')),
-          );
+          return const Scaffold(body: Center(child: Text('المستثمر غير موجود')));
         }
 
         return DefaultTabController(
@@ -39,11 +33,7 @@ class InvestorDetailsScreen extends ConsumerWidget {
               elevation: 0,
               toolbarHeight: 90,
               leading: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.primaryNavy,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primaryNavy, size: 20),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
               title: Row(
@@ -51,13 +41,8 @@ class InvestorDetailsScreen extends ConsumerWidget {
                   CircleAvatar(
                     backgroundColor: AppColors.primaryNavy,
                     radius: 22,
-                    child: Text(
-                      investor.fullName[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.accentGold,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: Text(investor.fullName[0].toUpperCase(), 
+                      style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 14),
                   Column(
@@ -65,29 +50,14 @@ class InvestorDetailsScreen extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            investor.fullName,
-                            style: const TextStyle(
-                              color: AppColors.primaryNavy,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
+                          Text(investor.fullName,
+                              style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 18)),
                           const SizedBox(width: 6),
-                          const Icon(
-                            Icons.verified_rounded,
-                            size: 16,
-                            color: Colors.blue,
-                          ),
+                          const Icon(Icons.verified_rounded, size: 16, color: Colors.blue),
                         ],
                       ),
-                      Text(
-                        investor.email,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
+                      Text(investor.email,
+                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
                     ],
                   ),
                 ],
@@ -98,10 +68,7 @@ class InvestorDetailsScreen extends ConsumerWidget {
                 indicatorWeight: 3,
                 labelColor: AppColors.primaryNavy,
                 unselectedLabelColor: Colors.grey,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 tabs: const [
                   Tab(text: 'المالية'),
                   Tab(text: 'العقود'),
@@ -123,10 +90,8 @@ class InvestorDetailsScreen extends ConsumerWidget {
           ),
         );
       },
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (err, stack) =>
-          Scaffold(body: Center(child: Text('حدث خطأ: $err'))),
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, stack) => Scaffold(body: Center(child: Text('حدث خطأ: $err'))),
     );
   }
 }
@@ -137,9 +102,7 @@ class _FinancialTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactionsAsync = ref.watch(
-      investorTransactionsControllerProvider(investor.id),
-    );
+    final transactionsAsync = ref.watch(investorTransactionsControllerProvider(investor.id));
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return SingleChildScrollView(
@@ -157,44 +120,25 @@ class _FinancialTab extends ConsumerWidget {
               color: AppColors.primaryNavy,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryNavy.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
+                BoxShadow(color: AppColors.primaryNavy.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'الرصيد المتاح للاستثمار',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
+                const Text('الرصيد المتاح للاستثمار', 
+                  style: TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: 12),
-                Text(
-                  '${f.format(investor.availableBalance)} ر.س',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+                Text('${f.format(investor.availableBalance)} ر.س',
+                    style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 32),
                 Container(height: 1, color: Colors.white.withOpacity(0.05)),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStatBox(
-                      'رأس المال الموظف',
-                      f.format(investor.deployedCapital),
-                    ),
-                    _buildStatBox(
-                      'إجمالي الأرباح',
-                      f.format(investor.totalProfitEarned),
-                      isGold: true,
-                    ),
+                    _buildStatBox('رأس المال الموظف', f.format(investor.deployedCapital)),
+                    _buildStatBox('إجمالي الأرباح', f.format(investor.totalProfitEarned), isGold: true),
                   ],
                 ),
               ],
@@ -211,11 +155,7 @@ class _FinancialTab extends ConsumerWidget {
                   icon: Icons.add_rounded,
                   color: const Color(0xFFE8F5E9),
                   textColor: Colors.green.shade700,
-                  onPressed: () => _showTransactionDialog(
-                    context,
-                    investor.id,
-                    InvestorTransactionType.deposit,
-                  ),
+                  onPressed: () => _showTransactionDialog(context, investor.id, InvestorTransactionType.deposit),
                 ),
               ),
               const SizedBox(width: 12),
@@ -225,39 +165,24 @@ class _FinancialTab extends ConsumerWidget {
                   icon: Icons.north_east_rounded,
                   color: const Color(0xFFFFEBEE),
                   textColor: Colors.red.shade700,
-                  onPressed: () => _showTransactionDialog(
-                    context,
-                    investor.id,
-                    InvestorTransactionType.withdrawal,
-                  ),
+                  onPressed: () => _showTransactionDialog(context, investor.id, InvestorTransactionType.withdrawal),
                 ),
               ),
             ],
           ),
 
           const SizedBox(height: 32),
-          const Text(
-            'آخر المعاملات',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryNavy,
-            ),
-          ),
+          const Text('آخر المعاملات', 
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
           const SizedBox(height: 16),
 
           transactionsAsync.when(
             data: (txs) {
               if (txs.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(60.0),
-                    child: Text(
-                      'لا توجد سجلات مالية',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                );
+                return const Center(child: Padding(
+                  padding: EdgeInsets.all(60.0),
+                  child: Text('لا توجد سجلات مالية', style: TextStyle(color: Colors.grey)),
+                ));
               }
               return Container(
                 decoration: BoxDecoration(
@@ -269,65 +194,30 @@ class _FinancialTab extends ConsumerWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: txs.length,
-                  separatorBuilder: (_, __) =>
-                      Divider(height: 1, color: Colors.grey.withOpacity(0.05)),
+                  separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.withOpacity(0.05)),
                   itemBuilder: (context, index) {
                     final tx = txs[index];
                     final isPositive = tx.amount > 0;
                     return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       leading: CircleAvatar(
                         radius: 18,
-                        backgroundColor:
-                            (isPositive ? Colors.green : Colors.red)
-                                .withOpacity(0.08),
-                        child: Icon(
-                          isPositive ? Icons.add_rounded : Icons.remove_rounded,
-                          color: isPositive ? Colors.green : Colors.red,
-                          size: 16,
-                        ),
+                        backgroundColor: (isPositive ? Colors.green : Colors.red).withOpacity(0.08),
+                        child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded,
+                            color: isPositive ? Colors.green : Colors.red, size: 16),
                       ),
-                      title: Text(
-                        tx.type.label,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      subtitle: Text(
-                        intl.DateFormat(
-                          'dd/MM/yyyy • HH:mm',
-                        ).format(tx.createdAt),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
-                      ),
+                      title: Text(tx.type.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      subtitle: Text(intl.DateFormat('dd/MM/yyyy • HH:mm').format(tx.createdAt),
+                          style: const TextStyle(fontSize: 11, color: Colors.grey)),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            '${isPositive ? "+" : ""}${f.format(tx.amount)} ر.س',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 15,
-                              color: isPositive
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700,
-                            ),
-                          ),
+                          Text('${isPositive ? "+" : ""}${f.format(tx.amount)} ر.س',
+                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15,
+                                  color: isPositive ? Colors.green.shade700 : Colors.red.shade700)),
                           if (tx.recordedByName != null)
-                            Text(
-                              'المنفذ: ${tx.recordedByName}',
-                              style: const TextStyle(
-                                fontSize: 9,
-                                color: Colors.blueGrey,
-                              ),
-                            ),
+                            Text('المنفذ: ${tx.recordedByName}', style: const TextStyle(fontSize: 9, color: Colors.blueGrey)),
                         ],
                       ),
                     );
@@ -345,47 +235,29 @@ class _FinancialTab extends ConsumerWidget {
 
   Widget _buildSmartInsightCard() {
     bool isIdle = investor.availableBalance > investor.deployedCapital;
-
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isIdle ? Colors.amber.shade50 : Colors.blue.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isIdle ? Colors.amber.shade200 : Colors.blue.shade200,
-        ),
+        border: Border.all(color: isIdle ? Colors.amber.shade200 : Colors.blue.shade200),
       ),
       child: Row(
         children: [
-          Icon(
-            isIdle ? Icons.auto_awesome_rounded : Icons.insights_rounded,
-            color: isIdle ? Colors.amber.shade800 : Colors.blue.shade800,
-          ),
+          Icon(isIdle ? Icons.auto_awesome_rounded : Icons.insights_rounded, 
+               color: isIdle ? Colors.amber.shade800 : Colors.blue.shade800),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isIdle ? 'توصية ذكية' : 'تحليل المحفظة',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: isIdle
-                        ? Colors.amber.shade900
-                        : Colors.blue.shade900,
-                  ),
-                ),
-                Text(
-                  isIdle
-                      ? 'لديك سيولة نقدية متاحة لم تُستثمر بعد. ننصح بتمويل عقود جديدة لرفع العائد المالي.'
-                      : 'محفظتك تعمل بكفاءة عالية. توزيع رأس المال متوازن مع العقود الحالية.',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
-                ),
+                Text(isIdle ? 'توصية ذكية' : 'تحليل المحفظة', 
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isIdle ? Colors.amber.shade900 : Colors.blue.shade900)),
+                Text(isIdle 
+                  ? 'لديك سيولة نقدية متاحة لم تُستثمر بعد. ننصح بتمويل عقود جديدة لرفع العائد المالي.'
+                  : 'محفظتك تعمل بكفاءة عالية. توزيع رأس المال متوازن مع العقود الحالية.',
+                  style: const TextStyle(fontSize: 11, color: Colors.black87, height: 1.4)),
               ],
             ),
           ),
@@ -398,66 +270,36 @@ class _FinancialTab extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
-        ),
+        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
         const SizedBox(height: 6),
-        Text(
-          '$value ر.س',
-          style: TextStyle(
-            color: isGold ? AppColors.accentGold : Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
+        Text('$value ر.س', 
+          style: TextStyle(color: isGold ? AppColors.accentGold : Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
       ],
     );
   }
 
-  Widget _buildActionBtn({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required Color textColor,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildActionBtn({required String label, required IconData icon, required Color color, required Color textColor, required VoidCallback onPressed}) {
     return InkWell(
       onTap: onPressed,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 18, color: textColor),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
+            Text(label, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13)),
           ],
         ),
       ),
     );
   }
 
-  void _showTransactionDialog(
-    BuildContext context,
-    String investorId,
-    InvestorTransactionType type,
-  ) {
+  void _showTransactionDialog(BuildContext context, String investorId, InvestorTransactionType type) {
     showDialog(
       context: context,
-      builder: (context) =>
-          AddTransactionDialog(investorId: investorId, type: type),
+      builder: (context) => AddTransactionDialog(investorId: investorId, type: type),
     );
   }
 }
@@ -467,59 +309,119 @@ class _ContractsTab extends ConsumerWidget {
   const _ContractsTab({required this.investorId});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final contractsAsync = ref.watch(
-      investorFundedContractsControllerProvider(investorId),
-    );
+    final contractsAsync = ref.watch(investorFundedContractsControllerProvider(investorId));
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
     return contractsAsync.when(
-      data: (contracts) => contracts.isEmpty
-          ? const Center(child: Text('لا توجد عقود'))
+      data: (contracts) => contracts.isEmpty ? const Center(child: Text('لا توجد عقود')) : ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: contracts.length,
+        itemBuilder: (context, index) {
+          final item = contracts[index];
+          final contract = item['financing_contracts'];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+            child: Row(
+              children: [
+                const Icon(Icons.description_outlined, color: AppColors.primaryNavy),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('عقد #${contract['contract_no']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('العميل: ${contract['customers']?['full_name']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                ])),
+                Text('${f.format(item['amount_allocated'])} ر.س', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          );
+        },
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('خطأ: $err')),
+    );
+  }
+}
+
+class _WithdrawalRequestsTab extends ConsumerStatefulWidget {
+  final String investorId;
+  const _WithdrawalRequestsTab({required this.investorId});
+
+  @override
+  ConsumerState<_WithdrawalRequestsTab> createState() => _WithdrawalRequestsTabState();
+}
+
+class _WithdrawalRequestsTabState extends ConsumerState<_WithdrawalRequestsTab> {
+  bool _isProcessing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final requestsAsync = ref.watch(withdrawalRequestsControllerProvider(investorId: widget.investorId));
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
+    return requestsAsync.when(
+      data: (requests) => requests.isEmpty 
+          ? const Center(child: Text('لا توجد طلبات سحب')) 
           : ListView.builder(
               padding: const EdgeInsets.all(20),
-              itemCount: contracts.length,
+              itemCount: requests.length,
               itemBuilder: (context, index) {
-                final item = contracts[index];
-                final contract = item['financing_contracts'];
-                return Container(
+                final req = requests[index];
+                final status = req['status'] as String;
+                final isPending = status == 'pending';
+
+                return Card(
+                  elevation: 0,
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                    side: BorderSide(color: Colors.grey.withOpacity(0.1)),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.description_outlined,
-                        color: AppColors.primaryNavy,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'عقد #${contract['contract_no']}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'العميل: ${contract['customers']?['full_name']}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: (isPending ? Colors.orange : Colors.green).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isPending ? Icons.pending_actions_rounded : Icons.check_circle_rounded,
+                            color: isPending ? Colors.orange : Colors.green,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${f.format(item['amount_allocated'])} ر.س',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'سحب مبلغ: ${f.format(req['amount'])} ر.س',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isPending ? 'بانتظار التحويل البنكي والاعتماد' : 'تم التنفيذ والاعتماد المحاسبي',
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isPending)
+                          _isProcessing 
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: () => _approveRequest(req['id']),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryNavy,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('تنفيذ السحب'),
+                              ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -528,41 +430,19 @@ class _ContractsTab extends ConsumerWidget {
       error: (err, _) => Center(child: Text('خطأ: $err')),
     );
   }
-}
 
-class _WithdrawalRequestsTab extends ConsumerWidget {
-  final String investorId;
-  const _WithdrawalRequestsTab({required this.investorId});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final requestsAsync = ref.watch(
-      withdrawalRequestsControllerProvider(investorId: investorId),
-    );
-    return requestsAsync.when(
-      data: (requests) => requests.isEmpty
-          ? const Center(child: Text('لا توجد طلبات سحب'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: requests.length,
-              itemBuilder: (context, index) {
-                final req = requests[index];
-                return Card(
-                  elevation: 0,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                  ),
-                  child: ListTile(
-                    title: Text('سحب: ${req['amount']} ر.س'),
-                    subtitle: Text('الحالة: ${req['status']}'),
-                  ),
-                );
-              },
-            ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('خطأ: $err')),
-    );
+  Future<void> _approveRequest(String requestId) async {
+    setState(() => _isProcessing = true);
+    try {
+      await ref.read(withdrawalRequestsControllerProvider().notifier).approveRequest(requestId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم تنفيذ السحب واعتماد القيد المحاسبي بنجاح')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
   }
 }
 
@@ -573,33 +453,16 @@ class _ProjectionsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projectionsAsync = ref.watch(investorProjectionsProvider(investorId));
     return projectionsAsync.when(
-      data: (list) => list.isEmpty
-          ? const Center(child: Text('لا توجد تدفقات متوقعة'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: list.length,
-              itemBuilder: (context, index) {
-                final item = list[index];
-                return Card(
-                  elevation: 0,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                  ),
-                  child: ListTile(
-                    title: Text('تحصيل متوقع في ${item['due_date']}'),
-                    trailing: Text(
-                      '${item['total_expected']} ر.س',
-                      style: const TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+      data: (list) => list.isEmpty ? const Center(child: Text('لا توجد تدفقات متوقعة')) : ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: list.length,
+        itemBuilder: (context, index) {
+          final item = list[index];
+          return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
+            child: ListTile(title: Text('تحصيل متوقع في ${item['due_date']}'), trailing: Text('${item['total_expected']} ر.س', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),),
+          );
+        },
+      ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('خطأ: $err')),
     );
