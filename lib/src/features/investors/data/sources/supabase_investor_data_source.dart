@@ -14,7 +14,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   Future<List<Map<String, dynamic>>> getInvestors() async {
     final response = await _client
         .from('investors')
-        .select('*, available_balance:available_bal, deployed_capital:deployed_capi, total_profit_earned:total_profit_')
+        .select()
         .order('full_name', ascending: true);
     return List<Map<String, dynamic>>.from(response);
   }
@@ -23,13 +23,19 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   Future<Map<String, dynamic>?> getInvestorById(String id) async {
     final user = _client.auth.currentUser;
     
-    // محاولة البحث بالـ ID أو الإيميل مع استخدام Aliases لتطابق الموديل
-    var query = _client.from('investors').select('*, available_balance:available_bal, deployed_capital:deployed_capi, total_profit_earned:total_profit_');
-    
-    var response = await query.eq('id', id).maybeSingle();
+    // البحث بالـ ID المباشر أو البريد الإلكتروني مع استخدام الأسماء الأصلية للأعمدة
+    var response = await _client
+        .from('investors')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
     
     if (response == null && user != null && user.email != null) {
-      response = await query.eq('email', user.email!).maybeSingle();
+      response = await _client
+          .from('investors')
+          .select()
+          .eq('email', user.email!)
+          .maybeSingle();
     }
     
     return response;

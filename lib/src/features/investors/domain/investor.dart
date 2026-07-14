@@ -9,10 +9,9 @@ class Investor with _$Investor {
     required String id,
     @JsonKey(name: 'full_name') required String fullName,
     required String email,
-    // تطابق تام مع أسماء الأعمدة في صورتك
-    @JsonKey(name: 'available_bal') required double availableBalance,
-    @JsonKey(name: 'deployed_capi') required double deployedCapital,
-    @JsonKey(name: 'total_profit_') required double totalProfitEarned,
+    @JsonKey(name: 'available_balance') required double availableBalance,
+    @JsonKey(name: 'deployed_capital') required double deployedCapital,
+    @JsonKey(name: 'total_profit_earned') required double totalProfitEarned,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
   }) = _Investor;
