@@ -37,8 +37,11 @@ class InvestorDetailsController extends _$InvestorDetailsController {
   }
 
   Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(investorRepositoryProvider).getInvestorById(id));
+    // لا نضع AsyncLoading() يدوياً هنا للحفاظ على البيانات القديمة في الواجهة أثناء التحديث
+    final result = await AsyncValue.guard(() => ref.read(investorRepositoryProvider).getInvestorById(id));
+    if (result.hasValue) {
+      state = result;
+    }
   }
 }
 
@@ -83,7 +86,6 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
     return !result.hasError;
   }
 
-  /// تخصيص تمويل لعقد معين من رصيد المستثمر
   Future<bool> allocateFunding({
     required String investorId,
     required String contractId,
@@ -104,7 +106,6 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
     return !result.hasError;
   }
 
-  /// توزيع أرباح إضافية للمستثمر
   Future<bool> distributeProfit({
     required String investorId,
     required double amount,
@@ -133,7 +134,6 @@ class PendingInvestorsController extends _$PendingInvestorsController {
     return ref.watch(investorRepositoryProvider).getPendingInvestorRequests();
   }
 
-  /// الموافقة على طلب الانضمام وتفعيل المستثمر مالياً
   Future<void> approveInvestor(String profileId) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -143,7 +143,6 @@ class PendingInvestorsController extends _$PendingInvestorsController {
     });
   }
 
-  /// رفض طلب الانضمام مع توضيح السبب
   Future<void> rejectInvestor(String profileId, String reason) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
