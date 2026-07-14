@@ -25,27 +25,20 @@ class InvestorDashboardScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: investorAsync.when(
         data: (investor) {
-          // إذا لم يجد النظام سجل مستثمر مرتبط بهذا الإيميل
           if (investor == null) {
             return Scaffold(
-              appBar: AppBar(
-                title: const Text('بوابة المستثمر'),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                    onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-                  ),
-                ],
-              ),
+              appBar: AppBar(title: const Text('بوابة المستثمر')),
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.person_search_rounded, size: 80, color: Colors.grey),
                     const SizedBox(height: 16),
-                    const Text('عذراً، هذا الحساب غير مربوط بملف مستثمر.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text('عذراً، هذا الحساب غير مربوط بملف مستثمر.', 
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    const Text('يرجى التواصل مع الإدارة لتفعيل حسابك كمستثمر.', style: TextStyle(color: Colors.grey)),
+                    const Text('يرجى التواصل مع الإدارة لتفعيل حسابك كمستثمر.', 
+                      style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () => context.go('/dashboard'),
@@ -68,6 +61,7 @@ class InvestorDashboardScreen extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
                     onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+                    tooltip: 'تسجيل الخروج',
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -97,14 +91,13 @@ class InvestorDashboardScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-        error: (err, _) => Scaffold(body: Center(child: Text('حدث خطأ: $err'))),
+        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primaryNavy))),
+        error: (err, _) => Scaffold(body: Center(child: Text('حدث خطأ في تحميل البيانات: $err'))),
       ),
     );
   }
 }
 
-// ... بقية الكود يظل كما هو
 class _OverviewTab extends ConsumerWidget {
   final dynamic investor;
   const _OverviewTab({required this.investor});
@@ -126,22 +119,27 @@ class _OverviewTab extends ConsumerWidget {
           children: [
             _buildBalanceHeroCard(investor, f),
             const SizedBox(height: 32),
-            const Text('تحليل نمو الأرباح الموزعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            const Text('تحليل نمو الأرباح الموزعة', 
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
             const SizedBox(height: 16),
             _buildProfitChart(txAsync),
             const SizedBox(height: 32),
             Row(
               children: [
-                _buildSmallStatCard('إجمالي الأرباح', f.format(investor.totalProfitEarned), Icons.auto_graph_rounded, Colors.orange),
+                _buildSmallStatCard('إجمالي الأرباح المحققة', f.format(investor.totalProfitEarned), 
+                    Icons.auto_graph_rounded, Colors.orange),
                 const SizedBox(width: 16),
-                _buildSmallStatCard('العقود الممولة', '${investor.deployedCapital > 0 ? "نشطة" : "لا يوجد"}', Icons.assignment_turned_in_rounded, Colors.green),
+                _buildSmallStatCard('حالة الاستثمار', 
+                    investor.deployedCapital > 0 ? "نشط ومدر للدخل" : "بانتظار فرص تمويل", 
+                    Icons.assignment_turned_in_rounded, 
+                    investor.deployedCapital > 0 ? Colors.green : Colors.blue),
               ],
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () => _showWithdrawalDialog(context, ref, investor),
               icon: const Icon(Icons.account_balance_wallet_outlined),
-              label: const Text('طلب سحب رصيد من المحفظة'),
+              label: const Text('طلب سحب رصيد متاح من المحفظة'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryNavy,
                 foregroundColor: Colors.white,
@@ -167,7 +165,10 @@ class _OverviewTab extends ConsumerWidget {
       child: txAsync.when(
         data: (txs) {
           final profitTxs = txs.where((t) => t.type.name == 'finance_profit_distribution').toList();
-          if (profitTxs.isEmpty) return const Center(child: Text('سيظهر الرسم البياني عند تحصيل أول أرباح'));
+          if (profitTxs.isEmpty) {
+            return const Center(child: Text('سيظهر الرسم البياني لتطور الأرباح عند تحصيل أول دفعة', 
+                style: TextStyle(color: Colors.grey, fontSize: 13)));
+          }
           
           return LineChart(
             LineChartData(
@@ -176,7 +177,8 @@ class _OverviewTab extends ConsumerWidget {
               borderData: FlBorderData(show: false),
               lineBarsData: [
                 LineChartBarData(
-                  spots: profitTxs.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.amount.toDouble())).toList(),
+                  spots: profitTxs.asMap().entries.map((e) => 
+                      FlSpot(e.key.toDouble(), e.value.amount.toDouble())).toList(),
                   isCurved: true,
                   color: AppColors.accentGold,
                   barWidth: 4,
@@ -192,7 +194,7 @@ class _OverviewTab extends ConsumerWidget {
       ),
     );
   }
-
+  
   Widget _buildBalanceHeroCard(investor, intl.NumberFormat f) {
     return Container(
       width: double.infinity,
@@ -208,7 +210,7 @@ class _OverviewTab extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          const Text('إجمالي القيمة الاستثمارية', style: TextStyle(color: Colors.white60, fontSize: 14)),
+          const Text('إجمالي القيمة الاستثمارية (المحفظة)', style: TextStyle(color: Colors.white60, fontSize: 14)),
           const SizedBox(height: 12),
           Text('${f.format(investor.availableBalance + investor.deployedCapital)} ر.س', 
                style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
@@ -217,7 +219,7 @@ class _OverviewTab extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildHeroStat('رصيد متاح للسحب', f.format(investor.availableBalance), Colors.greenAccent),
-              _buildHeroStat('رأس مال عامل', f.format(investor.deployedCapital), Colors.blueAccent),
+              _buildHeroStat('رأس مال قيد التشغيل', f.format(investor.deployedCapital), Colors.blueAccent),
             ],
           ),
         ],
@@ -250,7 +252,7 @@ class _OverviewTab extends ConsumerWidget {
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 12),
             Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryNavy), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -270,7 +272,7 @@ class _OverviewTab extends ConsumerWidget {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('طلب سحب أرباح'),
+            title: const Text('طلب سحب أرباح ونقدية'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -280,21 +282,32 @@ class _OverviewTab extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('متاح للسحب:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('${f.format(investor.availableBalance)} ر.س', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      const Text('الرصيد المتاح:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text('${f.format(investor.availableBalance)} ر.س', 
+                        style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: amountController,
-                  decoration: InputDecoration(labelText: 'المبلغ (ر.س)', border: const OutlineInputBorder(), errorText: errorText),
+                  decoration: InputDecoration(
+                    labelText: 'المبلغ المراد سحبه (ر.س)', 
+                    border: const OutlineInputBorder(), 
+                    errorText: errorText,
+                    prefixIcon: const Icon(Icons.money_rounded)
+                  ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: bankController,
-                  decoration: const InputDecoration(labelText: 'رقم الآيبان (IBAN)', border: OutlineInputBorder(), hintText: 'SA...'),
+                  decoration: const InputDecoration(
+                    labelText: 'تفاصيل الحساب البنكي (IBAN)', 
+                    border: OutlineInputBorder(), 
+                    hintText: 'SA...',
+                    prefixIcon: Icon(Icons.account_balance_rounded)
+                  ),
                   maxLines: 2,
                 ),
               ],
@@ -305,13 +318,20 @@ class _OverviewTab extends ConsumerWidget {
                 onPressed: () async {
                   final amount = double.tryParse(amountController.text);
                   if (amount == null || amount <= 0 || amount > investor.availableBalance) {
-                    setDialogState(() => errorText = 'مبلغ غير صحيح'); return;
+                    setDialogState(() => errorText = 'المبلغ يتجاوز الرصيد المتاح'); return;
                   }
-                  // استدعاء الطلب (مفترض وجود controller للطلبات)
-                  // await ref.read(withdrawalRequestsControllerProvider().notifier).requestWithdrawal(amount, bankController.text);
-                  if (context.mounted) { Navigator.pop(ctx); }
+                  final success = await ref.read(withdrawalRequestsControllerProvider().notifier)
+                    .requestWithdrawal(amount, bankController.text);
+                  
+                  if (context.mounted) { 
+                    Navigator.pop(ctx); 
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(success ? 'تم إرسال طلب السحب بنجاح' : 'فشل إرسال الطلب، حاول ثانية'), 
+                      backgroundColor: success ? Colors.green : Colors.red)
+                    ); 
+                  }
                 },
-                child: const Text('إرسال الطلب'),
+                child: const Text('إرسال طلب السحب'),
               ),
             ],
           ),
@@ -328,10 +348,11 @@ class _NotificationBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      alignment: Alignment.center,
       children: [
         IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () => context.push('/notifications')),
         if (count > 0)
-          Positioned(right: 10, top: 10, child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle), constraints: const BoxConstraints(minWidth: 16, minHeight: 16), child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center))),
+          Positioned(right: 8, top: 8, child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle), constraints: const BoxConstraints(minWidth: 16, minHeight: 16), child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center))),
       ],
     );
   }
@@ -340,29 +361,176 @@ class _NotificationBadge extends StatelessWidget {
 class _PortfolioTab extends ConsumerWidget {
   final String investorId;
   const _PortfolioTab({required this.investorId});
+
+  String _translateStatus(String status) {
+    switch (status) {
+      case 'active': return 'نشط';
+      case 'pending_funding': return 'قيد التمويل';
+      case 'closed': return 'مكتمل';
+      case 'defaulted': return 'متعثر';
+      default: return status;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final contractsAsync = ref.watch(investorFundedContractsControllerProvider(investorId));
-    return contractsAsync.when(data: (contracts) => contracts.isEmpty ? const Center(child: Text('لا توجد عقود ممولة')) : ListView.builder(padding: const EdgeInsets.all(16), itemCount: contracts.length, itemBuilder: (context, index) { final item = contracts[index]; final contract = item['financing_contracts']; return Card(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), child: ListTile(leading: const Icon(Icons.verified_user_rounded, color: Colors.green), title: Text('عقد رقم: ${contract['contract_no']}'), subtitle: Text('تمويلك: ${item['amount_allocated']} ر.س'), trailing: const Icon(Icons.chevron_left))); }), loading: () => const Center(child: CircularProgressIndicator()), error: (err, _) => Center(child: Text('خطأ: $err')));
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
+    return contractsAsync.when(
+      data: (contracts) => contracts.isEmpty 
+        ? const Center(child: Text('لا توجد عقود ممولة في محفظتك حالياً')) 
+        : ListView.builder(
+            padding: const EdgeInsets.all(16), 
+            itemCount: contracts.length, 
+            itemBuilder: (context, index) { 
+              final item = contracts[index]; 
+              final contract = item['financing_contracts']; 
+              final status = contract['status'] as String;
+              
+              return Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: Border.all(color: Colors.grey.shade100)), 
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: status == 'active' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                    child: Icon(Icons.assignment_rounded, color: status == 'active' ? Colors.green : Colors.orange, size: 20),
+                  ),
+                  title: Text('عقد رقم: ${contract['contract_no']}', style: const TextStyle(fontWeight: FontWeight.bold)), 
+                  subtitle: Text('قيمة مساهمتك: ${f.format(item['amount_allocated'])} ر.س'), 
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (status == 'active' ? Colors.green : Colors.blue).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(_translateStatus(status), 
+                      style: TextStyle(color: status == 'active' ? Colors.green : Colors.blue, fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ); 
+            }
+          ), 
+      loading: () => const Center(child: CircularProgressIndicator()), 
+      error: (err, _) => Center(child: Text('خطأ في تحميل المحفظة: $err'))
+    );
   }
 }
 
 class _TransactionsTab extends ConsumerWidget {
   final String investorId;
   const _TransactionsTab({required this.investorId});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final txAsync = ref.watch(investorTransactionsControllerProvider(investorId));
-    return Column(children: [Padding(padding: const EdgeInsets.all(20), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('كشف العمليات المالي', style: TextStyle(fontWeight: FontWeight.bold)), TextButton.icon(onPressed: () {}, icon: const Icon(Icons.picture_as_pdf, color: Colors.red), label: const Text('تصدير كشف حساب'))])), Expanded(child: txAsync.when(data: (txs) => txs.isEmpty ? const Center(child: Text('لا توجد عمليات')) : ListView.builder(padding: const EdgeInsets.symmetric(horizontal: 16), itemCount: txs.length, itemBuilder: (context, index) { final tx = txs[index]; final isPlus = tx.amount > 0; return ListTile(leading: Icon(isPlus ? Icons.add_circle_outline : Icons.remove_circle_outline, color: isPlus ? Colors.green : Colors.red), title: Text(tx.type.label), subtitle: Text(intl.DateFormat('yyyy/MM/dd').format(tx.createdAt)), trailing: Text('${isPlus ? "+" : ""}${tx.amount} ر.س', style: TextStyle(fontWeight: FontWeight.bold, color: isPlus ? Colors.green : Colors.red))); }), loading: () => const Center(child: CircularProgressIndicator()), error: (err, _) => Center(child: Text('خطأ: $err'))))]);
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20), 
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+            children: [
+              const Text('سجل العمليات المالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), 
+              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.picture_as_pdf, color: Colors.red), label: const Text('تصدير كشف حساب'))
+            ]
+          )
+        ), 
+        Expanded(
+          child: txAsync.when(
+            data: (txs) => txs.isEmpty 
+              ? const Center(child: Text('لا توجد عمليات مسجلة حتى الآن')) 
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16), 
+                  itemCount: txs.length, 
+                  itemBuilder: (context, index) { 
+                    final tx = txs[index]; 
+                    final isPlus = tx.amount > 0; 
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: Icon(isPlus ? Icons.add_circle_outline : Icons.remove_circle_outline, 
+                            color: isPlus ? Colors.green : Colors.red), 
+                        title: Text(tx.type.label, style: const TextStyle(fontWeight: FontWeight.w600)), 
+                        subtitle: Text(intl.DateFormat('yyyy/MM/dd HH:mm').format(tx.createdAt)), 
+                        trailing: Text('${isPlus ? "+" : ""}${f.format(tx.amount)} ر.س', 
+                            style: TextStyle(fontWeight: FontWeight.bold, color: isPlus ? Colors.green : Colors.red, fontSize: 14)),
+                      ),
+                    ); 
+                  }
+                ), 
+            loading: () => const Center(child: CircularProgressIndicator()), 
+            error: (err, _) => Center(child: Text('خطأ في تحميل العمليات: $err'))
+          )
+        )
+      ]
+    );
   }
 }
 
 class _ProjectionsTab extends ConsumerWidget {
   final String investorId;
   const _ProjectionsTab({required this.investorId});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectionsAsync = ref.watch(investorProjectionsProvider(investorId));
-    return projectionsAsync.when(data: (list) { if (list.isEmpty) return const Center(child: Text('لا توجد توقعات حالياً')); double grandTotal = 0; for (var item in list) grandTotal += (item['total_expected'] as num).toDouble(); return Column(children: [Container(width: double.infinity, margin: const EdgeInsets.all(20), padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green.shade100)), child: Column(children: [const Text('التدفقات النقدية المتوقعة لمحفظتك', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)), const SizedBox(height: 8), Text('${grandTotal.toStringAsFixed(0)} ر.س', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green.shade900))])), Expanded(child: ListView.builder(padding: const EdgeInsets.symmetric(horizontal: 16), itemCount: list.length, itemBuilder: (context, index) { final item = list[index]; return Card(margin: const EdgeInsets.only(bottom: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), child: ListTile(leading: const Icon(Icons.calendar_month_rounded, color: Colors.blue), title: Text('تاريخ الاستحقاق: ${item['due_date']}'), trailing: Text('${item['total_expected']} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)))); }))]); }, loading: () => const Center(child: CircularProgressIndicator()), error: (err, _) => Center(child: Text('خطأ: $err')));
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
+
+    return projectionsAsync.when(
+      data: (list) { 
+        if (list.isEmpty) return const Center(child: Text('لا توجد تدفقات نقدية متوقعة حالياً')); 
+        double grandTotal = 0; 
+        for (var item in list) grandTotal += (item['total_expected'] as num).toDouble(); 
+        
+        return Column(
+          children: [
+            Container(
+              width: double.infinity, 
+              margin: const EdgeInsets.all(20), 
+              padding: const EdgeInsets.all(24), 
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.green.shade700, Colors.green.shade900]),
+                borderRadius: BorderRadius.circular(24),
+              ), 
+              child: Column(
+                children: [
+                  const Text('إجمالي التدفقات النقدية القادمة لمحفظتك', 
+                    style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)), 
+                  const SizedBox(height: 12), 
+                  Text('${f.format(grandTotal)} ر.س', 
+                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white))
+                ]
+              )
+            ), 
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16), 
+                itemCount: list.length, 
+                itemBuilder: (context, index) { 
+                  final item = list[index]; 
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12), 
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: Border.all(color: Colors.grey.shade100)), 
+                    child: ListTile(
+                      leading: const Icon(Icons.calendar_month_rounded, color: Colors.blue), 
+                      title: Text('موعد استحقاق: ${item['due_date']}', style: const TextStyle(fontWeight: FontWeight.bold)), 
+                      trailing: Text('${f.format(item['total_expected'])} ر.س', 
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))
+                    ),
+                  ); 
+                }
+              )
+            )
+          ]
+        ); 
+      }, 
+      loading: () => const Center(child: CircularProgressIndicator()), 
+      error: (err, _) => Center(child: Text('خطأ في تحميل التوقعات: $err'))
+    );
   }
 }

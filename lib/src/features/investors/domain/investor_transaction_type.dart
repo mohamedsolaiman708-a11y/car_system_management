@@ -15,15 +15,15 @@ enum InvestorTransactionType {
   String get label {
     switch (this) {
       case InvestorTransactionType.deposit:
-        return 'Deposit';
+        return 'إيداع رأس مال';
       case InvestorTransactionType.withdrawal:
-        return 'Withdrawal';
+        return 'سحب نقدي';
       case InvestorTransactionType.contractAllocation:
-        return 'Contract Allocation';
+        return 'تمويل عقد';
       case InvestorTransactionType.contractReturn:
-        return 'Contract Return';
+        return 'استرداد رأس مال من قسط';
       case InvestorTransactionType.financeProfitDistribution:
-        return 'Finance Profit Distribution';
+        return 'توزيع أرباح تمويل';
     }
   }
 }
