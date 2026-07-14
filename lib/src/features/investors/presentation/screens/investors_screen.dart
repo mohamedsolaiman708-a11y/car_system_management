@@ -13,41 +13,55 @@ class InvestorsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 3,
-      initialIndex: initialIndex,
-      child: Scaffold(
-        backgroundColor: AppColors.bgGrey,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(160),
-          child: Container(
-            color: AppColors.primaryNavy,
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                    child: _buildHeader(context),
-                  ),
-                  const Spacer(),
-                  _buildTabBar(),
-                ],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: DefaultTabController(
+        length: 3,
+        initialIndex: initialIndex,
+        child: Scaffold(
+          backgroundColor: AppColors.bgGrey,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(180),
+            child: Container(
+              color: AppColors.primaryNavy,
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                      child: _buildHeader(context, ref),
+                    ),
+                    const Spacer(),
+                    _buildTabBar(),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        body: const TabBarView(
-          children: [
-            ActiveInvestorsList(),
-            PendingInvestorsList(),
-            WithdrawalRequestsList(),
-          ],
+          body: const TabBarView(
+            children: [
+              ActiveInvestorsList(),
+              PendingInvestorsList(),
+              WithdrawalRequestsList(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final investorsAsync = ref.watch(investorListControllerProvider);
+    double totalCapital = 0;
+    int count = 0;
+
+    investorsAsync.whenData((list) {
+      count = list.length;
+      totalCapital = list.fold(0, (sum, item) => sum + item.deployedCapital + item.availableBalance);
+    });
+
+    final f = intl.NumberFormat.compactCurrency(symbol: 'ر.س', locale: 'ar');
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -55,12 +69,16 @@ class InvestorsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'إدارة المحافظ الاستثمارية',
+              'مركز المستثمرين والشركاء',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
             ),
-            Text(
-              'متابعة رؤوس الأموال، الأرباح، والطلبات المعلقة',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildQuickStat('إجمالي رؤوس الأموال', f.format(totalCapital)),
+                const SizedBox(width: 40),
+                _buildQuickStat('عدد المستثمرين', count.toString()),
+              ],
             ),
           ],
         ),
@@ -74,10 +92,22 @@ class InvestorsScreen extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accentGold,
               foregroundColor: AppColors.primaryNavy,
-              minimumSize: const Size(200, 50),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildQuickStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.5)),
       ],
     );
   }
@@ -86,10 +116,11 @@ class InvestorsScreen extends ConsumerWidget {
     return const TabBar(
       isScrollable: true,
       tabAlignment: TabAlignment.start,
-      labelColor: AppColors.accentGold,
-      unselectedLabelColor: Colors.white54,
+      labelColor: Colors.white,
+      unselectedLabelColor: Colors.white38,
       indicatorColor: AppColors.accentGold,
       indicatorWeight: 4,
+      indicatorSize: TabBarIndicatorSize.label,
       labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
       padding: EdgeInsets.symmetric(horizontal: 16),
       tabs: [
@@ -114,7 +145,7 @@ class ActiveInvestorsList extends ConsumerWidget {
       child: investorsAsync.when(
         data: (investors) {
           if (investors.isEmpty) {
-            return _buildEmptyScrollable(context, 'لا يوجد مستثمرون نشطون حالياً', Icons.people_outline_rounded);
+            return _buildEmptyScrollable(context, 'لا يوجد مستثمرون حالياً', Icons.people_outline_rounded);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(24),
@@ -125,39 +156,33 @@ class ActiveInvestorsList extends ConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
-                  border: Border.all(color: Colors.white),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: InkWell(
                   onTap: () => context.push('/investors/${inv.id}'),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: AppColors.primaryNavy.withOpacity(0.05),
-                          child: Text(inv.fullName[0], 
-                            style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
-                        ),
+                        _buildInvestorAvatar(inv.fullName),
                         const SizedBox(width: 20),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                              Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
                               const SizedBox(height: 4),
-                              Text(inv.email, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                              Text(inv.email, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                             ],
                           ),
                         ),
-                        _buildInfoColumn('المتاح', f.format(inv.availableBalance), Colors.green),
-                        const SizedBox(width: 40),
-                        _buildInfoColumn('الموظف', f.format(inv.deployedCapital), Colors.blue),
-                        const SizedBox(width: 20),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                        _buildStatColumn('الرصيد المتاح', f.format(inv.availableBalance), AppColors.successGreen),
+                        const SizedBox(width: 32),
+                        _buildStatColumn('رأس المال الموظف', f.format(inv.deployedCapital), AppColors.primaryNavy),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.chevron_left_rounded, color: Colors.grey, size: 20),
                       ],
                     ),
                   ),
@@ -166,19 +191,34 @@ class ActiveInvestorsList extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
         error: (e, _) => Center(child: Text('خطأ في تحميل البيانات: $e')),
       ),
     );
   }
 
-  Widget _buildInfoColumn(String label, String value, Color color) {
+  Widget _buildInvestorAvatar(String name) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: AppColors.primaryNavy.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Text(name.isNotEmpty ? name[0] : '?', 
+          style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
         const SizedBox(height: 4),
-        Text('$value ر.س', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15)),
+        Text('$value ر.س', style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 14)),
       ],
     );
   }
@@ -195,7 +235,7 @@ class PendingInvestorsList extends ConsumerWidget {
       onRefresh: () => ref.refresh(pendingInvestorsControllerProvider.future),
       child: pendingAsync.when(
         data: (requests) => requests.isEmpty
-            ? _buildEmptyScrollable(context, 'لا توجد طلبات انضمام معلقة حالياً', Icons.mark_email_read_outlined)
+            ? _buildEmptyScrollable(context, 'لا توجد طلبات انضمام حالياً', Icons.mark_email_read_outlined)
             : ListView.builder(
                 padding: const EdgeInsets.all(24),
                 itemCount: requests.length,
@@ -213,20 +253,18 @@ class WithdrawalRequestsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // التعديل: نطلب كل البيانات بدون فلترة في المزود لضمان جلب الداتا من الداتابيز
     final requestsAsync = ref.watch(withdrawalRequestsControllerProvider());
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(withdrawalRequestsControllerProvider().future),
       child: requestsAsync.when(
         data: (allRequests) {
-          // فلترة الطلبات المعلقة (pending) فقط هنا في الـ UI
           final requests = allRequests.where((r) => 
             r['status'].toString().toLowerCase() == 'pending'
           ).toList();
 
           if (requests.isEmpty) {
-            return _buildEmptyScrollable(context, 'لا توجد طلبات سحب معلقة حالياً', Icons.account_balance_wallet_outlined);
+            return _buildEmptyScrollable(context, 'لا توجد طلبات سحب معلقة', Icons.account_balance_wallet_outlined);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(24),
@@ -235,10 +273,7 @@ class WithdrawalRequestsList extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text('خطأ في تحميل طلبات السحب: $e', textAlign: TextAlign.center),
-        )),
+        error: (e, _) => Center(child: Text('خطأ في تحميل طلبات السحب: $e')),
       ),
     );
   }
@@ -254,9 +289,13 @@ Widget _buildEmptyScrollable(BuildContext context, String msg, IconData icon) {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 80, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text(msg, style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              child: Icon(icon, size: 64, color: Colors.grey.shade300),
+            ),
+            const SizedBox(height: 24),
+            Text(msg, style: TextStyle(color: Colors.grey.shade500, fontSize: 16, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -280,31 +319,32 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
     final req = widget.req;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.accentGold.withOpacity(0.1)),
+        border: Border.all(color: Colors.white),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.accentGold.withOpacity(0.1), shape: BoxShape.circle),
-            child: const Icon(Icons.person_add_alt_rounded, color: AppColors.accentGold),
+            decoration: BoxDecoration(color: AppColors.accentGold.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.person_add_rounded, color: AppColors.accentGold, size: 24),
           ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(req['full_name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                Text(req['email'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(req['full_name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
+                const SizedBox(height: 2),
+                Text(req['email'] ?? '', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
               ],
             ),
           ),
           if (_isLoading)
-            const CircularProgressIndicator()
+            const CircularProgressIndicator(strokeWidth: 2)
           else
             Row(
               children: [
@@ -313,16 +353,16 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
                   style: TextButton.styleFrom(foregroundColor: AppColors.errorRed),
                   child: const Text('رفض الطلب'),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: _approve,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.successGreen,
                     foregroundColor: Colors.white,
-                    minimumSize: const Size(120, 45),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
-                  child: const Text('قبول واعتماد'),
+                  child: const Text('اعتماد القبول'),
                 ),
               ],
             ),
@@ -360,36 +400,41 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red.withOpacity(0.1)),
+        border: Border.all(color: Colors.red.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), shape: BoxShape.circle),
-            child: const Icon(Icons.outbox_rounded, color: Colors.red),
+            decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.red, size: 24),
           ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(investorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                Text('قيمة السحب: ${f.format(amount)} ر.س', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                Text(investorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
+                const SizedBox(height: 4),
+                Text('طلب سحب: ${f.format(amount)} ر.س', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700, fontSize: 13)),
               ],
             ),
           ),
           if (_isLoading)
-            const CircularProgressIndicator()
+            const CircularProgressIndicator(strokeWidth: 2)
           else
             ElevatedButton(
               onPressed: _approve,
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryNavy, foregroundColor: Colors.white),
-              child: const Text('تنفيذ السحب'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryNavy, 
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('صرف المبلغ'),
             ),
         ],
       ),

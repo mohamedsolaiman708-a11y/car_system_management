@@ -1,195 +1,142 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
-import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/utils/app_theme.dart';
-import '../../../../core/utils/responsive_layout.dart';
 import '../accounting_controller.dart';
-import '../../domain/account.dart';
+import '../widgets/create_account_dialog.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accountsAsync = ref.watch(chartOfAccountsControllerProvider);
-    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final accountsAsync = ref.watch(accountsProvider);
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('دليل الحسابات والأرصدة اللحظية', 
-          style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 16)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryNavy),
-            onPressed: () => ref.invalidate(chartOfAccountsControllerProvider),
-          ),
-          const SizedBox(width: 16),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.grey.shade200),
-        ),
-      ),
-      body: accountsAsync.when(
-        data: (accounts) {
-          if (accounts.isEmpty) {
-            return const Center(child: Text('لا توجد حسابات مالية معرفة في النظام'));
-          }
-          return ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              _buildExecutiveFinancialSummary(accounts),
-              const SizedBox(height: 24),
-              _buildAccountsTableHeader(),
-              const SizedBox(height: 8),
-              if (isDesktop)
-                _buildClassicAccountsTable(accounts)
-              else
-                _buildClassicAccountsList(accounts),
-              const SizedBox(height: 50),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('حدث خطأ في تحميل البيانات المالية: $err')),
-      ),
-    );
-  }
-
-  Widget _buildExecutiveFinancialSummary(List<Account> accounts) {
-    double assets = 0, liabilities = 0, equity = 0;
-    for (var acc in accounts) {
-      final b = acc.currentBalance;
-      if (acc.type == 'asset') assets += b;
-      if (acc.type == 'liability') liabilities += b;
-      if (acc.type == 'equity') equity += b;
-    }
-    
-    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
-    final bool hasData = (assets != 0 || liabilities != 0 || equity != 0);
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        children: [
-          if (hasData)
-            SizedBox(
-              width: 120,
-              height: 120,
-              child: PieChart(
-                PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 30,
-                  sections: [
-                    if (assets != 0) PieChartSectionData(value: assets.abs(), color: Colors.green, title: '', radius: 15),
-                    if (liabilities != 0) PieChartSectionData(value: liabilities.abs(), color: Colors.orange, title: '', radius: 15),
-                    if (equity != 0) PieChartSectionData(value: equity.abs(), color: Colors.purple, title: '', radius: 15),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: AppColors.bgGrey,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(140),
+          child: Container(
+            color: AppColors.primaryNavy,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('شجرة الحسابات المالية',
+                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
+                        SizedBox(height: 4),
+                        Text('إدارة وتصنيف الحسابات في النظام المحاسبي',
+                            style: TextStyle(color: Colors.white60, fontSize: 13)),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (context) => const CreateAccountDialog(),
+                      ),
+                      icon: const Icon(Icons.add_chart_rounded, size: 18),
+                      label: const Text('إضافة حساب'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentGold,
+                        foregroundColor: AppColors.primaryNavy,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-          if (hasData) const SizedBox(width: 40),
-          
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildSummaryBox('إجمالي الأصول', f.format(assets), Colors.green),
-                _buildDivider(),
-                _buildSummaryBox('الالتزامات', f.format(liabilities.abs()), Colors.orange),
-                _buildDivider(),
-                _buildSummaryBox('حقوق الملكية', f.format(equity.abs()), Colors.purple),
-                _buildDivider(),
-                _buildSummaryBox('صافي القيمة', f.format(assets - liabilities.abs()), AppColors.primaryNavy),
-              ],
-            ),
           ),
-        ],
+        ),
+        body: accountsAsync.when(
+          data: (accounts) => _buildAccountsGrid(accounts, f),
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+          error: (err, _) => Center(child: Text('خطأ: $err')),
+        ),
       ),
     );
   }
 
-  Widget _buildSummaryBox(String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Text('$value ر.س', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-      ],
-    );
-  }
+  Widget _buildAccountsGrid(List<Map<String, dynamic>> accounts, intl.NumberFormat f) {
+    if (accounts.isEmpty) return _buildEmptyState();
 
-  Widget _buildDivider() => Container(width: 1, height: 35, color: Colors.grey.shade200);
-
-  Widget _buildAccountsTableHeader() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8),
-      child: Text('دليل الحسابات التفصيلي', 
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-    );
-  }
-
-  Widget _buildClassicAccountsTable(List<Account> accounts) {
-    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(4),
+    return GridView.builder(
+      padding: const EdgeInsets.all(24),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 400,
+        mainAxisExtent: 180,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
       ),
-      child: DataTable(
-        headingRowHeight: 40,
-        dataRowHeight: 50,
-        headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
-        columns: const [
-          DataColumn(label: Text('كود', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('اسم الحساب', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('النوع', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('الرصيد اللحظي', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-        ],
-        rows: accounts.map((acc) {
-          final balance = acc.currentBalance;
-          return DataRow(
-            cells: [
-              DataCell(Text(acc.code, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.bold))),
-              DataCell(Text(acc.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-              DataCell(_buildTypeBadge(acc.type)),
-              DataCell(Text(f.format(balance), 
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: balance < 0 ? Colors.red : AppColors.primaryNavy))),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildClassicAccountsList(List<Account> accounts) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       itemCount: accounts.length,
       itemBuilder: (context, index) {
         final acc = accounts[index];
-        final balance = acc.currentBalance;
-        return Card(
-          elevation: 0, margin: const EdgeInsets.only(bottom: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: BorderSide(color: Colors.grey.shade200)),
-          child: ListTile(
-            dense: true,
-            title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('كود: ${acc.code}'),
-            trailing: Text('${balance.toStringAsFixed(2)} ر.س', 
-              style: TextStyle(fontWeight: FontWeight.bold, color: balance < 0 ? Colors.red : AppColors.primaryNavy)),
+        final balance = (acc['balance'] as num?)?.toDouble() ?? 0.0;
+        final type = acc['type'] ?? 'asset';
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () { /* تفاصيل الحساب */ },
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryNavy.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(acc['code'] ?? '', 
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryNavy)),
+                        ),
+                        _buildTypeBadge(type),
+                      ],
+                    ),
+                    const Spacer(),
+                    Text(acc['name'] ?? '', 
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('الرصيد الحالي', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                        Text('${f.format(balance)} ر.س', 
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900, 
+                            fontSize: 18, 
+                            color: balance < 0 ? Colors.red : AppColors.primaryNavy
+                          )),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -197,10 +144,33 @@ class AccountsScreen extends ConsumerWidget {
   }
 
   Widget _buildTypeBadge(String type) {
-    Color color = Colors.blue;
-    if (type == 'asset') color = Colors.green;
-    else if (type == 'liability') color = Colors.orange;
-    else if (type == 'equity') color = Colors.purple;
-    return Text(type.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold));
+    Color color;
+    String label;
+    switch (type.toLowerCase()) {
+      case 'asset': color = Colors.blue; label = 'أصل'; break;
+      case 'liability': color = Colors.orange; label = 'خصم'; break;
+      case 'equity': color = Colors.purple; label = 'حقوق ملكية'; break;
+      case 'revenue': color = Colors.green; label = 'إيراد'; break;
+      case 'expense': color = Colors.red; label = 'مصروف'; break;
+      default: color = Colors.grey; label = type;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.account_tree_outlined, size: 80, color: Colors.grey.shade200),
+          const SizedBox(height: 16),
+          const Text('لا توجد حسابات معرفة حالياً', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
   }
 }
