@@ -16,101 +16,99 @@ class InvestorDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    if (user == null)
+    if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final investorAsync = ref.watch(investorDetailsControllerProvider(user.id));
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
 
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: investorAsync.when(
-        data: (investor) {
-          if (investor == null) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('بوابة المستثمر')),
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.person_search_rounded,
-                      size: 80,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'عذراً، هذا الحساب غير مربوط بملف مستثمر.',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+      child: DefaultTabController(
+        length: 5,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF8F9FA),
+          appBar: AppBar(
+            title: const Text(
+              'بوابة المستثمر الذكية',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              _NotificationBadge(count: unreadCount),
+              IconButton(
+                icon: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.redAccent,
+                ),
+                onPressed: () =>
+                    ref.read(authControllerProvider.notifier).logout(),
+                tooltip: 'تسجيل الخروج',
+              ),
+              const SizedBox(width: 8),
+            ],
+            bottom: const TabBar(
+              isScrollable: true,
+              indicatorColor: AppColors.accentGold,
+              labelColor: AppColors.primaryNavy,
+              unselectedLabelColor: Colors.grey,
+              tabs: [
+                Tab(text: 'نظرة عامة', icon: Icon(Icons.dashboard_rounded)),
+                Tab(
+                  text: 'محفظة العقود',
+                  icon: Icon(Icons.account_balance_rounded),
+                ),
+                Tab(
+                  text: 'كشف الحساب',
+                  icon: Icon(Icons.receipt_long_rounded),
+                ),
+                Tab(
+                  text: 'التوقعات',
+                  icon: Icon(Icons.trending_up_rounded),
+                ),
+                Tab(
+                  text: 'المستندات',
+                  icon: Icon(Icons.folder_copy_rounded),
+                ),
+              ],
+            ),
+          ),
+          body: investorAsync.when(
+            data: (investor) {
+              if (investor == null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.person_search_rounded,
+                        size: 80,
+                        color: Colors.grey,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'يرجى التواصل مع الإدارة لتفعيل حسابك كمستثمر.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => context.go('/dashboard'),
-                      child: const Text('العودة للوحة تحكم الإدارة'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return DefaultTabController(
-            length: 5,
-            child: Scaffold(
-              backgroundColor: const Color(0xFFF8F9FA),
-              appBar: AppBar(
-                title: const Text(
-                  'بوابة المستثمر الذكية',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                actions: [
-                  _NotificationBadge(count: unreadCount),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.logout_rounded,
-                      color: Colors.redAccent,
-                    ),
-                    onPressed: () =>
-                        ref.read(authControllerProvider.notifier).logout(),
-                    tooltip: 'تسجيل الخروج',
+                      const SizedBox(height: 16),
+                      const Text(
+                        'عذراً، هذا الحساب غير مربوط بملف مستثمر.',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'يرجى التواصل مع الإدارة لتفعيل حسابك كمستثمر.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => context.go('/dashboard'),
+                        child: const Text('العودة للوحة تحكم الإدارة'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                ],
-                bottom: const TabBar(
-                  isScrollable: true,
-                  indicatorColor: AppColors.accentGold,
-                  labelColor: AppColors.primaryNavy,
-                  unselectedLabelColor: Colors.grey,
-                  tabs: [
-                    Tab(text: 'نظرة عامة', icon: Icon(Icons.dashboard_rounded)),
-                    Tab(
-                      text: 'محفظة العقود',
-                      icon: Icon(Icons.account_balance_rounded),
-                    ),
-                    Tab(
-                      text: 'كشف الحساب',
-                      icon: Icon(Icons.receipt_long_rounded),
-                    ),
-                    Tab(
-                      text: 'التوقعات',
-                      icon: Icon(Icons.trending_up_rounded),
-                    ),
-                    Tab(
-                      text: 'المستندات',
-                      icon: Icon(Icons.folder_copy_rounded),
-                    ),
-                  ],
-                ),
-              ),
-              body: TabBarView(
+                );
+              }
+
+              return TabBarView(
                 children: [
                   _OverviewTab(investor: investor),
                   _PortfolioTab(investorId: investor.id),
@@ -118,17 +116,21 @@ class InvestorDashboardScreen extends ConsumerWidget {
                   _ProjectionsTab(investorId: investor.id),
                   UniversalDocumentManager(investorId: investor.id),
                 ],
+              );
+            },
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryNavy),
+            ),
+            error: (err, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  'حدث خطأ في تحميل البيانات: $err',
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
-          );
-        },
-        loading: () => const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(color: AppColors.primaryNavy),
           ),
-        ),
-        error: (err, _) => Scaffold(
-          body: Center(child: Text('حدث خطأ في تحميل البيانات: $err')),
         ),
       ),
     );
