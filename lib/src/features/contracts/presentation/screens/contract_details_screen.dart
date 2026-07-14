@@ -613,9 +613,27 @@ class _AccountingTab extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             children: [
-                              Expanded(flex: 3, child: Text(line.accounts?['name'] ?? line.accounts?['code'] ?? '-', style: const TextStyle(fontSize: 11))),
-                              Expanded(child: Text(line.debit > 0 ? f.format(line.debit) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold))),
-                              Expanded(child: Text(line.credit > 0 ? f.format(line.credit) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold))),
+                              Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                      line.accounts?['name'] ?? '-',
+                                      style: const TextStyle(fontSize: 11)
+                                  )
+                              ),
+                              Expanded(
+                                  child: Text(
+                                      (line.debit ?? 0) > 0 ? f.format(line.debit) : '-',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)
+                                  )
+                              ),
+                              Expanded(
+                                  child: Text(
+                                      (line.credit ?? 0) > 0 ? f.format(line.credit) : '-',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)
+                                  )
+                              ),
                             ],
                           ),
                         )).toList(),

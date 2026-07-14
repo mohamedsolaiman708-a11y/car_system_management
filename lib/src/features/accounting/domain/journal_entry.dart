@@ -14,7 +14,8 @@ class JournalEntry with _$JournalEntry {
     @JsonKey(name: 'source_type') String? sourceType,
     @JsonKey(name: 'source_id') String? sourceId,
     @JsonKey(name: 'created_at') required DateTime createdAt,
-    @Default([]) List<JournalEntryLine> lines,
+    // الربط الصحيح مع مسمى الجدول في قاعدة البيانات
+    @JsonKey(name: 'journal_entry_lines') @Default([]) List<JournalEntryLine> lines,
   }) = _JournalEntry;
 
   factory JournalEntry.fromJson(Map<String, dynamic> json) => _$JournalEntryFromJson(json);
