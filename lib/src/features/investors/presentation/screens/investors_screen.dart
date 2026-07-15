@@ -21,13 +21,13 @@ class InvestorsScreen extends ConsumerWidget {
         child: Scaffold(
           backgroundColor: AppColors.bgGrey,
           appBar: AppBar(
-            toolbarHeight: 160,
+            toolbarHeight: 180,
             backgroundColor: AppColors.primaryNavy,
             automaticallyImplyLeading: false,
             elevation: 0,
             flexibleSpace: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(32, 20, 32, 0),
+                padding: const EdgeInsets.fromLTRB(32, 24, 32, 60),
                 child: _buildHeader(context, ref),
               ),
             ),
@@ -62,11 +62,11 @@ class InvestorsScreen extends ConsumerWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             const Text(
               'إدارة المستثمرين والشركاء',
@@ -76,35 +76,37 @@ class InvestorsScreen extends ConsumerWidget {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              'متابعة محافظ الشركاء، طلبات الانضمام، وعمليات السحب.',
+              'متابعة محافظ الشركاء، أرباح الاستثمار، وحركات رأس المال',
               style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Row(
               children: [
-                _buildQuickStat('إجمالي المحافظ الاستثمارية', f.format(totalCapital)),
-                const SizedBox(width: 40),
-                _buildQuickStat('عدد الشركاء النشطين', count.toString()),
+                _buildQuickStat('إجمالي المحافظ', f.format(totalCapital)),
+                const SizedBox(width: 48),
+                _buildQuickStat('الشركاء النشطين', count.toString()),
               ],
             ),
           ],
         ),
         if (ResponsiveLayout.isDesktop(context))
-          ElevatedButton.icon(
-            onPressed: () => showDialog(
-                context: context,
-                builder: (context) => const CreateInvestorDialog()),
-            icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-            label: const Text('إضافة مستثمر جديد'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accentGold,
-              foregroundColor: AppColors.primaryNavy,
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
-              shadowColor: Colors.black.withOpacity(0.3),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: ElevatedButton.icon(
+              onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => const CreateInvestorDialog()),
+              icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+              label: const Text('إضافة مستثمر جديد', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accentGold,
+                foregroundColor: AppColors.primaryNavy,
+                minimumSize: const Size(220, 54),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
             ),
           ),
       ],

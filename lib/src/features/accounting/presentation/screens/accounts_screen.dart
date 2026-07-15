@@ -18,90 +18,53 @@ class AccountsScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
-          toolbarHeight: 160,
+          toolbarHeight: 140,
           backgroundColor: AppColors.primaryNavy,
-          automaticallyImplyLeading: false,
+          automaticallyImplyLeading: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           elevation: 0,
           flexibleSpace: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(32, 20, 32, 0),
-              child: _buildHeader(context, accountsAsync),
-            ),
+            child: _buildHeader(context),
           ),
         ),
         body: accountsAsync.when(
           data: (accounts) => _buildAccountsGrid(accounts, f),
-          loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
           error: (err, _) => Center(child: Text('خطأ: $err')),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, AsyncValue<List<Account>> accountsAsync) {
-    int count = 0;
-    accountsAsync.whenData((list) => count = list.length);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      child: Center(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'شجرة الحسابات المالية',
+              'إدارة الحسابات المالية',
               style: TextStyle(
-                fontSize: 28, 
-                fontWeight: FontWeight.w900, 
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
                 color: Colors.white,
-                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              'مراقبة الأرصدة الحالية، هيكلة الحسابات، والنشاط المالي العام.',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildQuickStat('إجمالي الحسابات المعرفة', count.toString()),
-                const SizedBox(width: 40),
-                _buildQuickStat('حالة شجرة الحسابات', 'نشطة ومعتمدة'),
-              ],
+              'متابعة الأرصدة اللحظية، هيكلة شجرة الحسابات، والنشاط المالي',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+              ),
             ),
           ],
         ),
-        ElevatedButton.icon(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('خاصية إضافة حساب ستتوفر قريباً')),
-            );
-          },
-          icon: const Icon(Icons.add_chart_rounded, size: 20),
-          label: const Text('إضافة حساب جديد', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.accentGold,
-            foregroundColor: AppColors.primaryNavy,
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 4,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickStat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 18)),
-      ],
+      ),
     );
   }
 
@@ -112,7 +75,7 @@ class AccountsScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 400,
-        mainAxisExtent: 200,
+        mainAxisExtent: 220,
         crossAxisSpacing: 24,
         mainAxisSpacing: 24,
       ),
@@ -125,7 +88,13 @@ class AccountsScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04), 
+                blurRadius: 15, 
+                offset: const Offset(0, 8)
+              )
+            ],
           ),
           child: Material(
             color: Colors.transparent,
@@ -141,33 +110,45 @@ class AccountsScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: AppColors.primaryNavy.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(acc.code, 
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryNavy, fontFamily: 'monospace')),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold, 
+                              fontSize: 12, 
+                              color: AppColors.primaryNavy,
+                              fontFamily: 'monospace'
+                            )),
                         ),
                         _buildTypeBadge(acc.type),
                       ],
                     ),
                     const Spacer(),
                     Text(_translateAccountName(acc.name), 
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryNavy)),
-                    const SizedBox(height: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 19, 
+                        color: AppColors.primaryNavy
+                      )),
+                    const SizedBox(height: 12),
+                    const Text('الرصيد المالي', 
+                      style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text('الرصيد المالي', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        Text('${f.format(balance)} ر.س', 
+                        Text('${f.format(balance)}', 
                           style: TextStyle(
                             fontWeight: FontWeight.w900, 
-                            fontSize: 20, 
+                            fontSize: 22, 
                             color: balance < 0 ? Colors.red : AppColors.primaryNavy,
                             letterSpacing: 0.5
                           )),
+                        const Text('ر.س', 
+                          style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
                     ),
                   ],
@@ -189,7 +170,7 @@ class AccountsScreen extends ConsumerWidget {
       'Investor Payable - Profit': 'مستحقات المستثمرين - الأرباح',
       'Unearned Finance Profit': 'أرباح تمويل غير مكتسبة',
       'Realized Finance Profit': 'أرباح تمويل محققة',
-      'Cash': 'الصندوق',
+      'Cash': 'الصندوق الرئيسي',
       'Finance Revenue': 'إيرادات التمويل',
       'General Expenses': 'مصروفات عامة',
       'Equity': 'حقوق الملكية',
@@ -204,16 +185,16 @@ class AccountsScreen extends ConsumerWidget {
     Color color;
     String label;
     switch (type.toLowerCase()) {
-      case 'asset': color = Colors.blue; label = 'أصل'; break;
+      case 'asset': color = Colors.green; label = 'أصل'; break;
       case 'liability': color = Colors.orange; label = 'خصم'; break;
       case 'equity': color = Colors.purple; label = 'حقوق ملكية'; break;
-      case 'revenue': color = Colors.green; label = 'إيراد'; break;
+      case 'revenue': color = Colors.blue; label = 'إيراد'; break;
       case 'expense': color = Colors.red; label = 'مصروف'; break;
       default: color = Colors.grey; label = type;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }
