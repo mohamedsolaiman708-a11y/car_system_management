@@ -52,7 +52,11 @@ class SupabaseStaffRepository {
 
   /// طلب إعادة تعيين كلمة المرور
   Future<void> resetStaffPassword(String email) async {
-    await _client.auth.resetPasswordForEmail(email);
+    // نقوم بإضافة رابط العودة للتطبيق ليتمكن المستخدم من تغيير كلمة المرور
+    await _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'https://al-sami-auto.vercel.app/reset-password', // استبدله برابط تطبيقك الفعلي أو رابط التوجيه المناسب
+    );
   }
 
   /// إرسال دعوة لموظف جديد

@@ -16,7 +16,6 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   String searchQuery = '';
   String? selectedRole;
 
-  // تعريف الرتب المعتمدة فقط في النظام
   final List<String> _allowedRoles = ['admin', 'sales', 'accountant'];
 
   String _translateRole(String slugOrName) {
@@ -38,15 +37,16 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
-          toolbarHeight: 180,
+          toolbarHeight: 140,
           backgroundColor: AppColors.primaryNavy,
-          automaticallyImplyLeading: false,
+          automaticallyImplyLeading: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           elevation: 0,
           flexibleSpace: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
-              child: _buildHeader(context, staffAsync),
-            ),
+            child: _buildHeader(context),
           ),
         ),
         body: Column(
@@ -86,71 +86,53 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, AsyncValue<List<AppUser>> staffAsync) {
-    int total = 0;
-    int active = 0;
-    staffAsync.whenData((list) {
-      total = list.length;
-      active = list.where((m) => m.isActive).length;
-    });
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'إدارة فريق العمل والكوادر',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Row(
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      child: Stack(
+        children: [
+          // العنوان في المنتصف تماماً (مثل صفحة CRM)
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildHeaderStatCard('إجمالي الفريق', total.toString(), Icons.groups_rounded),
-                const SizedBox(width: 24),
-                _buildHeaderStatCard('الأعضاء النشطين', active.toString(), Icons.verified_user_rounded),
+                const Text(
+                  'إدارة فريق العمل',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'تنظيم أدوار الموظفين، إدارة الوصول، ومتابعة نشاط الفريق',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
-          ],
-        ),
-        ElevatedButton.icon(
-          onPressed: () => _showAddStaffDialog(context),
-          icon: const Icon(Icons.person_add_alt_1_rounded, size: 22),
-          label: const Text('دعوة موظف جديد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.accentGold,
-            foregroundColor: AppColors.primaryNavy,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 8,
-            shadowColor: Colors.black.withOpacity(0.3),
           ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildHeaderStatCard(String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.accentGold, size: 20),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
-              Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-            ],
+          // الزر الذهبي على جهة اليسار
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ElevatedButton.icon(
+              onPressed: () => _showAddStaffDialog(context),
+              icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+              label: const Text('دعوة موظف جديد', 
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accentGold,
+                foregroundColor: AppColors.primaryNavy,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 4,
+                shadowColor: Colors.black26,
+              ),
+            ),
           ),
         ],
       ),
@@ -197,7 +179,6 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       ),
       child: rolesAsync.maybeWhen(
         data: (roles) {
-          // فلترة الرتب المتاحة في القائمة المنسدلة
           final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
           return DropdownButtonHideUnderline(
             child: DropdownButton<String?>(
@@ -307,15 +288,27 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
         else if (value == 'approve') notifier.approveAsStaff(member.id);
         else if (value == 'edit_name') _showEditNameDialog(context, member);
         else if (value == 'reset_password') {
-          if (member.email != null) {
-            await notifier.resetPassword(member.email!);
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال رابط إعادة تعيين كلمة المرور')));
+          if (member.email != null && member.email!.isNotEmpty) {
+            final success = await notifier.resetPassword(member.email!);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(success ? 'تم إرسال رابط إعادة التعيين لبريد الموظف' : 'فشل إرسال الرابط، يرجى المحاولة لاحقاً'),
+                  backgroundColor: success ? Colors.green : Colors.red,
+                ),
+              );
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('بريد الموظف غير مسجل، لا يمكن إعادة التعيين'), backgroundColor: Colors.orange),
+              );
+            }
           }
         }
         else if (value.startsWith('role_')) notifier.updateRole(member.id, value.substring(5));
       },
       itemBuilder: (context) {
-        // فلترة الرتب المتاحة في خيارات تغيير الرتبة
         final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
         
         return [
