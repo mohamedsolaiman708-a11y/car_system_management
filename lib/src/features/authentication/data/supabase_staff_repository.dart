@@ -24,7 +24,8 @@ class SupabaseStaffRepository {
         final roleData = json['roles'];
         return AppUser.fromJson({
           ...json,
-          'role': roleData['slug'], 
+          'role': roleData['slug'],
+          'email': json['email'], // سيقرأ القيمة الجديدة من قاعدة البيانات
         });
       }).toList();
     } catch (e) {

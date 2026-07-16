@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../staff_controller.dart';
 import '../../domain/app_user.dart';
 import '../../../../core/utils/app_theme.dart';
-import '../../../../core/utils/responsive_layout.dart';
 
 class StaffManagementScreen extends ConsumerStatefulWidget {
   const StaffManagementScreen({super.key});
@@ -36,17 +35,67 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
-        appBar: AppBar(
-          toolbarHeight: 140,
-          backgroundColor: AppColors.primaryNavy,
-          automaticallyImplyLeading: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          elevation: 0,
-          flexibleSpace: SafeArea(
-            child: _buildHeader(context),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(120),
+          child: Container(
+            width: double.infinity,
+            color: AppColors.primaryNavy,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // اليمين: سهم العودة + العنوان
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'إدارة فريق العمل',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'تنظيم أدوار الموظفين وصلاحيات الوصول',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // اليسار: زر دعوة موظف جديد
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddStaffDialog(context),
+                      icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+                      label: const Text('دعوة موظف جديد', 
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentGold,
+                        foregroundColor: AppColors.primaryNavy,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
         body: Column(
@@ -82,59 +131,6 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32.0),
-      child: Stack(
-        children: [
-          // العنوان في المنتصف تماماً (مثل صفحة CRM)
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'إدارة فريق العمل',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'تنظيم أدوار الموظفين، إدارة الوصول، ومتابعة نشاط الفريق',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // الزر الذهبي على جهة اليسار
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddStaffDialog(context),
-              icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-              label: const Text('دعوة موظف جديد', 
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accentGold,
-                foregroundColor: AppColors.primaryNavy,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 4,
-                shadowColor: Colors.black26,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
