@@ -152,13 +152,14 @@ class _Sidebar extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          const SizedBox(height: 20),
-          _buildLogo(isCollapsed),
-          const SizedBox(height: 20),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
+                const SizedBox(height: 24),
+                _buildLogo(isCollapsed),
+                const SizedBox(height: 32),
+                
                 _SidebarLink(Icons.dashboard_rounded, 'الرئيسية', '/dashboard', isCollapsed),
 
                 if (role == UserRole.admin || role == UserRole.accountant)
@@ -201,6 +202,7 @@ class _Sidebar extends ConsumerWidget {
               ],
             ),
           ),
+          const Divider(color: Colors.white10, height: 1),
           _LogoutButton(isCollapsed: isCollapsed),
           const SizedBox(height: 12),
         ],
@@ -210,16 +212,12 @@ class _Sidebar extends ConsumerWidget {
 
   Widget _buildLogo(bool collapsed) {
     if (collapsed) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Icon(Icons.directions_car_filled_rounded, color: AppColors.accentGold, size: 35),
+      return const Center(
+        child: Icon(Icons.directions_car_filled_rounded, color: AppColors.accentGold, size: 32),
       );
     }
-    return const SizedBox(
-      height: 120,
-      child: Center(
-        child: BrandLogo(scale: 0.55),
-      ),
+    return const Center(
+      child: BrandLogo(scale: 0.55),
     );
   }
 }

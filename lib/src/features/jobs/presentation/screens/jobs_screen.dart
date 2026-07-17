@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../jobs_controller.dart';
 import '../../domain/background_job.dart';
+import '../../../../core/utils/arabic_translator.dart';
 
 class BackgroundJobsScreen extends ConsumerWidget {
   const BackgroundJobsScreen({super.key});
@@ -73,7 +74,7 @@ class _JobCard extends ConsumerWidget {
       ),
       child: ExpansionTile(
         leading: Icon(_getJobIcon(job.jobType), color: color),
-        title: Text(job.jobType, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(ArabicTranslator.jobType(job.jobType), style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('الحالة: ${_getStatusLabel(job.status)} | ${df.format(job.createdAt)}'),
         trailing: _buildTrailingActions(context, ref),
         children: [

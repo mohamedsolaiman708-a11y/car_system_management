@@ -17,7 +17,7 @@ class SupabaseDashboardRepository {
       
       final recentContracts = await _client
           .from('financing_contracts')
-          .select('contract_no, status, total_contract_value, customers(full_name)')
+          .select('id, contract_no, status, total_contract_value, customers(full_name)')
           .order('created_at', ascending: false)
           .limit(6);
 
@@ -39,8 +39,10 @@ class SupabaseDashboardRepository {
       final startDate = DateTime(now.year, now.month - 5, 1);
       
       final response = await _client.rpc('get_profit_report', params: {
-        'p_start_date': startDate.toIso8601String(),
-        'p_end_date': now.toIso8601String(),
+        'p_start_date': startDate.toIso8601String().split('T')[0],
+        'p_end_date': now.toIso8601String().split('T')[0],
+        'p_investor_id': null,
+        'p_customer_id': null,
       });
       
       return List<Map<String, dynamic>>.from(response);
@@ -75,3 +77,5 @@ class SupabaseDashboardRepository {
 SupabaseDashboardRepository dashboardRepository(DashboardRepositoryRef ref) {
   return SupabaseDashboardRepository(ref.watch(supabaseClientProvider));
 }
+
+

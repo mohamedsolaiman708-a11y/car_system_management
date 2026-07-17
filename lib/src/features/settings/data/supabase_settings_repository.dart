@@ -21,8 +21,11 @@ class SupabaseSettingsRepository {
   Future<void> updateSetting(String key, Map<String, dynamic> value) async {
     await _client
         .from('system_settings')
-        .update({'value': value, 'updated_at': DateTime.now().toIso8601String()})
-        .eq('key', key);
+        .upsert({
+          'key': key,
+          'value': value,
+          'updated_at': DateTime.now().toIso8601String(),
+        }, onConflict: 'key');
     
     // Audit Log
     try {

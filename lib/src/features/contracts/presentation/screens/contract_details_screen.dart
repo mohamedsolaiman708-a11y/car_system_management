@@ -10,6 +10,7 @@ import '../../../documents/presentation/widgets/universal_document_manager.dart'
 import '../../../investors/presentation/widgets/fund_contract_dialog.dart';
 import '../../../accounting/presentation/accounting_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/arabic_translator.dart';
 
 class ContractDetailsScreen extends ConsumerWidget {
   final String id;
@@ -17,7 +18,6 @@ class ContractDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // مراقبة حالة الـ Controller بشكل مركزي لإظهار الرسائل
     ref.listen<AsyncValue<void>>(
       contractControllerProvider,
       (previous, next) {
@@ -59,7 +59,22 @@ class ContractDetailsScreen extends ConsumerWidget {
       ),
       body: contractAsync.when(
         data: (contract) {
-          if (contract == null) return const Center(child: Text('العقد غير موجود'));
+          if (contract == null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.search_off_rounded, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text('العقد غير موجود', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('المعرف المطلوب: $id', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  const SizedBox(height: 24),
+                  ElevatedButton(onPressed: () => context.pop(), child: const Text('العودة للقائمة')),
+                ],
+              ),
+            );
+          }
 
           return DefaultTabController(
             length: 7,
@@ -79,7 +94,7 @@ class ContractDetailsScreen extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.all(24.0),
                         child: UniversalDocumentManager(
-                          customerId: contract.customerId,
+                          customerId: contract.customerId ?? '',
                           contractId: contract.id,
                         ),
                       ),
@@ -91,7 +106,12 @@ class ContractDetailsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
+        error: (err, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Text('حدث خطأ أثناء جلب البيانات: \n $err', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+          ),
+        ),
       ),
     );
   }
@@ -593,7 +613,7 @@ class _AccountingTab extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
               child: ExpansionTile(
-                title: Text(entry.description ?? 'قيد محاسبي', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                title: Text(ArabicTranslator.description(entry.description), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 subtitle: Text('تاريخ: ${intl.DateFormat('dd/MM/yyyy').format(entry.createdAt)}', style: const TextStyle(fontSize: 11)),
                 leading: const CircleAvatar(backgroundColor: AppColors.bgGrey, child: Icon(Icons.account_balance_wallet_outlined, size: 18, color: AppColors.primaryNavy)),
                 children: [
@@ -616,7 +636,7 @@ class _AccountingTab extends ConsumerWidget {
                               Expanded(
                                   flex: 3,
                                   child: Text(
-                                      line.accounts?['name'] ?? '-',
+                                      ArabicTranslator.accountName(line.accounts?['name']),
                                       style: const TextStyle(fontSize: 11)
                                   )
                               ),
@@ -679,7 +699,7 @@ class _TimelineTab extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(log.eventType, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 14)),
+                      Text(ArabicTranslator.eventType(log.eventType), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 14)),
                       Text(intl.DateFormat('dd/MM/yyyy HH:mm').format(log.occurredAt), style: const TextStyle(color: Colors.grey, fontSize: 10)),
                       const SizedBox(height: 24),
                     ],

@@ -67,6 +67,10 @@ import '../../features/notifications/presentation/screens/notifications_screen.d
 import '../../features/accounting/presentation/screens/accounts_screen.dart';
 import '../../features/accounting/presentation/screens/journal_entries_screen.dart';
 import '../../features/accounting/presentation/screens/trial_balance_screen.dart';
+import '../../features/accounting/presentation/screens/account_ledger_screen.dart';
+
+// Background Jobs
+import '../../features/jobs/presentation/screens/jobs_screen.dart';
 
 import 'main_scaffold.dart';
 
@@ -202,6 +206,14 @@ GoRouter goRouter(GoRouterRef ref) {
             routes: [
               GoRoute(path: 'journal', builder: (context, state) => const JournalEntriesScreen()),
               GoRoute(path: 'trial-balance', builder: (context, state) => const TrialBalanceScreen()),
+              GoRoute(
+                path: 'ledger/:id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  final name = state.uri.queryParameters['name'] ?? 'كشف حساب';
+                  return AccountLedgerScreen(accountId: id, accountName: name);
+                },
+              ),
             ],
           ),
 
@@ -210,6 +222,7 @@ GoRouter goRouter(GoRouterRef ref) {
             builder: (context, state) => const SettingsScreen(),
             routes: [
               GoRoute(path: 'company', builder: (context, state) => const CompanySettingsScreen()),
+              GoRoute(path: 'jobs', builder: (context, state) => const BackgroundJobsScreen()),
             ],
           ),
           

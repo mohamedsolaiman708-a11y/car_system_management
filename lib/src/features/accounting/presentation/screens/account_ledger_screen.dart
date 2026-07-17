@@ -20,7 +20,7 @@ class AccountLedgerScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: Text('كشف حركات: $accountName'),
+          title: Text('كشف حركات: ${_translateAccountName(accountName)}'),
           actions: [
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded),
@@ -31,12 +31,10 @@ class AccountLedgerScreen extends ConsumerWidget {
         ),
         body: entriesAsync.when(
           data: (entries) {
-            // تصفية الحركات التي تخص هذا الحساب فقط
             final ledgerLines = <Map<String, dynamic>>[];
-            double runningBalance = 0; // ملاحظة: للتبسيط حالياً، سنعرض الحركات فقط
 
             for (var entry in entries) {
-              for (var line in (entry.lines ?? [])) {
+              for (var line in (entry.lines ?? <dynamic>[])) {
                 if (line.accountId == accountId) {
                   ledgerLines.add({
                     'date': entry.createdAt,
@@ -57,7 +55,7 @@ class AccountLedgerScreen extends ConsumerWidget {
 
             return Column(
               children: [
-                _buildLedgerHeader(accountName, ledgerLines.length),
+                _buildLedgerHeader(_translateAccountName(accountName), ledgerLines.length),
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(20),
@@ -81,7 +79,7 @@ class AccountLedgerScreen extends ConsumerWidget {
                               size: 18,
                             ),
                           ),
-                          title: Text(line['description'] ?? '', 
+                          title: Text(_translateDescription(line['description'] ?? ''),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           subtitle: Text(
                             intl.DateFormat('yyyy/MM/dd HH:mm').format(line['date']),
@@ -144,7 +142,7 @@ class AccountLedgerScreen extends ConsumerWidget {
         if (line.accountId == accountId) {
           ledgerLines.add([
             intl.DateFormat('yyyy/MM/dd').format(entry.createdAt),
-            entry.description ?? '',
+            _translateDescription(entry.description ?? ''),
             line.debit > 0 ? line.debit.toString() : '-',
             line.credit > 0 ? line.credit.toString() : '-',
             entry.referenceNo ?? '-',
@@ -154,9 +152,50 @@ class AccountLedgerScreen extends ConsumerWidget {
     }
 
     await ref.read(exportServiceProvider).exportToPdf(
-      title: 'كشف حساب: $accountName',
+      title: 'كشف حساب: ${_translateAccountName(accountName)}',
       columns: ['التاريخ', 'البيان', 'مدين', 'دائن', 'المرجع'],
       rows: ledgerLines,
     );
+  }
+
+  String _translateAccountName(String name) {
+    const map = {
+      'Cash': 'الصندوق الرئيسي',
+      'Cash at Bank': 'النقد في البنك',
+      'Contracts Receivable': 'ذمم عقود التمويل',
+      'Accounts Receivable': 'الذمم المدينة',
+      'Investors Capital': 'رأس مال المستثمرين',
+      'Investor Payable - Principal': 'مستحقات المستثمرين - الأصل',
+      'Investor Payable - Profit': 'مستحقات المستثمرين - الأرباح',
+      'Profit Payable': 'أرباح مستحقة الدفع',
+      'Unearned Finance Profit': 'أرباح تمويل غير مكتسبة',
+      'Realized Finance Profit': 'أرباح تمويل محققة',
+      'Finance Revenue': 'إيرادات التمويل',
+      'Financing Profits': 'أرباح التمويل',
+      'General Expenses': 'مصروفات عامة',
+      'Operating Expenses': 'المصروفات التشغيلية',
+      'Equity': 'حقوق الملكية',
+      'Retained Earnings': 'الأرباح المبقاة',
+    };
+    return map[name] ?? name;
+  }
+
+  String _translateDescription(String text) {
+    if (text.isEmpty) return text;
+    const prefixes = {
+      'Investor Deposit (': 'إيداع مستثمر (',
+      'Investor Withdrawal (': 'سحب مستثمر (',
+      'Investor Deposit': 'إيداع مستثمر',
+      'Investor Withdrawal': 'سحب مستثمر',
+      'Activation of Contract:': 'تفعيل عقد:',
+      'Payment for Contract:': 'دفعة للعقد:',
+      'Withdrawal Request Approved:': 'تمت الموافقة على طلب السحب:',
+    };
+    for (final entry in prefixes.entries) {
+      if (text.startsWith(entry.key)) {
+        return text.replaceFirst(entry.key, entry.value);
+      }
+    }
+    return text;
   }
 }

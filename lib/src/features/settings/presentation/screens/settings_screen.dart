@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../settings_controller.dart';
 import '../../domain/system_setting.dart';
 import '../../../authentication/presentation/auth_controller.dart';
@@ -76,6 +77,15 @@ class SettingsScreen extends ConsumerWidget {
                     ref.read(disasterRecoveryControllerProvider.notifier).runIntegrityCheck();
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بدأت عملية الفحص والتدقيق في الخلفية...')));
                   }),
+                ),
+                const SizedBox(height: 16),
+                _buildActionCard(
+                  context,
+                  title: 'مراقبة المهام الخلفية',
+                  subtitle: 'عرض وإدارة المهام المجدولة في الخلفية مثل التقارير والإشعارات.',
+                  icon: Icons.work_history_outlined,
+                  color: Colors.indigo.shade700,
+                  onTap: () => context.push('/settings/jobs'),
                 ),
               ],
             ],

@@ -8,6 +8,8 @@ import '../../../inventory/presentation/inventory_controller.dart';
 import '../../../inventory/domain/vehicle.dart';
 import '../../../investors/presentation/investor_controller.dart';
 import '../contract_controller.dart';
+import '../../../settings/presentation/settings_controller.dart';
+import '../../../settings/domain/system_setting.dart';
 
 class CreateContractScreen extends ConsumerStatefulWidget {
   const CreateContractScreen({super.key});
@@ -167,6 +169,28 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch settings to ensure it fetches, and listen to apply defaults
+    ref.listen<AsyncValue<List<SystemSetting>>>(settingsControllerProvider, (prev, next) {
+      if (next.hasValue && next.value != null) {
+        final settings = next.value!;
+        try {
+          final profitSetting = settings.firstWhere((s) => s.key == 'profit_settings').value;
+          final ratioStr = profitSetting['ratio']?.toString();
+          if (ratioStr != null) {
+            final ratio = double.tryParse(ratioStr) ?? 0.15;
+            if (_profitRateController.text == '15') {
+              double percentageVal = ratio < 1.0 ? ratio * 100 : ratio;
+              _profitRateController.text = percentageVal.toStringAsFixed(0);
+              _calculateTotals();
+            }
+          }
+        } catch (_) {}
+      }
+    });
+
+    // Also watch settings here to ensure the provider is active and fetching
+    ref.watch(settingsControllerProvider);
+
     final customersAsync = ref.watch(customersListProvider());
     final vehiclesAsync = ref.watch(vehiclesListProvider(status: 'available'));
 

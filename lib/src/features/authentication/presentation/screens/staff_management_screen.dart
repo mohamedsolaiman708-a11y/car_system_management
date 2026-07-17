@@ -36,65 +36,12 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(120),
+          preferredSize: const Size.fromHeight(140),
           child: Container(
-            width: double.infinity,
             color: AppColors.primaryNavy,
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // اليمين: سهم العودة + العنوان
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'إدارة فريق العمل',
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'تنظيم أدوار الموظفين وصلاحيات الوصول',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    // اليسار: زر دعوة موظف جديد
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddStaffDialog(context),
-                      icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-                      label: const Text('دعوة موظف جديد', 
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accentGold,
-                        foregroundColor: AppColors.primaryNavy,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: _buildSimpleHeader(context),
             ),
           ),
         ),
@@ -105,8 +52,8 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
               child: staffAsync.when(
                 data: (staffList) {
                   final filteredList = staffList.where((member) {
-                    final matchesSearch = member.fullName.toLowerCase().contains(searchQuery.toLowerCase()) || 
-                                         (member.email?.toLowerCase().contains(searchQuery.toLowerCase()) ?? false);
+                    final matchesSearch = member.fullName.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                        (member.email?.toLowerCase().contains(searchQuery.toLowerCase()) ?? false);
                     final matchesRole = selectedRole == null || member.role.name == selectedRole;
                     return matchesSearch && matchesRole;
                   }).toList();
@@ -132,6 +79,51 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSimpleHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // اليمين: العنوان والوصف
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'إدارة فريق العمل والكوادر',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'تنظيم أدوار الموظفين ومتابعة النشاط الإداري للنظام',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        // اليسار: الزر الذهبي
+        ElevatedButton.icon(
+          onPressed: () => _showAddStaffDialog(context),
+          icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+          label: const Text('دعوة موظف جديد',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.accentGold,
+            foregroundColor: AppColors.primaryNavy,
+            minimumSize: const Size(220, 54),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+          ),
+        ),
+      ],
     );
   }
 
@@ -246,8 +238,8 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
         boxShadow: [BoxShadow(color: AppColors.primaryNavy.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Center(
-        child: Text(member.fullName.isNotEmpty ? member.fullName[0] : '?', 
-          style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.w900, fontSize: 24)),
+        child: Text(member.fullName.isNotEmpty ? member.fullName[0] : '?',
+            style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.w900, fontSize: 24)),
       ),
     );
   }
@@ -306,7 +298,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       },
       itemBuilder: (context) {
         final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
-        
+
         return [
           const PopupMenuItem(value: 'edit_name', child: Row(children: [Icon(Icons.edit_rounded, size: 18), SizedBox(width: 12), Text('تعديل البيانات')])),
           if (member.status == 'pending')

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../settings_controller.dart';
 import '../../domain/company_settings.dart';
+import '../../domain/system_setting.dart';
 
 class CompanySettingsScreen extends ConsumerStatefulWidget {
   const CompanySettingsScreen({super.key});
@@ -74,9 +75,24 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
         ),
         body: settingsAsync.when(
           data: (settingsList) {
+            final defaultSetting = SystemSetting(
+              id: '',
+              key: 'company_profile',
+              value: const {
+                'companyName': '',
+                'address': '',
+                'phone': '',
+                'email': '',
+                'defaultProfitRatio': 15.0,
+                'tax_number': '',
+                'cr_number': '',
+                'website': '',
+              },
+              updatedAt: DateTime.now(),
+            );
             final companySetting = settingsList.firstWhere(
-                  (s) => s.key == 'company_profile',
-              orElse: () => throw Exception('إعدادات المنشأة غير موجودة في قاعدة البيانات'),
+              (s) => s.key == 'company_profile',
+              orElse: () => defaultSetting,
             );
 
             final currentSettings = CompanySettings.fromJson(companySetting.value);

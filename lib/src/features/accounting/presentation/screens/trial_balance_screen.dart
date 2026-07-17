@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
 import '../../../reports/presentation/reports_controller.dart';
+import '../../../../core/utils/arabic_translator.dart';
 
 class TrialBalanceScreen extends ConsumerWidget {
   const TrialBalanceScreen({super.key});
@@ -94,7 +95,7 @@ class TrialBalanceScreen extends ConsumerWidget {
               rows: [
                 ...data.map((row) => DataRow(cells: [
                   DataCell(Text(row['account_code'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
-                  DataCell(Text(row['account_name'] ?? '')),
+                  DataCell(Text(ArabicTranslator.accountName(row['account_name'] ?? ''))),
                   DataCell(Text(f.format(row['total_debit'] ?? 0), style: const TextStyle(color: AppColors.successGreen))),
                   DataCell(Text(f.format(row['total_credit'] ?? 0), style: const TextStyle(color: Colors.redAccent))),
                   DataCell(Text(f.format(row['net_balance'] ?? 0), style: const TextStyle(fontWeight: FontWeight.w900))),
