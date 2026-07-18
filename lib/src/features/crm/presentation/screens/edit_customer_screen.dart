@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../domain/customer.dart';
 import '../crm_controller.dart';
 
@@ -124,14 +126,17 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
     };
 
     await ref.read(crmControllerProvider.notifier).updateCustomer(widget.id, data);
+    final state = ref.read(crmControllerProvider);
 
-    if (mounted && !ref.read(crmControllerProvider).hasError) {
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تحديث بيانات العميل بنجاح'), backgroundColor: Colors.green),
-      );
-      ref.invalidate(customerDetailsProvider(widget.id));
-      ref.invalidate(customersListProvider);
+    if (mounted) {
+      if (state.hasError) {
+        SnackBarHelper.showError(context, state.error);
+      } else {
+        context.pop();
+        SnackBarHelper.showSuccess(context, 'تم تحديث بيانات العميل بنجاح');
+        ref.invalidate(customerDetailsProvider(widget.id));
+        ref.invalidate(customersListProvider);
+      }
     }
   }
 
@@ -318,7 +323,16 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
+        error: (err, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -23,7 +23,7 @@ BEGIN
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
 
     -- تسجيل في الرقابة
-    INSERT INTO public.audit_logs (profile_id, event_type, table_name, record_id, details)
+    INSERT INTO public.audit_logs (profile_id, event_type, table_name, record_id, new_values)
     VALUES (auth.uid(), 'SYSTEM_MAINTENANCE_TOGGLE', 'system_settings', '00000000-0000-0000-0000-000000000000', 
             jsonb_build_object('is_active', p_is_active, 'message', p_message));
 END;

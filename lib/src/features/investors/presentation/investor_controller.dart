@@ -1,10 +1,11 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/supabase_investor_repository.dart';
 import '../domain/investor.dart';
-import '../domain/investor_repository.dart';
 import '../domain/investor_transaction.dart';
 import '../domain/investor_transaction_type.dart';
 import '../../documents/domain/document.dart';
+// استيراد متحكم العقود لعمل تحديث للبيانات
+import '../../contracts/presentation/contract_controller.dart';
 
 part 'investor_controller.g.dart';
 
@@ -37,7 +38,6 @@ class InvestorDetailsController extends _$InvestorDetailsController {
   }
 
   Future<void> refresh() async {
-    // لا نضع AsyncLoading() يدوياً هنا للحفاظ على البيانات القديمة في الواجهة أثناء التحديث
     final result = await AsyncValue.guard(() => ref.read(investorRepositoryProvider).getInvestorById(id));
     if (result.hasValue) {
       state = result;
@@ -101,7 +101,14 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
 
     state = result;
     if (!result.hasError) {
+      // 1. تحديث بيانات المستثمر (الرصيد المتاح)
       ref.invalidate(investorDetailsControllerProvider(investorId));
+      ref.invalidate(investorListControllerProvider);
+      
+      // 2. الأهم: تحديث بيانات العقد لكي يظهر المبلغ الممول فوراً في الواجهة
+      ref.invalidate(contractFundingProvider(contractId));
+      ref.invalidate(contractDetailsProvider(contractId));
+      ref.invalidate(contractStatsProvider);
     }
     return !result.hasError;
   }

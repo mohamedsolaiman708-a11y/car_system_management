@@ -46,7 +46,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                       const SizedBox(height: 4),
                       Text('تحليل الأداء الاستثماري، التدفقات النقدية، والتقارير الرقابية',
-                          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
                     ],
                   ),
                   _buildDateRangePicker(),
@@ -90,9 +90,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Row(
           children: [
@@ -135,19 +135,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: gradient.last.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: gradient.last.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
               child: Icon(icon, color: Colors.white, size: 22),
             ),
             const SizedBox(height: 20),
             Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-            Text(title, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8))),
+            Text(title, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
           ],
         ),
       ),
@@ -177,7 +177,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
       ),
       child: Material(
         color: Colors.transparent,
@@ -191,7 +191,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                   child: Icon(icon, color: color, size: 32),
                 ),
                 const SizedBox(height: 16),
@@ -213,7 +213,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

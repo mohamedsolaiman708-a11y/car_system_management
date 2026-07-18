@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../domain/account.dart';
 import '../accounting_controller.dart';
 
@@ -61,7 +62,7 @@ class AccountsScreen extends ConsumerWidget {
                           Text(
                             'متابعة الأرصدة اللحظية، هيكلة شجرة الحسابات، والنشاط المالي العام',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                               fontSize: 13,
                               fontWeight: FontWeight.normal,
                             ),
@@ -82,7 +83,16 @@ class AccountsScreen extends ConsumerWidget {
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primaryNavy),
           ),
-          error: (err, _) => Center(child: Text('خطأ: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -110,7 +120,7 @@ class AccountsScreen extends ConsumerWidget {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 15,
                 offset: const Offset(0, 8),
               ),
@@ -137,7 +147,7 @@ class AccountsScreen extends ConsumerWidget {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryNavy.withOpacity(0.05),
+                            color: AppColors.primaryNavy.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -272,7 +282,7 @@ class AccountsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' as intl;
 import '../notification_controller.dart';
 import '../../domain/app_notification.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -33,7 +34,7 @@ class NotificationsScreen extends ConsumerWidget {
                         style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                       const SizedBox(height: 4),
                       Text('ابقَ على اطلاع بكافة المستجدات الإدارية والمالية', 
-                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
                     ],
                   ),
                   TextButton.icon(
@@ -42,7 +43,7 @@ class NotificationsScreen extends ConsumerWidget {
                     label: const Text('تحديد الكل كمقروء', 
                       style: TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.1),
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -62,7 +63,16 @@ class NotificationsScreen extends ConsumerWidget {
                 itemBuilder: (context, index) => _PremiumNotificationTile(notification: notifications[index]),
               ),
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -96,8 +106,8 @@ class _PremiumNotificationTile extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(isUnread ? 0.05 : 0.01), blurRadius: 10)],
-        border: Border.all(color: isUnread ? typeColor.withOpacity(0.1) : Colors.transparent),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isUnread ? 0.05 : 0.01), blurRadius: 10)],
+        border: Border.all(color: isUnread ? typeColor.withValues(alpha: 0.1) : Colors.transparent),
       ),
       child: Material(
         color: Colors.transparent,
@@ -112,7 +122,7 @@ class _PremiumNotificationTile extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: typeColor.withOpacity(0.1),
+                    color: typeColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(typeIcon, color: typeColor, size: 24),

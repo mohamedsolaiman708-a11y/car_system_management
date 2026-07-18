@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/services/export_service.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../accounting_controller.dart';
 
 class AccountLedgerScreen extends ConsumerWidget {
@@ -34,7 +35,7 @@ class AccountLedgerScreen extends ConsumerWidget {
             final ledgerLines = <Map<String, dynamic>>[];
 
             for (var entry in entries) {
-              for (var line in (entry.lines ?? <dynamic>[])) {
+              for (var line in entry.lines) {
                 if (line.accountId == accountId) {
                   ledgerLines.add({
                     'date': entry.createdAt,
@@ -109,7 +110,16 @@ class AccountLedgerScreen extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('خطأ في تحميل الحركات: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ),
       ),
     );

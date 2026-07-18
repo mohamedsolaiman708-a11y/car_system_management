@@ -43,13 +43,13 @@ class AppTheme {
           minimumSize: const Size(double.infinity, 56), // طول مريح للضغط
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 2, // إضافة ظل عشان تحس إنه زرار حقيقي
-          shadowColor: AppColors.primaryNavy.withOpacity(0.5),
+          shadowColor: AppColors.primaryNavy.withValues(alpha: 0.5),
         ).copyWith(
           // إضافة تأثير "النبضة" لما تضغط
           overlayColor: WidgetStateProperty.resolveWith<Color?>(
                 (states) {
               if (states.contains(WidgetState.pressed)) {
-                return Colors.white.withOpacity(0.15);
+                return Colors.white.withValues(alpha: 0.15);
               }
               return null;
             },

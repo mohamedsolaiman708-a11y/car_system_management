@@ -19,10 +19,7 @@ class DisasterRecoveryController extends _$DisasterRecoveryController {
 
   /// تجميد أو إلغاء تجميد العمليات المالية
   Future<void> toggleFreeze(bool freeze) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(disasterRecoveryRepositoryProvider).toggleFinancialFreeze(freeze),
-    );
+    await ref.read(disasterRecoveryRepositoryProvider).toggleFinancialFreeze(freeze);
     ref.invalidate(systemFreezeStatusProvider);
   }
 

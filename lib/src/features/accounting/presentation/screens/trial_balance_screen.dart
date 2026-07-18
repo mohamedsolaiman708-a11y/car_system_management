@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../reports/presentation/reports_controller.dart';
 import '../../../../core/utils/arabic_translator.dart';
 
@@ -48,7 +49,16 @@ class TrialBalanceScreen extends ConsumerWidget {
         body: trialBalanceAsync.when(
           data: (data) => _buildPremiumTable(context, data, f),
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-          error: (err, _) => Center(child: Text('خطأ: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -56,7 +66,7 @@ class TrialBalanceScreen extends ConsumerWidget {
 
   Widget _buildRefreshButton(WidgetRef ref) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
       child: IconButton(
         icon: const Icon(Icons.refresh_rounded, color: AppColors.accentGold),
         onPressed: () => ref.invalidate(trialBalanceProvider),
@@ -78,13 +88,13 @@ class TrialBalanceScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-              dataRowHeight: 65,
+              dataRowMinHeight: 65, dataRowMaxHeight: 65,
               columns: const [
                 DataColumn(label: Text('الكود', style: TextStyle(fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('الحساب', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -101,7 +111,7 @@ class TrialBalanceScreen extends ConsumerWidget {
                   DataCell(Text(f.format(row['net_balance'] ?? 0), style: const TextStyle(fontWeight: FontWeight.w900))),
                 ])),
                 DataRow(
-                  color: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.03)),
+                  color: WidgetStateProperty.all(AppColors.primaryNavy.withValues(alpha: 0.03)),
                   cells: [
                     const DataCell(Text('')),
                     const DataCell(Text('الإجماليات', style: TextStyle(fontWeight: FontWeight.bold))),

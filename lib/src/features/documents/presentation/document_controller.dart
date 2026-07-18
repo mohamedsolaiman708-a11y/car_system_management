@@ -1,9 +1,12 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/supabase_document_repository.dart';
 import '../domain/document.dart';
-import '../domain/document_repository.dart';
 
 part 'document_controller.g.dart';
+
+// Provider لتتبع تقدم الرفع (0.0 = لا يوجد رفع، 1.0 = مكتمل)
+final uploadProgressProvider = StateProvider<double?>((ref) => null);
 
 @riverpod
 class DocumentController extends _$DocumentController {
@@ -21,21 +24,40 @@ class DocumentController extends _$DocumentController {
     required List<int> fileBytes,
   }) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() => ref.read(documentRepositoryProvider).uploadDocument(
-          customerId: customerId,
-          contractId: contractId,
-          investorId: investorId,
-          type: type,
-          fileName: fileName,
-          fileBytes: fileBytes,
-        ));
-    
+
+    // إعادة ضبط التقدم
+    ref.read(uploadProgressProvider.notifier).state = 0.0;
+
+    final result = await AsyncValue.guard(
+      () => ref.read(documentRepositoryProvider).uploadDocument(
+            customerId: customerId,
+            contractId: contractId,
+            investorId: investorId,
+            type: type,
+            fileName: fileName,
+            fileBytes: fileBytes,
+            onProgress: (progress) {
+              ref.read(uploadProgressProvider.notifier).state = progress;
+            },
+          ),
+    );
+
     if (!result.hasError) {
       // Invalidate the relevant lists
-      if (customerId != null) ref.invalidate(documentsListProvider(customerId: customerId));
-      if (contractId != null) ref.invalidate(documentsListProvider(contractId: contractId));
-      if (investorId != null) ref.invalidate(documentsListProvider(investorId: investorId));
+      if (customerId != null) {
+        ref.invalidate(documentsListProvider(customerId: customerId));
+      }
+      if (contractId != null) {
+        ref.invalidate(documentsListProvider(contractId: contractId));
+      }
+      if (investorId != null) {
+        ref.invalidate(documentsListProvider(investorId: investorId));
+      }
     }
+
+    // إعادة الـ progress إلى null بعد الانتهاء
+    await Future.delayed(const Duration(milliseconds: 600));
+    ref.read(uploadProgressProvider.notifier).state = null;
     state = result;
   }
 
@@ -47,12 +69,19 @@ class DocumentController extends _$DocumentController {
     String? investorId,
   }) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() => ref.read(documentRepositoryProvider).deleteDocument(documentId, filePath));
-    
+    final result = await AsyncValue.guard(
+        () => ref.read(documentRepositoryProvider).deleteDocument(documentId, filePath));
+
     if (!result.hasError) {
-      if (customerId != null) ref.invalidate(documentsListProvider(customerId: customerId));
-      if (contractId != null) ref.invalidate(documentsListProvider(contractId: contractId));
-      if (investorId != null) ref.invalidate(documentsListProvider(investorId: investorId));
+      if (customerId != null) {
+        ref.invalidate(documentsListProvider(customerId: customerId));
+      }
+      if (contractId != null) {
+        ref.invalidate(documentsListProvider(contractId: contractId));
+      }
+      if (investorId != null) {
+        ref.invalidate(documentsListProvider(investorId: investorId));
+      }
     }
     state = result;
   }
@@ -60,7 +89,7 @@ class DocumentController extends _$DocumentController {
 
 @riverpod
 Future<List<AppDocument>> documentsList(
-  DocumentsListRef ref, {
+  Ref ref, {
   String? customerId,
   String? contractId,
   String? investorId,

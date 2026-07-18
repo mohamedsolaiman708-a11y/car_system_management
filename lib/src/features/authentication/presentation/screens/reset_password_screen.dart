@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:car_system_management/l10n/app_localizations.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../auth_controller.dart';
 import '../widgets/auth_layout.dart';
 import '../../../../core/utils/app_theme.dart';
@@ -34,17 +36,22 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         .resetPassword(_passwordController.text);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')),
-      );
+      SnackBarHelper.showSuccess(context, 'تم تحديث كلمة المرور بنجاح.');
       context.go('/portal-selection');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final authState = ref.watch(authControllerProvider);
+
+    ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
+      next.whenOrNull(
+        error: (err, stack) {
+          SnackBarHelper.showError(context, err);
+        },
+      );
+    });
 
     return AuthLayout(
       title: 'تعيين كلمة مرور جديدة',
@@ -94,8 +101,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Text(
-                  'حدث خطأ أثناء التحديث، يرجى المحاولة لاحقاً',
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                  Failure.fromException(authState.error).message,
+                  style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Cairo', fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
               ),

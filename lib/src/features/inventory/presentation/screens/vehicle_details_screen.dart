@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../domain/vehicle.dart';
 import '../inventory_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
+import '../../../../core/utils/error_handler.dart';
 
 class VehicleDetailsScreen extends ConsumerWidget {
   final String id;
@@ -63,7 +65,16 @@ class VehicleDetailsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, _) => Center(child: Text('حدث خطأ: $err')),
+        error: (err, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -82,9 +93,9 @@ class VehicleDetailsScreen extends ConsumerWidget {
             width: 140,
             height: 140,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: const Icon(Icons.directions_car_filled_rounded, size: 80, color: AppColors.accentGold),
           ),
@@ -136,7 +147,7 @@ class VehicleDetailsScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,9 +205,9 @@ class VehicleDetailsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.primaryNavy.withOpacity(0.05),
+        color: AppColors.primaryNavy.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primaryNavy.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -240,9 +251,16 @@ class VehicleDetailsScreen extends ConsumerWidget {
             ElevatedButton(
               onPressed: () async {
                 await ref.read(inventoryControllerProvider.notifier).deleteVehicle(id);
-                if (context.mounted) {
-                  context.pop(); context.pop();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف المركبة بنجاح')));
+                final state = ref.read(inventoryControllerProvider);
+                if (state.hasError) {
+                  if (context.mounted) {
+                    SnackBarHelper.showError(context, state.error);
+                  }
+                } else {
+                  if (context.mounted) {
+                    context.pop(); context.pop();
+                    SnackBarHelper.showSuccess(context, 'تم شطب الأصل بنجاح');
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -257,7 +275,17 @@ class VehicleDetailsScreen extends ConsumerWidget {
   void _toggleMaintenance(BuildContext context, WidgetRef ref, Vehicle vehicle) async {
     final newStatus = vehicle.status == 'maintenance' ? 'available' : 'maintenance';
     await ref.read(inventoryControllerProvider.notifier).updateVehicle(id, {'status': newStatus});
-    ref.invalidate(vehicleDetailsProvider(id));
+    final state = ref.read(inventoryControllerProvider);
+    if (state.hasError) {
+      if (context.mounted) {
+        SnackBarHelper.showError(context, state.error);
+      }
+    } else {
+      ref.invalidate(vehicleDetailsProvider(id));
+      if (context.mounted) {
+        SnackBarHelper.showSuccess(context, 'تم تحديث حالة الصيانة التشغيلية بنجاح');
+      }
+    }
   }
 }
 
@@ -277,9 +305,9 @@ class _StatusBadgeLarge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
     );

@@ -88,7 +88,7 @@ BEGIN
     VALUES ('financial_freeze', jsonb_build_object('is_frozen', p_is_frozen, 'frozen_at', NOW(), 'frozen_by', auth.uid()))
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
 
-    INSERT INTO public.audit_logs (profile_id, event_type, table_name, record_id, details)
+    INSERT INTO public.audit_logs (profile_id, event_type, table_name, record_id, new_values)
     VALUES (auth.uid(), 'FINANCIAL_SYSTEM_FREEZE_TOGGLE', 'system_settings', '00000000-0000-0000-0000-000000000000', 
             jsonb_build_object('is_frozen', p_is_frozen));
 END;
@@ -117,7 +117,7 @@ BEGIN
 
     GET DIAGNOSTICS v_updated_count = ROW_COUNT;
 
-    INSERT INTO public.audit_logs (profile_id, event_type, table_name, record_id, details)
+    INSERT INTO public.audit_logs (profile_id, event_type, table_name, record_id, new_values)
     VALUES (auth.uid(), 'SYSTEM_REPAIR_BALANCES', 'investors', '00000000-0000-0000-0000-000000000000', 
             jsonb_build_object('repaired_investors', v_updated_count));
 

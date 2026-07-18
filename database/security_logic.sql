@@ -130,7 +130,8 @@ INSERT INTO public.permissions (name, slug) VALUES
 ('View Accounting', 'view_accounting'),
 ('View Customers', 'view_customers'),
 ('Manage Customers', 'manage_customers'),
-('View Inventory', 'view_inventory')
+('View Inventory', 'view_inventory'),
+('Manage Settings', 'manage_settings')  -- مطلوبة لـ toggle_maintenance و toggle_financial_freeze
 ON CONFLICT (slug) DO NOTHING;
 
 -- منح كافة الصلاحيات للمسؤول (Admin)

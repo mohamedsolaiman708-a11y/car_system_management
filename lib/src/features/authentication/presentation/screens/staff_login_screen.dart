@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../auth_controller.dart';
 import '../widgets/brand_logo.dart';
 
@@ -25,10 +26,19 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
   }
 
   Future<void> _login() async {
-    final success = await ref.read(authControllerProvider.notifier).login(
-      _emailController.text,
-      _passwordController.text,
-    );
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty) {
+      SnackBarHelper.showInfo(context, 'يرجى إدخال البريد الإلكتروني.');
+      return;
+    }
+    if (password.isEmpty) {
+      SnackBarHelper.showInfo(context, 'يرجى إدخال كلمة المرور.');
+      return;
+    }
+
+    final success = await ref.read(authControllerProvider.notifier).login(email, password);
     if (success && mounted) {
       context.go('/dashboard');
     }
@@ -37,6 +47,14 @@ class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
+
+    ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
+      next.whenOrNull(
+        error: (err, stack) {
+          SnackBarHelper.showError(context, err);
+        },
+      );
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A1227),

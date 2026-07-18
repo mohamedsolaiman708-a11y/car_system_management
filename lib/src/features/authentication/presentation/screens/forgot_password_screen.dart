@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../auth_controller.dart';
 import '../widgets/auth_layout.dart';
 
@@ -27,12 +29,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     final success = await ref
         .read(authControllerProvider.notifier)
-        .recoverPassword(_emailController.text);
+        .recoverPassword(_emailController.text.trim());
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال رابط إعادة تعيين كلمة المرور')),
-      );
+      SnackBarHelper.showSuccess(context, 'تم إرسال رابط إعادة تعيين كلمة المرور بنجاح.');
       context.pop();
     }
   }
@@ -41,6 +41,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authState = ref.watch(authControllerProvider);
+
+    ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
+      next.whenOrNull(
+        error: (err, stack) {
+          SnackBarHelper.showError(context, err);
+        },
+      );
+    });
 
     return AuthLayout(
       title: l10n.forgotPassword,
@@ -69,8 +77,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Text(
-                  authState.error.toString(),
-                  style: const TextStyle(color: Colors.red),
+                  Failure.fromException(authState.error).message,
+                  style: const TextStyle(color: Colors.red, fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
               ),

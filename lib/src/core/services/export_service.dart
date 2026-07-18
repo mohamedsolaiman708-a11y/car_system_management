@@ -1,8 +1,5 @@
-import 'dart:io';
-import 'dart:convert';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -58,36 +55,95 @@ class ExportService {
     await Printing.sharePdf(bytes: bytes, filename: '$fileName.xlsx');
   }
 
-  /// تصدير البيانات إلى ملف PDF
+  /// تصدير البيانات إلى ملف PDF احترافي يليق بالعملاء (RTL Corrected)
   Future<void> exportToPdf({
     required String title,
     required List<String> columns,
     required List<List<dynamic>> rows,
   }) async {
     final pdf = pw.Document();
-    final font = await PdfGoogleFonts.notoKufiArabicRegular();
+
+    final font = await PdfGoogleFonts.cairoRegular();
+    final boldFont = await PdfGoogleFonts.cairoBold();
+
+    // عكس القوائم لضمان ظهور "الاسم" في اليمين و "البريد" في اليسار
+    // لأن مكتبة PDF ترتب الـ List من 0 (يسار) إلى N (يمين)
+    final reversedColumns = columns.reversed.toList();
+    final reversedRows = rows.map((row) => row.reversed.toList()).toList();
 
     pdf.addPage(
       pw.MultiPage(
-        theme: pw.ThemeData.withFont(base: font),
+        pageFormat: PdfPageFormat.a4.landscape,
+        theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         textDirection: pw.TextDirection.rtl,
-        orientation: pw.PageOrientation.landscape,
+        margin: const pw.EdgeInsets.all(32),
+        header: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          padding: const pw.EdgeInsets.only(bottom: 15),
+          decoration: const pw.BoxDecoration(
+            border: pw.Border(bottom: pw.BorderSide(color: PdfColors.blueGrey900, width: 2)),
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(title, style: pw.TextStyle(font: boldFont, fontSize: 24, color: PdfColors.blueGrey900)),
+                  pw.Text('نظام إدارة السيارات المتكامل', style: const pw.TextStyle(fontSize: 10, color: PdfColors.blueGrey600)),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text('تاريخ التصدير: ${DateTime.now().toString().split(' ')[0]}', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text('تقرير CRM المعتمد', style: const pw.TextStyle(fontSize: 10, color: PdfColors.blueGrey600)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerLeft,
+          padding: const pw.EdgeInsets.only(top: 15),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('طُبع بواسطة نظام الإدارة الذكي', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+              pw.Text('صفحة ${context.pageNumber} من ${context.pagesCount}', style: const pw.TextStyle(fontSize: 9)),
+            ],
+          ),
+        ),
         build: (context) => [
-          pw.Header(level: 0, child: pw.Text(title, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold))),
           pw.SizedBox(height: 20),
           pw.TableHelper.fromTextArray(
-            headers: columns,
-            data: rows,
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            headers: reversedColumns,
+            data: reversedRows,
+            headerStyle: pw.TextStyle(font: boldFont, color: PdfColors.white, fontSize: 11),
+            cellStyle: const pw.TextStyle(fontSize: 10),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
             cellAlignment: pw.Alignment.centerRight,
+            headerAlignment: pw.Alignment.centerRight,
             border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+            headerHeight: 35,
+            cellPadding: const pw.EdgeInsets.all(8),
+            // تعديل النسب لتتوافق مع الترتيب المعكوس
+            columnWidths: {
+              0: const pw.FlexColumnWidth(3.5), // البريد الإلكتروني (أصبح الأول من اليسار)
+              1: const pw.FlexColumnWidth(1.5), // مستوى المخاطر
+              2: const pw.FlexColumnWidth(2),   // رقم الهاتف
+              3: const pw.FlexColumnWidth(2),   // رقم الهوية
+              4: const pw.FlexColumnWidth(3),   // الاسم الكامل (أصبح الأخير من اليسار = الأول من اليمين)
+            },
           ),
         ],
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) => pdf.save());
+    await Printing.layoutPdf(
+      onLayout: (format) => pdf.save(),
+      name: '$title.pdf',
+    );
   }
 }
 

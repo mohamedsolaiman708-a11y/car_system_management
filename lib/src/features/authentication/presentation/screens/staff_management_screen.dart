@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../staff_controller.dart';
 import '../../domain/app_user.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class StaffManagementScreen extends ConsumerStatefulWidget {
   const StaffManagementScreen({super.key});
@@ -30,6 +32,21 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   Widget build(BuildContext context) {
     final staffAsync = ref.watch(staffListControllerProvider);
     final rolesAsync = ref.watch(availableRolesProvider);
+
+    ref.listen<AsyncValue<List<AppUser>>>(
+      staffListControllerProvider,
+      (previous, next) {
+        next.whenOrNull(
+          error: (error, _) => SnackBarHelper.showError(context, error),
+          data: (_) {
+            // الإصلاح: لا تظهر الرسالة إلا إذا كان هناك قيمة سابقة (أي كانت عملية تحديث وليس أول تحميل)
+            if (previous != null && previous.isLoading && previous.hasValue) {
+              SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح');
+            }
+          },
+        );
+      },
+    );
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -73,7 +90,16 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-                error: (err, _) => const Center(child: Text('حدث خطأ في جلب بيانات الفريق')),
+                error: (err, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Text(
+                      Failure.fromException(err).message,
+                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -82,11 +108,23 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person_search_rounded, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
+          const SizedBox(height: 20),
+          Text('لا يوجد موظفين يطابقون معايير البحث', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSimpleHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // اليمين: العنوان والوصف
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -103,13 +141,12 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
             Text(
               'تنظيم أدوار الموظفين ومتابعة النشاط الإداري للنظام',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white.withValues(alpha: 0.6),
                 fontSize: 14,
               ),
             ),
           ],
         ),
-        // اليسار: الزر الذهبي
         ElevatedButton.icon(
           onPressed: () => _showAddStaffDialog(context),
           icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
@@ -137,7 +174,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4))],
               ),
               child: TextField(
                 onChanged: (val) => setState(() => searchQuery = val),
@@ -163,7 +200,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20)],
       ),
       child: rolesAsync.maybeWhen(
         data: (roles) {
@@ -192,7 +229,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15, offset: const Offset(0, 6))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -230,12 +267,12 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       height: 64,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primaryNavy, AppColors.primaryNavy.withOpacity(0.8)],
+          colors: [AppColors.primaryNavy, AppColors.primaryNavy.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: AppColors.primaryNavy.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: AppColors.primaryNavy.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Center(
         child: Text(member.fullName.isNotEmpty ? member.fullName[0] : '?',
@@ -248,7 +285,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryNavy.withOpacity(0.05),
+        color: AppColors.primaryNavy.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(roleName, style: const TextStyle(color: AppColors.primaryNavy, fontSize: 11, fontWeight: FontWeight.bold)),
@@ -272,71 +309,50 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       elevation: 10,
       onSelected: (value) async {
         final notifier = ref.read(staffListControllerProvider.notifier);
-        if (value == 'toggle') notifier.updateStatus(member.id, !member.isActive);
-        else if (value == 'approve') notifier.approveAsStaff(member.id);
-        else if (value == 'edit_name') _showEditNameDialog(context, member);
-        else if (value == 'reset_password') {
+        if (value == 'toggle') {
+          notifier.updateStatus(member.id, !member.isActive);
+        } else if (value == 'approve') {
+          notifier.approveAsStaff(member.id);
+        } else if (value == 'edit_name') {
+          _showEditNameDialog(context, member);
+        } else if (value == 'reset_password') {
           if (member.email != null && member.email!.isNotEmpty) {
             final success = await notifier.resetPassword(member.email!);
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(success ? 'تم إرسال رابط إعادة التعيين لبريد الموظف' : 'فشل إرسال الرابط، يرجى المحاولة لاحقاً'),
-                  backgroundColor: success ? Colors.green : Colors.red,
-                ),
-              );
-            }
-          } else {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('بريد الموظف غير مسجل، لا يمكن إعادة التعيين'), backgroundColor: Colors.orange),
-              );
+              if (success) {
+                SnackBarHelper.showSuccess(context, 'تم إرسال رابط إعادة التعيين لبريد الموظف');
+              } else {
+                SnackBarHelper.showError(context, 'فشل إرسال البريد');
+              }
             }
           }
+        } else if (value.startsWith('role_')) {
+          notifier.updateRole(member.id, value.substring(5));
         }
-        else if (value.startsWith('role_')) notifier.updateRole(member.id, value.substring(5));
       },
       itemBuilder: (context) {
         final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
-
         return [
-          const PopupMenuItem(value: 'edit_name', child: Row(children: [Icon(Icons.edit_rounded, size: 18), SizedBox(width: 12), Text('تعديل البيانات')])),
+          PopupMenuItem(value: 'edit_name', child: _buildPopupItem(Icons.edit_rounded, 'تعديل البيانات')),
           if (member.status == 'pending')
-            const PopupMenuItem(value: 'approve', child: Row(children: [Icon(Icons.verified_rounded, size: 18, color: Colors.green), SizedBox(width: 12), Text('اعتماد الموظف')])),
-          PopupMenuItem(value: 'toggle', child: Row(children: [Icon(member.isActive ? Icons.block_rounded : Icons.check_circle_rounded, size: 18, color: member.isActive ? Colors.red : Colors.green), SizedBox(width: 12), Text(member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب')])),
-          const PopupMenuItem(value: 'reset_password', child: Row(children: [Icon(Icons.vpn_key_rounded, size: 18), SizedBox(width: 12), Text('إعادة تعيين المرور')])),
+            PopupMenuItem(value: 'approve', child: _buildPopupItem(Icons.verified_rounded, 'اعتماد الموظف', color: Colors.green)),
+          PopupMenuItem(value: 'toggle', child: _buildPopupItem(
+            member.isActive ? Icons.block_rounded : Icons.check_circle_rounded, 
+            member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب',
+            color: member.isActive ? Colors.red : Colors.green,
+          )),
+          PopupMenuItem(value: 'reset_password', child: _buildPopupItem(Icons.vpn_key_rounded, 'إعادة تعيين المرور')),
           const PopupMenuDivider(),
-          ...filteredRoles.where((r) => r['slug'] != member.role.name).map((r) => PopupMenuItem(value: 'role_${r['id']}', child: Text('تغيير لـ ${_translateRole(r['slug'])}'))),
+          ...filteredRoles.where((r) => r['slug'] != member.role.name).map((r) => 
+            PopupMenuItem(value: 'role_${r['id']}', child: Text('تغيير لـ ${_translateRole(r['slug'])}'))
+          ),
         ];
       },
     );
   }
 
-  void _showEditNameDialog(BuildContext context, AppUser member) {
-    final controller = TextEditingController(text: member.fullName);
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('تعديل بيانات الموظف', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
-          content: TextField(controller: controller, decoration: const InputDecoration(labelText: 'الاسم الكامل كما في الهوية', border: OutlineInputBorder())),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () async {
-                if (controller.text.isNotEmpty) {
-                  await ref.read(staffListControllerProvider.notifier).updateName(member.id, controller.text);
-                  if (context.mounted) Navigator.pop(context);
-                }
-              },
-              child: const Text('حفظ'),
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget _buildPopupItem(IconData icon, String text, {Color? color}) {
+    return Row(children: [Icon(icon, size: 18, color: color), const SizedBox(width: 12), Text(text)]);
   }
 
   void _showAddStaffDialog(BuildContext context) {
@@ -372,7 +388,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                         onChanged: (val) => setState(() => roleId = val),
                       );
                     },
-                    orElse: () => const CircularProgressIndicator(),
+                    orElse: () => const Center(child: CircularProgressIndicator()),
                   ),
                 ],
               ),
@@ -389,7 +405,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     );
                     if (success && context.mounted) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الدعوة بنجاح')));
+                      SnackBarHelper.showSuccess(context, 'تم إرسال الدعوة بنجاح');
                     }
                   }
                 },
@@ -402,15 +418,29 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person_search_rounded, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 20),
-          Text('لا يوجد موظفين يطابقون معايير البحث', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
-        ],
+  void _showEditNameDialog(BuildContext context, AppUser member) {
+    final controller = TextEditingController(text: member.fullName);
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('تعديل بيانات الموظف', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
+          content: TextField(controller: controller, decoration: const InputDecoration(labelText: 'الاسم الكامل كما في الهوية', border: OutlineInputBorder())),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: () async {
+                if (controller.text.isNotEmpty) {
+                  await ref.read(staffListControllerProvider.notifier).updateName(member.id, controller.text);
+                  if (context.mounted) Navigator.pop(context);
+                }
+              },
+              child: const Text('حفظ'),
+            ),
+          ],
+        ),
       ),
     );
   }

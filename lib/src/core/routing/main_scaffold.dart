@@ -8,9 +8,9 @@ import '../../features/authentication/presentation/widgets/brand_logo.dart';
 import '../../features/authentication/presentation/staff_controller.dart';
 import '../../features/investors/presentation/investor_controller.dart';
 import '../../features/notifications/presentation/notification_controller.dart';
-import '../../features/dashboard/presentation/dashboard_controller.dart';
 import '../utils/app_theme.dart';
 import '../utils/responsive_layout.dart';
+import '../providers/connection_provider.dart';
 
 class MainScaffold extends ConsumerWidget {
   final Widget child;
@@ -47,6 +47,7 @@ class _DesktopScaffold extends ConsumerWidget {
             child: Column(
               children: [
                 _TopBar(user: user),
+                const OfflineBanner(),
                 Expanded(
                   child: Container(
                     color: const Color(0xFFF8F9FA),
@@ -77,6 +78,7 @@ class _TabletScaffold extends ConsumerWidget {
             child: Column(
               children: [
                 _TopBar(user: user),
+                const OfflineBanner(),
                 Expanded(child: child),
               ],
             ),
@@ -110,7 +112,12 @@ class _MobileScaffold extends ConsumerWidget {
         ],
       ),
       drawer: Drawer(child: _Sidebar(isCollapsed: false, user: user)),
-      body: child,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: child),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: AppColors.primaryNavy,
         unselectedItemColor: Colors.grey,
@@ -264,7 +271,7 @@ class _SidebarLink extends StatelessWidget {
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
               )),
           selected: isSelected,
-          selectedTileColor: Colors.white.withOpacity(0.08),
+          selectedTileColor: Colors.white.withValues(alpha: 0.08),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           dense: true,
         ),
@@ -331,14 +338,14 @@ class _TopBar extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.primaryNavy.withOpacity(0.03),
+          color: AppColors.primaryNavy.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(50),
         ),
         child: Row(
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.primaryNavy.withOpacity(0.1),
+              backgroundColor: AppColors.primaryNavy.withValues(alpha: 0.1),
               child: const Icon(Icons.person_rounded, color: AppColors.primaryNavy, size: 20),
             ),
             const SizedBox(width: 12),
@@ -478,6 +485,58 @@ class _LogoutButton extends ConsumerWidget {
         leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
         title: isCollapsed ? null : const Text('تسجيل الخروج', style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+class OfflineBanner extends ConsumerWidget {
+  const OfflineBanner({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isOffline = ref.watch(connectionNotifierProvider);
+    if (!isOffline) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      color: AppColors.errorRed,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'لا يوجد اتصال بالإنترنت. تم تفعيل وضع الاستعراض (أوفلاين).',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Cairo',
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.white24,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => ref.read(connectionNotifierProvider.notifier).forceCheck(),
+            child: const Text(
+              'إعادة المحاولة',
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }

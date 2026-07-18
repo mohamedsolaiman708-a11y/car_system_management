@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../accounting_controller.dart';
 
 class JournalEntriesScreen extends ConsumerWidget {
@@ -38,7 +39,16 @@ class JournalEntriesScreen extends ConsumerWidget {
             },
           ),
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-          error: (err, _) => Center(child: Text('خطأ في تحميل القيود: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -114,7 +124,7 @@ class _JournalEntryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
       ),
       child: Column(
         children: [
@@ -168,7 +178,7 @@ class _JournalEntryCard extends StatelessWidget {
                           flex: 3,
                           child: Text(line.accountName ?? '', 
                             style: TextStyle(
-                              color: isDebit ? AppColors.primaryNavy : AppColors.primaryNavy.withOpacity(0.7),
+                              color: isDebit ? AppColors.primaryNavy : AppColors.primaryNavy.withValues(alpha: 0.7),
                               fontWeight: isDebit ? FontWeight.bold : FontWeight.normal,
                               fontSize: 13
                             )),
@@ -194,7 +204,7 @@ class _JournalEntryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.bgGrey.withOpacity(0.3),
+              color: AppColors.bgGrey.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
             ),
             child: Row(

@@ -11,6 +11,8 @@ import '../../../investors/presentation/widgets/fund_contract_dialog.dart';
 import '../../../accounting/presentation/accounting_controller.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/arabic_translator.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class ContractDetailsScreen extends ConsumerWidget {
   final String id;
@@ -22,14 +24,10 @@ class ContractDetailsScreen extends ConsumerWidget {
       contractControllerProvider,
       (previous, next) {
         next.whenOrNull(
-          error: (error, _) => ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: $error'), backgroundColor: Colors.red),
-          ),
+          error: (error, _) => SnackBarHelper.showError(context, error),
           data: (_) {
             if (previous?.isLoading == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('تمت العملية بنجاح')),
-              );
+              SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح');
             }
           },
         );
@@ -109,7 +107,11 @@ class ContractDetailsScreen extends ConsumerWidget {
         error: (err, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32.0),
-            child: Text('حدث خطأ أثناء جلب البيانات: \n $err', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              Failure.fromException(err).message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+            ),
           ),
         ),
       ),
@@ -128,9 +130,9 @@ class ContractDetailsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: const Icon(Icons.assignment_turned_in_rounded, size: 36, color: AppColors.accentGold),
           ),
@@ -205,7 +207,7 @@ class ContractDetailsScreen extends ConsumerWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withOpacity(0.5))),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.5))),
       child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
@@ -353,7 +355,12 @@ class _InstallmentsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => const Center(child: Text('خطأ في تحميل الأقساط')),
+      error: (e, _) => Center(
+        child: Text(
+          Failure.fromException(e).message,
+          style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 
@@ -366,7 +373,7 @@ class _InstallmentsTab extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
       child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
@@ -405,7 +412,7 @@ class _PaymentsTab extends ConsumerWidget {
                   final isReversed = p['status'] == 'reversed';
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10),
-                    decoration: BoxDecoration(color: isReversed ? Colors.red.withOpacity(0.02) : Colors.white, borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(color: isReversed ? Colors.red.withValues(alpha: 0.02) : Colors.white, borderRadius: BorderRadius.circular(16)),
                     child: ListTile(
                       dense: true,
                       leading: Icon(isReversed ? Icons.history_rounded : Icons.check_circle_rounded, color: isReversed ? Colors.red : Colors.green, size: 28),
@@ -430,7 +437,12 @@ class _PaymentsTab extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => const Center(child: Text('خطأ في تحميل المدفوعات')),
+            error: (e, _) => Center(
+              child: Text(
+                Failure.fromException(e).message,
+                style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Cairo'),
+              ),
+            ),
           ),
         ),
       ],
@@ -565,7 +577,12 @@ class _FundingTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => const Center(child: Text('Error')),
+      error: (e, _) => Center(
+        child: Text(
+          Failure.fromException(e).message,
+          style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 
@@ -667,7 +684,12 @@ class _AccountingTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => const Center(child: Text('خطأ في تحميل القيود')),
+      error: (e, _) => Center(
+        child: Text(
+          Failure.fromException(e).message,
+          style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 }
@@ -711,7 +733,12 @@ class _TimelineTab extends ConsumerWidget {
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => const Center(child: Text('Error')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 }

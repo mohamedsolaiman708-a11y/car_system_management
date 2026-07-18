@@ -105,7 +105,7 @@ class StaffDashboardScreen extends ConsumerWidget {
                       Text(
                         'نظام الإدارة الذكي',
                         style: TextStyle(
-                          color: AppColors.accentGold.withOpacity(0.8),
+                          color: AppColors.accentGold.withValues(alpha: 0.8),
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -122,7 +122,7 @@ class StaffDashboardScreen extends ConsumerWidget {
                       Text(
                         'إليك نظرة شاملة على أداء المنظومة اليوم',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 11,
                         ),
                       ),
@@ -178,7 +178,7 @@ class StaffDashboardScreen extends ConsumerWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -189,7 +189,7 @@ class StaffDashboardScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -350,9 +350,9 @@ class StaffDashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -394,7 +394,7 @@ class _InsightTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.1)),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,7 +449,7 @@ class _DashboardCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -515,8 +515,8 @@ class _ModernGrowthChart extends StatelessWidget {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primaryNavy.withOpacity(0.2),
-                  AppColors.primaryNavy.withOpacity(0),
+                  AppColors.primaryNavy.withValues(alpha: 0.2),
+                  AppColors.primaryNavy.withValues(alpha: 0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -712,7 +712,7 @@ class _QuickActionsSection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         ),
         child: Row(
           children: [

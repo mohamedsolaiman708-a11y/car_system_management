@@ -6,6 +6,7 @@ import '../../data/supabase_auth_repository.dart';
 import '../auth_controller.dart';
 import '../widgets/auth_layout.dart';
 import '../../domain/user_role.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class PendingApprovalScreen extends ConsumerStatefulWidget {
   const PendingApprovalScreen({super.key});
@@ -31,7 +32,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
         return;
       }
 
-      if (updatedUser.status == 'approved') {
+        if (updatedUser.status == 'approved') {
         // تم الموافقة — وجّه المستخدم للبوابة الصحيحة
         if (updatedUser.role == UserRole.investor) {
           context.go('/investor-portal');
@@ -43,24 +44,14 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
       } else {
         // لا يزال قيد الانتظار
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('طلبك لا يزال قيد المراجعة. يرجى الانتظار.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          SnackBarHelper.showInfo(context, 'طلبك لا يزال قيد المراجعة. يرجى الانتظار.');
         }
         setState(() => _isChecking = false);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isChecking = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('حدث خطأ: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackBarHelper.showError(context, e);
       }
     }
   }

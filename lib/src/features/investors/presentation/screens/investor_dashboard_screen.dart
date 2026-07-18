@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../../domain/investor.dart';
 import '../investor_controller.dart';
 import '../../../authentication/presentation/auth_controller.dart';
@@ -82,7 +84,11 @@ class InvestorDashboardScreen extends ConsumerWidget {
                   children: [
                     const Icon(Icons.error_outline, color: Colors.red, size: 48),
                     const SizedBox(height: 16),
-                    Text('حدث خطأ في تحميل البيانات: $err', textAlign: TextAlign.center),
+                    Text(
+                      Failure.fromException(err).message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontFamily: 'Cairo'),
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => ref.invalidate(investorDetailsControllerProvider(user.id)),
@@ -195,7 +201,7 @@ class _OverviewTab extends ConsumerWidget {
                     isCurved: true,
                     color: AppColors.accentGold,
                     barWidth: 4,
-                    belowBarData: BarAreaData(show: true, color: AppColors.accentGold.withOpacity(0.1)),
+                    belowBarData: BarAreaData(show: true, color: AppColors.accentGold.withValues(alpha: 0.1)),
                     dotData: const FlDotData(show: true),
                   ),
                 ],
@@ -218,7 +224,7 @@ class _OverviewTab extends ConsumerWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0D1B3E), Color(0xFF1A2E5A)]),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 15, offset: const Offset(0, 8))],
       ),
       child: Column(
         children: [
@@ -320,7 +326,11 @@ class _OverviewTab extends ConsumerWidget {
                   final success = await ref.read(withdrawalRequestsControllerProvider().notifier).requestWithdrawal(amount, bankController.text);
                   if (context.mounted) {
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(success ? 'تم إرسال طلب السحب بنجاح' : 'فشل إرسال الطلب'), backgroundColor: success ? Colors.green : Colors.red));
+                    if (success) {
+                      SnackBarHelper.showSuccess(context, 'تم إرسال طلب السحب بنجاح');
+                    } else {
+                      SnackBarHelper.showError(context, 'فشل إرسال الطلب');
+                    }
                   }
                 },
                 child: const Text('إرسال طلب السحب'),
@@ -370,7 +380,7 @@ class _PortfolioTab extends ConsumerWidget {
                 elevation: 0, 
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade100)), 
                 child: ListTile(
-                  leading: CircleAvatar(backgroundColor: (status == 'active' ? Colors.green : Colors.orange).withOpacity(0.1), child: Icon(Icons.assignment_rounded, color: status == 'active' ? Colors.green : Colors.orange, size: 20)), 
+                  leading: CircleAvatar(backgroundColor: (status == 'active' ? Colors.green : Colors.orange).withValues(alpha: 0.1), child: Icon(Icons.assignment_rounded, color: status == 'active' ? Colors.green : Colors.orange, size: 20)), 
                   title: Text('عقد رقم: ${contract['contract_no'] ?? 'N/A'}', style: const TextStyle(fontWeight: FontWeight.bold)), 
                   subtitle: Text('قيمة مساهمتك: ${f.format(item['amount_allocated'] ?? 0)} ر.س'),
                 )
@@ -378,7 +388,12 @@ class _PortfolioTab extends ConsumerWidget {
             }
           ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('خطأ في تحميل المحفظة: $err')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 }
@@ -404,7 +419,12 @@ class _TransactionsTab extends ConsumerWidget {
             }
           ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('خطأ في تحميل العمليات: $err')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 }
@@ -430,7 +450,12 @@ class _ProjectionsTab extends ConsumerWidget {
         ]);
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('خطأ في تحميل التوقعات: $err')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 }

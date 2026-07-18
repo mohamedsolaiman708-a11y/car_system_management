@@ -17,7 +17,7 @@ class StaffListController extends _$StaffListController {
   }
 
   Future<void> updateStatus(String userId, bool isActive) async {
-    state = const AsyncLoading();
+    state = AsyncLoading<List<AppUser>>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
       await ref.read(staffRepositoryProvider).updateStaffProfile(userId, isActive: isActive);
       return ref.read(staffRepositoryProvider).getStaffMembers();
@@ -26,7 +26,7 @@ class StaffListController extends _$StaffListController {
 
   /// اعتماد المستخدم كعضو في الفريق (تغيير الحالة وتفعيل الحساب)
   Future<void> approveAsStaff(String userId) async {
-    state = const AsyncLoading();
+    state = AsyncLoading<List<AppUser>>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
       await ref.read(staffRepositoryProvider).updateStaffProfile(
         userId, 
@@ -38,7 +38,7 @@ class StaffListController extends _$StaffListController {
   }
 
   Future<void> updateRole(String userId, String roleId) async {
-    state = const AsyncLoading();
+    state = AsyncLoading<List<AppUser>>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
       await ref.read(staffRepositoryProvider).updateStaffProfile(userId, roleId: roleId);
       return ref.read(staffRepositoryProvider).getStaffMembers();
@@ -46,7 +46,7 @@ class StaffListController extends _$StaffListController {
   }
 
   Future<void> updateName(String userId, String fullName) async {
-    state = const AsyncLoading();
+    state = AsyncLoading<List<AppUser>>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
       await ref.read(staffRepositoryProvider).updateStaffProfile(userId, fullName: fullName);
       return ref.read(staffRepositoryProvider).getStaffMembers();

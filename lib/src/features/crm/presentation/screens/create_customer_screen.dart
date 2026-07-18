@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../crm_controller.dart';
 
 class CreateCustomerScreen extends ConsumerStatefulWidget {
@@ -77,24 +78,16 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
     };
 
     await ref.read(crmControllerProvider.notifier).createCustomer(data);
+    final state = ref.read(crmControllerProvider);
 
-    if (mounted && !ref.read(crmControllerProvider).hasError) {
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white),
-              SizedBox(width: 12),
-              Text('تم تسجيل العميل بنجاح في قاعدة البيانات'),
-            ],
-          ),
-          backgroundColor: AppColors.successGreen,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      ref.invalidate(customersListProvider);
+    if (mounted) {
+      if (state.hasError) {
+        SnackBarHelper.showError(context, state.error);
+      } else {
+        context.pop();
+        SnackBarHelper.showSuccess(context, 'تم تسجيل العميل بنجاح في قاعدة البيانات');
+        ref.invalidate(customersListProvider);
+      }
     }
   }
 
@@ -279,7 +272,7 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
                         minimumSize: const Size(double.infinity, 64),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         elevation: 8,
-                        shadowColor: AppColors.primaryNavy.withOpacity(0.4),
+                        shadowColor: AppColors.primaryNavy.withValues(alpha: 0.4),
                       ),
                       child: const Text('حفظ واعتماد ملف العميل',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
@@ -317,7 +310,7 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
               style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text('يرجى التأكد من مطابقة البيانات للوثائق الرسمية لضمان دقة التقييم الائتماني.',
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13, height: 1.4)),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, height: 1.4)),
         ],
       ),
     );
@@ -329,7 +322,7 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,7 +331,7 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppColors.accentGold.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppColors.accentGold.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: AppColors.accentGold, size: 20),
               ),
               const SizedBox(width: 16),
@@ -369,7 +362,7 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
         prefixIcon: Icon(prefixIcon, size: 20, color: Colors.grey.shade400),
         suffix: suffix,
         filled: true,
-        fillColor: AppColors.bgGrey.withOpacity(0.5),
+        fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.accentGold, width: 1.5)),
@@ -407,7 +400,7 @@ class _RiskOption extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.1) : Colors.white,
+            color: isSelected ? color.withValues(alpha: 0.1) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isSelected ? color : Colors.grey.shade200),
           ),

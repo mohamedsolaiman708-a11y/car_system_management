@@ -274,7 +274,53 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   }
 
   Future<void> _handleExport(String format) async {
-    // منطق التصدير كما هو
+    final customersAsync = ref.read(customersListProvider(searchQuery: searchQuery));
+    final customers = customersAsync.valueOrNull;
+
+    if (customers == null || customers.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لا توجد بيانات لتصديرها')),
+        );
+      }
+      return;
+    }
+
+    final exportService = ref.read(exportServiceProvider);
+    final columns = ['الاسم الكامل', 'رقم الهوية', 'رقم الهاتف', 'مستوى المخاطر', 'البريد الإلكتروني'];
+
+    try {
+      if (format == 'excel') {
+        final data = customers.map((c) => c.toJson()).toList();
+        final dataKeys = ['full_name', 'national_id', 'phone', 'risk_rating', 'email'];
+        await exportService.exportToExcel(
+          fileName: 'قائمة_العملاء_${DateTime.now().millisecondsSinceEpoch}',
+          columns: columns,
+          data: data,
+          dataKeys: dataKeys,
+        );
+      } else if (format == 'pdf') {
+        final rows = customers.map((c) => [
+          c.fullName,
+          c.nationalId,
+          c.phone,
+          c.riskRating == 'low' ? 'منخفضة' : (c.riskRating == 'high' ? 'عالية' : 'متوسطة'),
+          c.email ?? '-',
+        ]).toList();
+
+        await exportService.exportToPdf(
+          title: 'تقرير قائمة العملاء',
+          columns: columns,
+          rows: rows,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ أثناء التصدير: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildEmptyState() {

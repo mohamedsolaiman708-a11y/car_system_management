@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/document.dart';
@@ -31,8 +32,10 @@ class SupabaseDocumentRepository implements DocumentRepository {
     }
 
     final response = await query.order('created_at', ascending: false);
-    
-    return (response as List).map((json) => AppDocument.fromJson(json)).toList();
+
+    return (response as List)
+        .map((json) => AppDocument.fromJson(json))
+        .toList();
   }
 
   @override
@@ -43,28 +46,42 @@ class SupabaseDocumentRepository implements DocumentRepository {
     required DocumentType type,
     required String fileName,
     required List<int> fileBytes,
+    void Function(double progress)? onProgress,
   }) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final folder = investorId != null ? 'investors/$investorId' : 
-                   contractId != null ? 'contracts/$contractId' : 'customers/$customerId';
-    
-    final fileExtension = fileName.split('.').last;
-    final storagePath = '$folder/${type.name.toUpperCase()}_$timestamp.$fileExtension';
+    final folder = investorId != null
+        ? 'investors/$investorId'
+        : contractId != null
+        ? 'contracts/$contractId'
+        : 'customers/$customerId';
 
-    // الرفع إلى Storage
-    await _client.storage.from('documents').uploadBinary(
-      storagePath, 
-      fileBytes as dynamic,
-      fileOptions: FileOptions(
-        contentType: _getContentType(fileExtension),
-        upsert: false,
-      ),
-    );
+    final fileExtension = fileName.split('.').last;
+    final storagePath =
+        '$folder/${type.name.toUpperCase()}_$timestamp.$fileExtension';
+
+    // محاكاة تقدم الرفع من 0% إلى 70% أثناء الرفع
+    onProgress?.call(0.05);
+
+    // رفع الملف إلى Storage
+    await _client.storage
+        .from('documents')
+        .uploadBinary(
+          storagePath,
+          fileBytes as dynamic,
+          fileOptions: FileOptions(
+            contentType: _getContentType(fileExtension),
+            upsert: false,
+          ),
+        );
+
+    onProgress?.call(0.75);
 
     // جلب الرابط العام
     final fileUrl = _client.storage.from('documents').getPublicUrl(storagePath);
 
-    // تسجيل البيانات
+    onProgress?.call(0.85);
+
+    // تسجيل البيانات في قاعدة البيانات
     await _client.from('contract_documents').insert({
       'customer_id': customerId,
       'contract_id': contractId,
@@ -75,12 +92,15 @@ class SupabaseDocumentRepository implements DocumentRepository {
       'document_type': type.name.toUpperCase(),
       'version': 1,
     });
+
+    onProgress?.call(1.0);
   }
 
   @override
   Future<void> deleteDocument(String documentId, String filePath) async {
     // تنفيذ الحذف الناعم (Soft Delete)
-    await _client.from('contract_documents')
+    await _client
+        .from('contract_documents')
         .update({'deleted_at': DateTime.now().toIso8601String()})
         .eq('id', documentId);
   }
@@ -92,11 +112,15 @@ class SupabaseDocumentRepository implements DocumentRepository {
 
   String _getContentType(String extension) {
     switch (extension.toLowerCase()) {
-      case 'pdf': return 'application/pdf';
+      case 'pdf':
+        return 'application/pdf';
       case 'jpg':
-      case 'jpeg': return 'image/jpeg';
-      case 'png': return 'image/png';
-      default: return 'application/octet-stream';
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      default:
+        return 'application/octet-stream';
     }
   }
 }

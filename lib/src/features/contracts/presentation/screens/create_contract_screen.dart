@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../../../crm/presentation/crm_controller.dart';
 import '../../../inventory/presentation/inventory_controller.dart';
 import '../../../inventory/domain/vehicle.dart';
@@ -24,7 +25,6 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
 
   String? _selectedCustomerId;
   String? _selectedVehicleId;
-  String? _suggestedInvestorName;
   String _contractType = 'installments';
 
   final _principalController = TextEditingController();
@@ -89,25 +89,12 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     }
   }
 
-  void _findSmartInvestorSuggestion(double carPrice) {
-    final investors = ref.read(investorListControllerProvider).valueOrNull;
-    if (investors != null && investors.isNotEmpty) {
-      try {
-        final suggestion = investors.firstWhere((inv) => inv.availableBalance >= carPrice);
-        setState(() => _suggestedInvestorName = suggestion.fullName);
-      } catch (e) {
-        setState(() => _suggestedInvestorName = 'لا يوجد مستثمر لديه سيولة كافية حالياً');
-      }
-    }
-  }
 
   Future<void> _submit() async {
     if (_isLoading) return;
 
     if (!_formKey.currentState!.validate() || _selectedCustomerId == null || _selectedVehicleId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى إكمال البيانات واختيار العميل والسيارة'), backgroundColor: Colors.red),
-      );
+      SnackBarHelper.showWarning(context, 'يرجى إكمال البيانات واختيار العميل والسيارة');
       return;
     }
 
@@ -141,24 +128,18 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       
       if (controllerState.hasError) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${controllerState.error}'), backgroundColor: Colors.red),
-          );
+          SnackBarHelper.showError(context, controllerState.error);
         }
       } else {
         if (mounted) {
           ref.invalidate(contractsListProvider);
           context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم إصدار مسودة العقد بنجاح'), backgroundColor: Colors.green),
-          );
+          SnackBarHelper.showSuccess(context, 'تم إصدار مسودة العقد بنجاح');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ غير متوقع: $e'), backgroundColor: Colors.red),
-        );
+        SnackBarHelper.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -332,7 +313,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildContractTypeSelector() {
     return Container(
       padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
       child: Row(
         children: [
           _buildTypeOption('installments', 'بيع بالأجل (أقساط)', Icons.history_edu_rounded),
@@ -366,7 +347,7 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -2,31 +2,54 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/app_notification.dart';
 import '../../../core/providers/supabase_provider.dart';
+import '../../../core/utils/error_handler.dart';
 
 part 'supabase_notification_repository.g.dart';
 
 class SupabaseNotificationRepository {
   final SupabaseClient _client;
+  final Map<String, dynamic> _memCache = {};
+
   SupabaseNotificationRepository(this._client);
 
   Future<List<AppNotification>> getNotifications() async {
-    final response = await _client
-        .from('notifications')
-        .select()
-        .order('created_at', ascending: false)
-        .limit(50);
-    
-    return (response as List).map((json) => AppNotification.fromJson(json)).toList();
+    const key = 'notifications_list';
+    try {
+      final response = await _client
+          .from('notifications')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(50);
+      
+      final list = (response as List).map((json) => AppNotification.fromJson(json)).toList();
+      _memCache[key] = list;
+      return list;
+    } catch (e) {
+      if (_memCache.containsKey(key)) {
+        return _memCache[key] as List<AppNotification>;
+      }
+      throw Failure.fromException(e);
+    }
   }
 
   Future<void> markAsRead(String id) async {
-    await _client.from('notifications').update({'is_read': true}).eq('id', id);
+    try {
+      await _client.from('notifications').update({'is_read': true}).eq('id', id);
+      _memCache.clear();
+    } catch (e) {
+      throw Failure.fromException(e);
+    }
   }
 
   Future<void> markAllAsRead() async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId != null) {
-      await _client.from('notifications').update({'is_read': true}).eq('profile_id', userId);
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId != null) {
+        await _client.from('notifications').update({'is_read': true}).eq('profile_id', userId);
+        _memCache.clear();
+      }
+    } catch (e) {
+      throw Failure.fromException(e);
     }
   }
 

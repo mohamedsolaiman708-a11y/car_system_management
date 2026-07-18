@@ -111,7 +111,7 @@ class _CollectionsReportScreenState extends ConsumerState<CollectionsReportScree
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white10),
         ),
@@ -136,7 +136,7 @@ class _CollectionsReportScreenState extends ConsumerState<CollectionsReportScree
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -177,7 +177,7 @@ class _CollectionsReportScreenState extends ConsumerState<CollectionsReportScree
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: AppColors.successGreen.withOpacity(0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: AppColors.successGreen.withValues(alpha: 0.1), shape: BoxShape.circle),
           child: const Icon(Icons.arrow_downward_rounded, color: AppColors.successGreen, size: 20),
         ),
         title: Text(customer?['full_name'] ?? 'عميل غير معروف', 

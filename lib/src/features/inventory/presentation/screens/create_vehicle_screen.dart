@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../inventory_controller.dart';
 
 class CreateVehicleScreen extends ConsumerStatefulWidget {
@@ -53,24 +54,16 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
     };
 
     await ref.read(inventoryControllerProvider.notifier).createVehicle(data);
+    final state = ref.read(inventoryControllerProvider);
 
-    if (mounted && !ref.read(inventoryControllerProvider).hasError) {
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white),
-              SizedBox(width: 12),
-              Text('تمت إضافة المركبة بنجاح إلى المخزون المالي'),
-            ],
-          ),
-          backgroundColor: AppColors.successGreen,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      ref.invalidate(vehiclesListProvider);
+    if (mounted) {
+      if (state.hasError) {
+        SnackBarHelper.showError(context, state.error);
+      } else {
+        context.pop();
+        SnackBarHelper.showSuccess(context, 'تمت إضافة المركبة بنجاح إلى المخزون المالي');
+        ref.invalidate(vehiclesListProvider);
+      }
     }
   }
 
@@ -205,7 +198,7 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
                         minimumSize: const Size(double.infinity, 64),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         elevation: 8,
-                        shadowColor: AppColors.primaryNavy.withOpacity(0.4),
+                        shadowColor: AppColors.primaryNavy.withValues(alpha: 0.4),
                       ),
                       child: const Text('حفظ المركبة في المخزون العام',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
@@ -243,7 +236,7 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
               style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text('تأكد من دقة رقم الهيكل (VIN) وسعر الشراء لضمان سلامة العمليات المحاسبية.',
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13, height: 1.4)),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, height: 1.4)),
         ],
       ),
     );
@@ -255,7 +248,7 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +257,7 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppColors.accentGold.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppColors.accentGold.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: AppColors.accentGold, size: 20),
               ),
               const SizedBox(width: 16),
@@ -295,7 +288,7 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
         prefixIcon: Icon(prefixIcon, size: 20, color: Colors.grey.shade400),
         suffixIcon: suffix != null ? Padding(padding: const EdgeInsets.all(14.0), child: suffix) : null,
         filled: true,
-        fillColor: AppColors.bgGrey.withOpacity(0.5),
+        fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.accentGold, width: 1.5)),

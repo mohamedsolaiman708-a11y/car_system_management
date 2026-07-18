@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../disaster_recovery_controller.dart';
 import '../../../dashboard/presentation/dashboard_controller.dart';
 
@@ -83,7 +84,10 @@ class DisasterRecoveryScreen extends ConsumerWidget {
         );
       },
       loading: () => const LinearProgressIndicator(),
-      error: (e, _) => Text('خطأ في جلب حالة النزاهة: $e'),
+      error: (e, _) => Text(
+        Failure.fromException(e).message,
+        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
@@ -175,7 +179,10 @@ class DisasterRecoveryScreen extends ConsumerWidget {
               },
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Text('خطأ في تحميل الفترات: $err'),
+            error: (err, _) => Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

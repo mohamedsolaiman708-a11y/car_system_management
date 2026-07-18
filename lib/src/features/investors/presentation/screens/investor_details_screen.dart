@@ -7,6 +7,8 @@ import '../../domain/investor.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../documents/presentation/widgets/universal_document_manager.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class InvestorDetailsScreen extends ConsumerWidget {
   final String id;
@@ -91,7 +93,18 @@ class InvestorDetailsScreen extends ConsumerWidget {
         );
       },
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (err, stack) => Scaffold(body: Center(child: Text('حدث خطأ: $err'))),
+      error: (err, stack) => Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -120,7 +133,7 @@ class _FinancialTab extends ConsumerWidget {
               color: AppColors.primaryNavy,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
-                BoxShadow(color: AppColors.primaryNavy.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))
+                BoxShadow(color: AppColors.primaryNavy.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))
               ],
             ),
             child: Column(
@@ -132,7 +145,7 @@ class _FinancialTab extends ConsumerWidget {
                 Text('${f.format(investor.availableBalance)} ر.س',
                     style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 32),
-                Container(height: 1, color: Colors.white.withOpacity(0.05)),
+                Container(height: 1, color: Colors.white.withValues(alpha: 0.05)),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -188,13 +201,13 @@ class _FinancialTab extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: txs.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.withOpacity(0.05)),
+                  separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.withValues(alpha: 0.05)),
                   itemBuilder: (context, index) {
                     final tx = txs[index];
                     final isPositive = tx.amount > 0;
@@ -202,7 +215,7 @@ class _FinancialTab extends ConsumerWidget {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       leading: CircleAvatar(
                         radius: 18,
-                        backgroundColor: (isPositive ? Colors.green : Colors.red).withOpacity(0.08),
+                        backgroundColor: (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.08),
                         child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded,
                             color: isPositive ? Colors.green : Colors.red, size: 16),
                       ),
@@ -226,7 +239,12 @@ class _FinancialTab extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Text('خطأ: $err'),
+            error: (err, _) => Center(
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+              ),
+            ),
           ),
         ],
       ),
@@ -321,7 +339,7 @@ class _ContractsTab extends ConsumerWidget {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
             child: Row(
               children: [
                 const Icon(Icons.description_outlined, color: AppColors.primaryNavy),
@@ -337,7 +355,12 @@ class _ContractsTab extends ConsumerWidget {
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('خطأ: $err')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 }
@@ -374,7 +397,7 @@ class _WithdrawalRequestsTabState extends ConsumerState<_WithdrawalRequestsTab> 
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -383,7 +406,7 @@ class _WithdrawalRequestsTabState extends ConsumerState<_WithdrawalRequestsTab> 
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: (isPending ? Colors.orange : Colors.green).withOpacity(0.1),
+                            color: (isPending ? Colors.orange : Colors.green).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -427,7 +450,12 @@ class _WithdrawalRequestsTabState extends ConsumerState<_WithdrawalRequestsTab> 
               },
             ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('خطأ: $err')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 
@@ -436,10 +464,10 @@ class _WithdrawalRequestsTabState extends ConsumerState<_WithdrawalRequestsTab> 
     try {
       await ref.read(withdrawalRequestsControllerProvider().notifier).approveRequest(requestId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم تنفيذ السحب واعتماد القيد المحاسبي بنجاح')),
-        );
+        SnackBarHelper.showSuccess(context, 'تم تنفيذ السحب واعتماد القيد المحاسبي بنجاح');
       }
+    } catch (e) {
+      if (mounted) SnackBarHelper.showError(context, e);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -464,7 +492,12 @@ class _ProjectionsTab extends ConsumerWidget {
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('خطأ: $err')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+        ),
+      ),
     );
   }
 }

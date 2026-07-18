@@ -55,15 +55,15 @@ class AuthLayout extends StatelessWidget {
                           vertical: 24,
                         ), 
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             width: 1.2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 30,
                               offset: const Offset(0, 15),
                             ),
@@ -87,7 +87,7 @@ class AuthLayout extends StatelessWidget {
                               Text(
                                 subtitle!,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.5),
+                                  color: Colors.white.withValues(alpha: 0.5),
                                   fontSize: 13,
                                 ),
                                 textAlign: TextAlign.center,
@@ -128,9 +128,9 @@ class AuthLayout extends StatelessWidget {
   InputDecorationTheme _buildDarkInputTheme() {
     return InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white.withOpacity(0.05),
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
-      labelStyle: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+      fillColor: Colors.white.withValues(alpha: 0.05),
+      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
+      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
       floatingLabelStyle: const TextStyle(color: AppColors.accentGold, fontSize: 14),
       prefixIconColor: AppColors.accentGold,
       suffixIconColor: AppColors.accentGold,
@@ -140,11 +140,11 @@ class AuthLayout extends StatelessWidget {
       ), 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../contract_controller.dart';
 
 class ContractsScreen extends ConsumerStatefulWidget {
@@ -63,7 +64,16 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                   ? _buildPremiumTable(contracts, f)
                   : _buildPremiumCards(contracts, f),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('حدث خطأ: $err')),
+              error: (err, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    Failure.fromException(err).message,
+                    style: const TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -90,7 +100,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 4),
             Text('إدارة عمليات البيع الآجل، مراجعة الأقساط، وتحليل التحصيل',
-                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
           ],
         ),
         if (ResponsiveLayout.isDesktop(context))
@@ -135,13 +145,13 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
               child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(width: 16),
@@ -164,7 +174,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 10)],
       ),
       child: Row(
         children: [
@@ -176,7 +186,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                 hintText: 'البحث برقم العقد، اسم العميل، أو السيارة...',
                 prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
                 filled: true,
-                fillColor: AppColors.bgGrey.withOpacity(0.5),
+                fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
               ),
             ),
@@ -194,7 +204,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
   Widget _buildPremiumFilterDropdown() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(color: AppColors.bgGrey.withOpacity(0.5), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: AppColors.bgGrey.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(16)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: statusFilter,
@@ -219,14 +229,14 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: SingleChildScrollView(
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.02)),
-            dataRowHeight: 80,
+            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withValues(alpha: 0.02)),
+            dataRowMinHeight: 80, dataRowMaxHeight: 80,
             columns: const [
               DataColumn(label: Text('رقم العقد', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('العميل المستفيد', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -299,7 +309,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }

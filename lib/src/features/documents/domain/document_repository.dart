@@ -14,6 +14,7 @@ abstract class DocumentRepository {
     required DocumentType type,
     required String fileName,
     required List<int> fileBytes,
+    void Function(double progress)? onProgress,
   });
 
   Future<void> deleteDocument(String documentId, String filePath);

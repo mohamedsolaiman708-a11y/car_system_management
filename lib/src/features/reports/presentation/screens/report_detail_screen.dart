@@ -97,7 +97,7 @@ class ReportDetailScreen extends ConsumerWidget {
             ],
           )
         : Text('كشف تفصيلي بالعمليات المالية والحسابات', 
-            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
     );
   }
 
@@ -105,7 +105,7 @@ class ReportDetailScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
         const SizedBox(height: 6),
         Text('$value ر.س', 
           style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
@@ -121,7 +121,7 @@ class ReportDetailScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
@@ -130,7 +130,8 @@ class ReportDetailScreen extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             child: DataTable(
               headingRowHeight: 64,
-              dataRowHeight: 60,
+              dataRowMinHeight: 60,
+              dataRowMaxHeight: 60,
               horizontalMargin: 24,
               columnSpacing: 40,
               headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
@@ -188,7 +189,7 @@ class ReportDetailScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       icon: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
         child: const Icon(Icons.ios_share_rounded, color: Colors.white, size: 20),
       ),
       onSelected: (val) => _handleExport(context, ref, val),
@@ -204,8 +205,11 @@ class ReportDetailScreen extends ConsumerWidget {
     final parts = path.split('.');
     dynamic current = row;
     for (var part in parts) {
-      if (current is Map) current = current[part];
-      else return null;
+      if (current is Map) {
+        current = current[part];
+      } else {
+        return null;
+      }
     }
     return current;
   }

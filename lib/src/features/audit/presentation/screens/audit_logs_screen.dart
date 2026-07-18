@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/arabic_translator.dart';
 import '../../data/supabase_audit_repository.dart';
 import '../../domain/audit_log.dart';
 
@@ -46,7 +48,16 @@ class AuditLogsScreen extends ConsumerWidget {
           },
         ),
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, _) => Center(child: Text('خطأ في تحميل السجلات: $err')),
+        error: (err, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -129,7 +140,7 @@ class _EliteAuditLogCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(_formatEventType(eventType),
+                        Text(ArabicTranslator.actionType(eventType),
                             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: statusColor, letterSpacing: 0.5)),
                         const Spacer(),
                         if (investorName != null) _buildInvestorBadge(investorName),
@@ -193,20 +204,6 @@ class _EliteAuditLogCard extends StatelessWidget {
     );
   }
 
-  String _formatEventType(String type) {
-    return type
-        .replaceAll('_', ' ')
-        .replaceAll('CREATED', 'إضافة')
-        .replaceAll('UPDATED', 'تحديث')
-        .replaceAll('DELETED', 'حذف')
-        .replaceAll('CONTRACT', 'عقد')
-        .replaceAll('CUSTOMER', 'عميل')
-        .replaceAll('VEHICLE', 'سيارة')
-        .replaceAll('PAYMENT', 'عملية دفع')
-        .replaceAll('INVESTOR DEPOSIT', 'إيداع مالي')
-        .replaceAll('INVESTOR WITHDRAWAL', 'سحب مالي')
-        .replaceAll('PROFIT DISTRIBUTION', 'توزيع أرباح');
-  }
 
   void _showLogDetails(BuildContext context, AuditLog log) {
     showDialog(

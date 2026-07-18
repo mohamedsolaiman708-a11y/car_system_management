@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import '../../features/authentication/presentation/auth_controller.dart';
 import '../../features/authentication/presentation/screens/splash_screen.dart';
 import '../../features/authentication/presentation/screens/portal_selection_screen.dart';
@@ -76,23 +75,56 @@ import 'main_scaffold.dart';
 
 part 'app_router.g.dart';
 
+// ---------------------------------------------------------------------------
+// RouterNotifier — يراقب حالة المصادقة ووضع الصيانة ويُخطر GoRouter فوراً
+// ---------------------------------------------------------------------------
+
+@riverpod
+class RouterNotifier extends _$RouterNotifier with ChangeNotifier {
+  @override
+  void build() {
+    // مراقبة كلا الـ providers — أي تغيير يُعيد بناء هذا الـ notifier
+    ref.watch(authStateProvider);
+    ref.watch(isMaintenanceModeProvider);
+
+    // عند إعادة البناء، أخبر GoRouter بإعادة تقييم الـ redirect
+    ref.listenSelf((_, __) => notifyListeners());
+  }
+
+  AsyncValue get authState => ref.read(authStateProvider);
+  bool get isInMaintenance => ref.read(isMaintenanceModeProvider).value == true;
+}
+
+// ---------------------------------------------------------------------------
+// GoRouter Provider
+// ---------------------------------------------------------------------------
+
 @riverpod
 GoRouter goRouter(GoRouterRef ref) {
-  final authState = ref.watch(authStateProvider);
-  final maintenanceModeAsync = ref.watch(isMaintenanceModeProvider);
+  final notifier = ref.watch(routerNotifierProvider.notifier);
 
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: notifier,
     redirect: (context, state) {
+      final authState = notifier.authState;
+      final isInMaintenance = notifier.isInMaintenance;
+
       if (authState.isLoading) return null;
 
       final user = authState.valueOrNull;
       final isLoggedIn = user != null;
       final path = state.matchedLocation;
 
-      if (maintenanceModeAsync.value == true && path != '/maintenance') {
-        if (isLoggedIn && user.role != UserRole.admin) return '/maintenance';
+      // --- وضع الصيانة: إعادة توجيه لغير الأدمن ---
+      if (isInMaintenance && path != '/maintenance') {
         if (!isLoggedIn) return '/maintenance';
+        if (user.role != UserRole.admin) return '/maintenance';
+      }
+
+      // --- انتهى وضع الصيانة وهو في صفحة الصيانة ---
+      if (!isInMaintenance && path == '/maintenance') {
+        return isLoggedIn ? '/dashboard' : '/portal-selection';
       }
 
       if (!isLoggedIn) {
@@ -101,7 +133,7 @@ GoRouter goRouter(GoRouterRef ref) {
       }
 
       final isStaff = user.role != UserRole.investor;
-      
+
       if (isStaff) {
         if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
           return '/dashboard';
@@ -112,13 +144,18 @@ GoRouter goRouter(GoRouterRef ref) {
       if (user.status == 'pending' && path != '/auth/pending') return '/auth/pending';
       if (user.status == 'rejected' && path != '/auth/rejected') return '/auth/rejected';
 
-      if ((user.status == 'approved' || user.status == 'active') && 
+      if ((user.status == 'approved' || user.status == 'active') &&
           (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
         return '/investor-portal';
       }
 
-      final staffPaths = ['/dashboard', '/crm', '/inventory', '/contracts', '/investors', '/accounting', '/settings', '/staff-management'];
-      if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) return '/investor-portal';
+      final staffPaths = [
+        '/dashboard', '/crm', '/inventory', '/contracts',
+        '/investors', '/accounting', '/settings', '/staff-management'
+      ];
+      if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) {
+        return '/investor-portal';
+      }
 
       return null;
     },
@@ -129,11 +166,11 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/auth/staff/login', builder: (context, state) => const StaffLoginScreen()),
       GoRoute(path: '/auth/investor/login', builder: (context, state) => const InvestorLoginScreen()),
       GoRoute(
-        path: '/auth/register', 
+        path: '/auth/register',
         builder: (context, state) {
           final type = state.uri.queryParameters['type'] ?? 'investor';
           return InvestorRegisterScreen(type: type);
-        }
+        },
       ),
       GoRoute(path: '/auth/investor/register', redirect: (_, __) => '/auth/register?type=investor'),
       GoRoute(path: '/auth/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
@@ -142,7 +179,7 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/auth/pending', builder: (context, state) => const PendingApprovalScreen()),
       GoRoute(path: '/auth/rejected', builder: (context, state) => const AccountRejectedScreen()),
       GoRoute(path: '/auth/session-expired', builder: (context, state) => const SessionExpiredScreen()),
-      
+
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
@@ -156,8 +193,15 @@ GoRouter goRouter(GoRouterRef ref) {
             builder: (context, state) => const CustomersScreen(),
             routes: [
               GoRoute(path: 'new', builder: (context, state) => const CreateCustomerScreen()),
-              GoRoute(path: ':id', builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
-                routes: [GoRoute(path: 'edit', builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!))],
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!),
+                  )
+                ],
               ),
             ],
           ),
@@ -167,8 +211,15 @@ GoRouter goRouter(GoRouterRef ref) {
             builder: (context, state) => const VehiclesScreen(),
             routes: [
               GoRoute(path: 'new', builder: (context, state) => const CreateVehicleScreen()),
-              GoRoute(path: ':id', builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
-                routes: [GoRoute(path: 'edit', builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!))],
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!),
+                  )
+                ],
               ),
             ],
           ),
@@ -190,12 +241,12 @@ GoRouter goRouter(GoRouterRef ref) {
             },
             routes: [
               GoRoute(
-                path: ':id', 
+                path: ':id',
                 builder: (context, state) {
                   final id = state.pathParameters['id']!;
                   final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
                   return InvestorDetailsScreen(id: id, initialTab: tab);
-                }
+                },
               ),
             ],
           ),
@@ -225,7 +276,7 @@ GoRouter goRouter(GoRouterRef ref) {
               GoRoute(path: 'jobs', builder: (context, state) => const BackgroundJobsScreen()),
             ],
           ),
-          
+
           GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
           GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
           GoRoute(path: '/help-center', builder: (context, state) => const HelpCenterScreen()),

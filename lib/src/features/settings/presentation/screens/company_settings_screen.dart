@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../settings_controller.dart';
 import '../../domain/company_settings.dart';
 import '../../domain/system_setting.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class CompanySettingsScreen extends ConsumerStatefulWidget {
   const CompanySettingsScreen({super.key});
@@ -170,7 +172,16 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('خطأ في تحميل الإعدادات: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -187,7 +198,7 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
         children: [
           CircleAvatar(
             radius: 35,
-            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
             child: const Icon(Icons.business_rounded, size: 40, color: Colors.white),
           ),
           const SizedBox(width: 20),
@@ -263,7 +274,7 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
         ),
         subtitle: const Text('عند التفعيل، يقتصر دخول النظام على مدراء النظام فقط (Admins) لحماية البيانات أثناء التحديثات.', style: TextStyle(fontSize: 11)),
         value: isMaintenance,
-        activeColor: Colors.red.shade700,
+        activeThumbColor: Colors.red.shade700,
         onChanged: (val) {
           ref.read(settingsControllerProvider.notifier).toggleMaintenance(val, 'النظام قيد الصيانة المجدولة حالياً لضمان جودة الخدمة. نعتذر عن الإزعاج.');
         },
@@ -284,16 +295,15 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
         'website': _websiteController.text,
       };
 
-      await ref.read(settingsControllerProvider.notifier).updateSetting('company_profile', updatedData);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم تحديث إعدادات المنشأة بنجاح'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      try {
+        await ref.read(settingsControllerProvider.notifier).updateSetting('company_profile', updatedData);
+        if (mounted) {
+          SnackBarHelper.showSuccess(context, 'تم تحديث إعدادات المنشأة بنجاح');
+        }
+      } catch (e) {
+        if (mounted) {
+          SnackBarHelper.showError(context, e);
+        }
       }
     }
   }

@@ -79,7 +79,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                 center: Alignment.center,
                 radius: 1.2,
                 colors: [
-                  const Color(0xFF1A2E5A).withOpacity(0.4),
+                  const Color(0xFF1A2E5A).withValues(alpha: 0.4),
                   const Color(0xFF0A1227),
                 ],
               ),

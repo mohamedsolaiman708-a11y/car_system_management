@@ -47,7 +47,7 @@ class BrandLogo extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent, 
-                  AppColors.accentGold.withOpacity(0.6), 
+                  AppColors.accentGold.withValues(alpha: 0.6), 
                   Colors.transparent
                 ],
               ),

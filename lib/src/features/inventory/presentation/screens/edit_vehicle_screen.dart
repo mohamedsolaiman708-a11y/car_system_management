@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../domain/vehicle.dart';
 import '../inventory_controller.dart';
 
@@ -85,14 +87,17 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     };
 
     await ref.read(inventoryControllerProvider.notifier).updateVehicle(widget.id, data);
+    final state = ref.read(inventoryControllerProvider);
 
-    if (mounted && !ref.read(inventoryControllerProvider).hasError) {
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تحديث بيانات المركبة بنجاح'), backgroundColor: Colors.green),
-      );
-      ref.invalidate(vehicleDetailsProvider(widget.id));
-      ref.invalidate(vehiclesListProvider);
+    if (mounted) {
+      if (state.hasError) {
+        SnackBarHelper.showError(context, state.error);
+      } else {
+        context.pop();
+        SnackBarHelper.showSuccess(context, 'تم تحديث بيانات المركبة بنجاح');
+        ref.invalidate(vehicleDetailsProvider(widget.id));
+        ref.invalidate(vehiclesListProvider);
+      }
     }
   }
 
@@ -208,7 +213,16 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
+        error: (err, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }

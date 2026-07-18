@@ -106,7 +106,7 @@
 //       ),
 //       child: ListTile(
 //         leading: CircleAvatar(
-//           backgroundColor: color.withOpacity(0.1),
+//           backgroundColor: color.withValues(alpha: 0.1),
 //           child: Icon(Icons.settings_backup_restore_rounded, color: color),
 //         ),
 //         title: Text(backup.filename, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -192,7 +192,7 @@
 //     return Container(
 //       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
 //       decoration: BoxDecoration(
-//         color: color.withOpacity(0.1),
+//         color: color.withValues(alpha: 0.1),
 //         borderRadius: BorderRadius.circular(12),
 //       ),
 //       child: Text(

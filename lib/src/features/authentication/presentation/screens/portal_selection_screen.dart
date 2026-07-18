@@ -33,12 +33,14 @@ class PortalSelectionScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'اختر الهوية المخصصة للمتابعة والوصول إلى الأدوات',
-                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
                   ),
                   const SizedBox(height: 60),
                   
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    spacing: 32,
+                    runSpacing: 32,
+                    alignment: WrapAlignment.center,
                     children: [
                       _buildPortalCard(
                         context,
@@ -48,7 +50,6 @@ class PortalSelectionScreen extends StatelessWidget {
                         color: AppColors.accentGold,
                         path: '/auth/staff/login',
                       ),
-                      const SizedBox(width: 32),
                       _buildPortalCard(
                         context,
                         title: 'بوابة شركاء الاستثمار',
@@ -63,7 +64,7 @@ class PortalSelectionScreen extends StatelessWidget {
                   const SizedBox(height: 70),
                   Text(
                     'نظام السامي لإدارة تمويل السيارات © 2026',
-                    style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, letterSpacing: 2),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10, letterSpacing: 2),
                   ),
                 ],
               ),
@@ -90,9 +91,9 @@ class PortalSelectionScreen extends StatelessWidget {
         height: 280,
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
+          color: Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -100,7 +101,7 @@ class PortalSelectionScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.05),
+                color: color.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(icon, color: color, size: 48),
@@ -115,10 +116,10 @@ class PortalSelectionScreen extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
             ),
             const SizedBox(height: 24),
-            Icon(Icons.arrow_forward_rounded, color: color.withOpacity(0.3), size: 20),
+            Icon(Icons.arrow_forward_rounded, color: color.withValues(alpha: 0.3), size: 20),
           ],
         ),
       ),

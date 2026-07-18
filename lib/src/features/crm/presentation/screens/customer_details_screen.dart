@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
-import '../../../../core/utils/responsive_layout.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../domain/customer.dart';
 import '../crm_controller.dart';
 import '../../../documents/presentation/widgets/universal_document_manager.dart';
@@ -20,7 +20,8 @@ class CustomerDetailsScreen extends ConsumerWidget {
       backgroundColor: AppColors.bgGrey,
       body: customerAsync.when(
         data: (customer) {
-          if (customer == null) return const Center(child: Text('العميل غير موجود'));
+          if (customer == null)
+            return const Center(child: Text('العميل غير موجود'));
 
           return DefaultTabController(
             length: 5,
@@ -46,8 +47,23 @@ class CustomerDetailsScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, _) => Center(child: Text('حدث خطأ: $err')),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryNavy),
+        ),
+        error: (err, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              Failure.fromException(err).message,
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Cairo',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -64,7 +80,11 @@ class CustomerDetailsScreen extends ConsumerWidget {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: () => context.pop(),
               ),
               const SizedBox(width: 12),
@@ -72,9 +92,15 @@ class CustomerDetailsScreen extends ConsumerWidget {
                 tag: 'cust-${customer.id}',
                 child: CircleAvatar(
                   radius: 40,
-                  backgroundColor: Colors.white.withOpacity(0.1),
-                  child: Text(customer.fullName[0],
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.accentGold)),
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  child: Text(
+                    customer.fullName[0],
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accentGold,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 24),
@@ -84,8 +110,14 @@ class CustomerDetailsScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Text(customer.fullName,
-                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text(
+                          customer.fullName,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                         const SizedBox(width: 16),
                         _buildRiskBadge(customer.riskRating),
                       ],
@@ -93,9 +125,15 @@ class CustomerDetailsScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _HeaderInfoChip(Icons.badge_rounded, 'هوية: ${customer.nationalId}'),
+                        _HeaderInfoChip(
+                          Icons.badge_rounded,
+                          'هوية: ${customer.nationalId}',
+                        ),
                         const SizedBox(width: 20),
-                        _HeaderInfoChip(Icons.phone_iphone_rounded, customer.phone),
+                        _HeaderInfoChip(
+                          Icons.phone_iphone_rounded,
+                          customer.phone,
+                        ),
                       ],
                     ),
                   ],
@@ -104,7 +142,9 @@ class CustomerDetailsScreen extends ConsumerWidget {
               Column(
                 children: [
                   ElevatedButton.icon(
-                    onPressed: () => context.push('/contracts/new?customerId=${customer.id}'),
+                    onPressed: () => context.push(
+                      '/contracts/new?customerId=${customer.id}',
+                    ),
                     icon: const Icon(Icons.add_task_rounded, size: 18),
                     label: const Text('تعميد عقد جديد'),
                     style: ElevatedButton.styleFrom(
@@ -121,7 +161,7 @@ class CustomerDetailsScreen extends ConsumerWidget {
                     label: const Text('تعديل الملف'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                      side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                       minimumSize: const Size(160, 42),
                     ),
                   ),
@@ -160,17 +200,29 @@ class CustomerDetailsScreen extends ConsumerWidget {
   Widget _buildRiskBadge(String risk) {
     Color color = AppColors.successGreen;
     String label = 'منخفض المخاطر';
-    if (risk == 'medium') { color = Colors.orange; label = 'مخاطر متوسطة'; }
-    else if (risk == 'high') { color = AppColors.errorRed; label = 'مخاطر عالية'; }
+    if (risk == 'medium') {
+      color = Colors.orange;
+      label = 'مخاطر متوسطة';
+    } else if (risk == 'high') {
+      color = AppColors.errorRed;
+      label = 'مخاطر عالية';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
@@ -184,12 +236,18 @@ class _HeaderInfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
         children: [
           Icon(icon, size: 14, color: Colors.white60),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(
+            text,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -202,7 +260,9 @@ class _ExecutiveOverviewTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(customerFinancialSummaryProvider(customer.id));
+    final summaryAsync = ref.watch(
+      customerFinancialSummaryProvider(customer.id),
+    );
     final kyc = customer.kycData;
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
@@ -213,11 +273,26 @@ class _ExecutiveOverviewTab extends ConsumerWidget {
           summaryAsync.when(
             data: (summary) => Row(
               children: [
-                _ExecutiveStatBox('إجمالي العقود', summary['total_contracts'].toString(), Icons.assignment_rounded, Colors.blue),
+                _ExecutiveStatBox(
+                  'إجمالي العقود',
+                  summary['total_contracts'].toString(),
+                  Icons.assignment_rounded,
+                  Colors.blue,
+                ),
                 const SizedBox(width: 24),
-                _ExecutiveStatBox('الرصيد القائم', '${f.format(summary['outstanding_balance'])} ر.س', Icons.pending_actions_rounded, AppColors.errorRed),
+                _ExecutiveStatBox(
+                  'الرصيد القائم',
+                  '${f.format(summary['outstanding_balance'])} ر.س',
+                  Icons.pending_actions_rounded,
+                  AppColors.errorRed,
+                ),
                 const SizedBox(width: 24),
-                _ExecutiveStatBox('إجمالي المسدد', '${f.format(summary['total_paid'])} ر.س', Icons.verified_rounded, AppColors.successGreen),
+                _ExecutiveStatBox(
+                  'إجمالي المسدد',
+                  '${f.format(summary['total_paid'])} ر.س',
+                  Icons.verified_rounded,
+                  AppColors.successGreen,
+                ),
               ],
             ),
             loading: () => const LinearProgressIndicator(),
@@ -233,10 +308,22 @@ class _ExecutiveOverviewTab extends ConsumerWidget {
                   title: 'البيانات الوظيفية والدخل',
                   icon: Icons.work_history_rounded,
                   children: [
-                    _DetailRow('جهة العمل الحالية', kyc['employer'] ?? 'غير مسجل'),
-                    _DetailRow('المسمى الوظيفي', kyc['job_title'] ?? 'غير مسجل'),
-                    _DetailRow('صافي الراتب الشهري', '${f.format(kyc['salary'] ?? 0)} ر.س'),
-                    _DetailRow('تاريخ الالتحاق', kyc['join_date'] ?? 'غير مسجل'),
+                    _DetailRow(
+                      'جهة العمل الحالية',
+                      kyc['employer'] ?? 'غير مسجل',
+                    ),
+                    _DetailRow(
+                      'المسمى الوظيفي',
+                      kyc['job_title'] ?? 'غير مسجل',
+                    ),
+                    _DetailRow(
+                      'صافي الراتب الشهري',
+                      '${f.format(kyc['salary'] ?? 0)} ر.س',
+                    ),
+                    _DetailRow(
+                      'تاريخ الالتحاق',
+                      kyc['join_date'] ?? 'غير مسجل',
+                    ),
                   ],
                 ),
               ),
@@ -247,9 +334,15 @@ class _ExecutiveOverviewTab extends ConsumerWidget {
                   title: 'بيانات الضامن',
                   icon: Icons.gpp_good_rounded,
                   children: [
-                    _DetailRow('اسم الضامن', kyc['guarantor']?['name'] ?? 'لا يوجد'),
+                    _DetailRow(
+                      'اسم الضامن',
+                      kyc['guarantor']?['name'] ?? 'لا يوجد',
+                    ),
                     _DetailRow('رقم الجوال', kyc['guarantor']?['phone'] ?? '-'),
-                    _DetailRow('صلة القرابة', kyc['guarantor']?['relationship'] ?? '-'),
+                    _DetailRow(
+                      'صلة القرابة',
+                      kyc['guarantor']?['relationship'] ?? '-',
+                    ),
                   ],
                 ),
               ),
@@ -275,19 +368,38 @@ class _ExecutiveStatBox extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: color, size: 22)
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 20),
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryNavy,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
@@ -299,7 +411,11 @@ class _PremiumInfoCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final List<Widget> children;
-  const _PremiumInfoCard({required this.title, required this.icon, required this.children});
+  const _PremiumInfoCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -308,19 +424,31 @@ class _PremiumInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 20)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 20),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-              children: [
-                Icon(icon, color: AppColors.accentGold, size: 24),
-                const SizedBox(width: 16),
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy))
-              ]
+            children: [
+              Icon(icon, color: AppColors.accentGold, size: 24),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryNavy,
+                ),
+              ),
+            ],
           ),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider(height: 1)),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Divider(height: 1),
+          ),
           ...children,
         ],
       ),
@@ -340,7 +468,14 @@ class _DetailRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 15)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryNavy,
+              fontSize: 15,
+            ),
+          ),
         ],
       ),
     );
@@ -362,24 +497,51 @@ class _ContractsListTab extends ConsumerWidget {
           final c = contracts[index];
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: ListTile(
               contentPadding: const EdgeInsets.all(20),
               leading: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: AppColors.bgGrey, borderRadius: BorderRadius.circular(14)),
-                  child: const Icon(Icons.description_outlined, color: AppColors.primaryNavy)
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.bgGrey,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.description_outlined,
+                  color: AppColors.primaryNavy,
+                ),
               ),
-              title: Text('عقد تمويل #${c['contract_no']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('تاريخ الإصدار: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(c['created_at']))}'),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+              title: Text(
+                'عقد تمويل #${c['contract_no']}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                'تاريخ الإصدار: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(c['created_at']))}',
+              ),
+              trailing: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.grey,
+              ),
               onTap: () => context.push('/contracts/${c['id']}'),
             ),
           );
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(
+            color: Colors.red,
+            fontSize: 13,
+            fontFamily: 'Cairo',
+          ),
+        ),
+      ),
     );
   }
 }
@@ -399,20 +561,54 @@ class _PaymentsHistoryTab extends ConsumerWidget {
           final p = payments[index];
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              leading: const Icon(Icons.arrow_circle_down_rounded, color: AppColors.successGreen, size: 32),
-              title: Text('${p['amount_total']} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              subtitle: Text('وسيلة الدفع: ${p['payment_method'] ?? 'تحويل بنكي'}'),
-              trailing: Text(intl.DateFormat('dd/MM/yyyy').format(DateTime.parse(p['created_at'])),
-                  style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 8,
+              ),
+              leading: const Icon(
+                Icons.arrow_circle_down_rounded,
+                color: AppColors.successGreen,
+                size: 32,
+              ),
+              title: Text(
+                '${p['amount_total']} ر.س',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              subtitle: Text(
+                'وسيلة الدفع: ${p['payment_method'] ?? 'تحويل بنكي'}',
+              ),
+              trailing: Text(
+                intl.DateFormat(
+                  'dd/MM/yyyy',
+                ).format(DateTime.parse(p['created_at'])),
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           );
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(
+            color: Colors.red,
+            fontSize: 13,
+            fontFamily: 'Cairo',
+          ),
+        ),
+      ),
     );
   }
 }
@@ -435,8 +631,19 @@ class _ActivityTimelineTab extends ConsumerWidget {
               children: [
                 Column(
                   children: [
-                    Container(width: 14, height: 14, decoration: BoxDecoration(color: AppColors.accentGold, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2))),
-                    if (index != logs.length - 1) Expanded(child: Container(width: 2, color: Colors.grey.shade200)),
+                    Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: AppColors.accentGold,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                    if (index != logs.length - 1)
+                      Expanded(
+                        child: Container(width: 2, color: Colors.grey.shade200),
+                      ),
                   ],
                 ),
                 const SizedBox(width: 24),
@@ -444,10 +651,25 @@ class _ActivityTimelineTab extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(log['event_type'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 15)),
+                      Text(
+                        log['event_type'],
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryNavy,
+                          fontSize: 15,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(intl.DateFormat('dd MMMM yyyy • HH:mm', 'ar').format(DateTime.parse(log['created_at'])),
-                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text(
+                        intl.DateFormat(
+                          'dd MMMM yyyy • HH:mm',
+                          'ar',
+                        ).format(DateTime.parse(log['created_at'])),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -458,7 +680,16 @@ class _ActivityTimelineTab extends ConsumerWidget {
         },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error')),
+      error: (err, _) => Center(
+        child: Text(
+          Failure.fromException(err).message,
+          style: const TextStyle(
+            color: Colors.red,
+            fontSize: 13,
+            fontFamily: 'Cairo',
+          ),
+        ),
+      ),
     );
   }
 }

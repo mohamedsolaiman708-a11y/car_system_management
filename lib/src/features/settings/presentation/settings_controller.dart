@@ -20,13 +20,10 @@ class SettingsController extends _$SettingsController {
   }
 
   /// تبديل وضع الصيانة
+  /// لا يلمس [state] (قائمة الإعدادات) لتجنب تعطل الشاشة عند الفشل.
   Future<void> toggleMaintenance(bool isActive, String message) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(settingsRepositoryProvider).toggleMaintenanceMode(isActive, message);
-      ref.invalidate(isMaintenanceModeProvider); // تحديث الحالة عالمياً
-      return ref.read(settingsRepositoryProvider).getSettings();
-    });
+    await ref.read(settingsRepositoryProvider).toggleMaintenanceMode(isActive, message);
+    ref.invalidate(isMaintenanceModeProvider); // تحديث الحالة عالمياً
   }
 }
 

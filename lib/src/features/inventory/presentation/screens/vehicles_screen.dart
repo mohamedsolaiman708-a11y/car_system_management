@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../inventory_controller.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
@@ -68,7 +69,21 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                   ? _buildPremiumTable(vehicles, f)
                   : _buildPremiumGrid(vehicles, f),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('حدث خطأ: $err')),
+              error: (err, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    Failure.fromException(err).message,
+                    style: const TextStyle(
+                      color: AppColors.errorRed,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      fontFamily: 'Cairo',
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -94,7 +109,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 4),
             Text('تتبع المخزون، تقييم الأصول، وحالات التوافر اللحظية',
-                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
           ],
         ),
         if (ResponsiveLayout.isDesktop(context))
@@ -139,14 +154,14 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
           border: Border.all(color: Colors.white),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
               child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(width: 16),
@@ -169,7 +184,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 10)],
       ),
       child: Row(
         children: [
@@ -181,7 +196,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 hintText: 'البحث برقم اللوحة، الموديل، أو رقم الهيكل...',
                 prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
                 filled: true,
-                fillColor: AppColors.bgGrey.withOpacity(0.5),
+                fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
               ),
             ),
@@ -200,7 +215,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.bgGrey.withOpacity(0.5),
+        color: AppColors.bgGrey.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: DropdownButtonHideUnderline(
@@ -227,14 +242,14 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: SingleChildScrollView(
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.02)),
-            dataRowHeight: 80,
+            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withValues(alpha: 0.02)),
+            dataRowMinHeight: 80, dataRowMaxHeight: 80,
             headingRowHeight: 60,
             columns: const [
               DataColumn(label: Text('المركبة والموديل', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
@@ -294,7 +309,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
           ),
           child: InkWell(
             onTap: () => context.push('/inventory/${v.id}'),
@@ -348,7 +363,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }

@@ -1,7 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/app_user.dart';
-import '../domain/auth_repository.dart';
-import '../domain/security_log.dart';
 import '../data/supabase_auth_repository.dart';
 
 part 'auth_controller.g.dart';

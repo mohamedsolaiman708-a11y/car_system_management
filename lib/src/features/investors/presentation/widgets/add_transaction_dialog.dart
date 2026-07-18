@@ -52,7 +52,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               )
@@ -70,7 +70,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: themeColor.withOpacity(0.1),
+                        color: themeColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
@@ -116,7 +116,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     suffixText: 'ر.س',
                     prefixIcon: const Icon(Icons.money_rounded),
                     filled: true,
-                    fillColor: AppColors.bgGrey.withOpacity(0.5),
+                    fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:car_system_management/src/features/authentication/presentation/auth_controller.dart';
 import 'package:car_system_management/src/features/authentication/presentation/widgets/auth_layout.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class InvestorRegisterScreen extends ConsumerStatefulWidget {
   final String type; // 'investor' أو 'staff'
@@ -57,6 +58,14 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
     final authState = ref.watch(authControllerProvider);
     final isStaff = widget.type == 'staff';
     const inputStyle = TextStyle(color: Colors.white, fontSize: 15);
+
+    ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
+      next.whenOrNull(
+        error: (err, stack) {
+          SnackBarHelper.showError(context, err);
+        },
+      );
+    });
 
     return AuthLayout(
       title: isStaff ? 'إنشاء حساب موظف' : 'تسجيل مستثمر جديد',

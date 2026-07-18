@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../investor_controller.dart';
 import '../widgets/create_investor_dialog.dart';
 
@@ -79,7 +81,7 @@ class InvestorsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               'متابعة محافظ الشركاء، أرباح الاستثمار، وحركات رأس المال',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
             ),
             const SizedBox(height: 24),
             Row(
@@ -117,7 +119,7 @@ class InvestorsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 18)),
       ],
@@ -169,7 +171,7 @@ class ActiveInvestorsList extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: InkWell(
                   onTap: () => context.push('/investors/${inv.id}'),
@@ -182,7 +184,7 @@ class ActiveInvestorsList extends ConsumerWidget {
                           width: 56,
                           height: 56,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryNavy.withOpacity(0.05),
+                            color: AppColors.primaryNavy.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Center(
@@ -215,7 +217,16 @@ class ActiveInvestorsList extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (e, _) => Center(child: Text('خطأ في تحميل البيانات: $e')),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              Failure.fromException(e).message,
+              style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -250,7 +261,12 @@ class PendingInvestorsList extends ConsumerWidget {
                 itemBuilder: (context, index) => _PendingInvestorCard(req: requests[index]),
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('خطأ في تحميل الطلبات: $e')),
+        error: (e, _) => Center(
+          child: Text(
+            Failure.fromException(e).message,
+            style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+          ),
+        ),
       ),
     );
   }
@@ -281,7 +297,12 @@ class WithdrawalRequestsList extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('خطأ في تحميل طلبات السحب: $e')),
+        error: (e, _) => Center(
+          child: Text(
+            Failure.fromException(e).message,
+            style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+          ),
+        ),
       ),
     );
   }
@@ -337,7 +358,7 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.accentGold.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: AppColors.accentGold.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: const Icon(Icons.person_add_rounded, color: AppColors.accentGold, size: 24),
           ),
           const SizedBox(width: 20),
@@ -381,11 +402,51 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
 
   Future<void> _approve() async {
     setState(() => _isLoading = true);
-    await ref.read(pendingInvestorsControllerProvider.notifier).approveInvestor(widget.req['id']);
-    if (mounted) setState(() => _isLoading = false);
+    try {
+      await ref.read(pendingInvestorsControllerProvider.notifier).approveInvestor(widget.req['id']);
+      if (mounted) SnackBarHelper.showSuccess(context, 'تم اعتماد المستثمر بنجاح');
+    } catch (e) {
+      if (mounted) SnackBarHelper.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  Future<void> _reject() async { }
+  Future<void> _reject() async {
+    final reasonCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('رفض طلب الانضمام'),
+          content: TextField(
+            controller: reasonCtrl,
+            decoration: const InputDecoration(labelText: 'سبب الرفض (إلزامي)', border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.errorRed, foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('رفض'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed == true && reasonCtrl.text.isNotEmpty) {
+      setState(() => _isLoading = true);
+      try {
+        await ref.read(pendingInvestorsControllerProvider.notifier).rejectInvestor(widget.req['id'], reasonCtrl.text.trim());
+        if (mounted) SnackBarHelper.showInfo(context, 'تم رفض الطلب');
+      } catch (e) {
+        if (mounted) SnackBarHelper.showError(context, e);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
 }
 
 class _WithdrawalRequestCard extends ConsumerStatefulWidget {
@@ -412,13 +473,13 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red.withOpacity(0.05)),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
             child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.red, size: 24),
           ),
           const SizedBox(width: 20),

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart' as intl;
 import '../jobs_controller.dart';
 import '../../domain/background_job.dart';
 import '../../../../core/utils/arabic_translator.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class BackgroundJobsScreen extends ConsumerWidget {
   const BackgroundJobsScreen({super.key});
@@ -11,6 +13,20 @@ class BackgroundJobsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jobsAsync = ref.watch(jobsListControllerProvider);
+
+    ref.listen<AsyncValue<List<BackgroundJob>>>(
+      jobsListControllerProvider,
+      (previous, next) {
+        next.whenOrNull(
+          error: (error, _) => SnackBarHelper.showError(context, error),
+          data: (_) {
+            if (previous?.isLoading == true) {
+              SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح');
+            }
+          },
+        );
+      },
+    );
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -27,7 +43,16 @@ class BackgroundJobsScreen extends ConsumerWidget {
         body: jobsAsync.when(
           data: (jobs) => _buildJobsList(context, ref, jobs),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('حدث خطأ: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ),
       ),
     );

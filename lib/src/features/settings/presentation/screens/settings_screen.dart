@@ -7,6 +7,8 @@ import '../../../authentication/presentation/auth_controller.dart';
 import '../../../authentication/domain/user_role.dart';
 import '../../../audit/presentation/disaster_recovery_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -23,95 +25,149 @@ class SettingsScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
-          title: const Text('إعدادات النظام والشركة'),
+          title: const Text(
+            'إعدادات النظام والشركة',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          centerTitle: false,
           elevation: 0,
           backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.primaryNavy,
         ),
         body: settingsAsync.when(
           data: (settings) => ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             children: [
-              _buildSectionHeader('المعلومات الأساسية للمؤسسة'),
-              _buildInfoCard(
-                context, ref,
-                title: 'بيانات التواصل الرسمية',
-                icon: Icons.business_rounded,
-                settingKey: 'company_profile',
-                data: _getSettingByKey(settings, 'company_profile'),
-                displayFields: {'companyName': 'المنشأة', 'cr_number': 'سجل تجاري', 'tax_number': 'رقم ضريبي'},
-                fieldsToEdit: {
-                  'companyName': 'اسم الشركة',
-                  'address': 'العنوان الرسمي',
-                  'phone': 'رقم التواصل',
-                  'tax_number': 'الرقم الضريبي (VAT)',
-                  'cr_number': 'رقم السجل التجاري',
-                },
+              _buildModernSection(
+                title: 'المعلومات الأساسية للمؤسسة',
+                children: [
+                  _buildModernInfoCard(
+                    context, ref,
+                    title: 'بيانات التواصل الرسمية',
+                    icon: Icons.business_center_rounded,
+                    settingKey: 'company_profile',
+                    data: _getSettingByKey(settings, 'company_profile'),
+                    displayFields: {
+                      'companyName': 'اسم المنشأة',
+                      'cr_number': 'السجل التجاري',
+                      'tax_number': 'الرقم الضريبي',
+                      'phone': 'رقم التواصل',
+                    },
+                    fieldsToEdit: {
+                      'companyName': 'اسم الشركة',
+                      'address': 'العنوان الرسمي',
+                      'phone': 'رقم التواصل',
+                      'tax_number': 'الرقم الضريبي (VAT)',
+                      'cr_number': 'رقم السجل التجاري',
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
-              _buildSectionHeader('الإعدادات المالية والحوكمة'),
-              _buildInfoCard(
-                context, ref,
-                title: 'النسب الربحية والعملة',
-                icon: Icons.account_balance_rounded,
-                settingKey: 'profit_settings',
-                data: _getSettingByKey(settings, 'profit_settings'),
-                displayFields: {'ratio': 'نسبة الربح الافتراضية', 'currency': 'العملة المعمدة'},
-                fieldsToEdit: {
-                  'ratio': 'نسبة الربح (مثلاً 0.15 لـ 15%)',
-                  'currency': 'رمز العملة (ر.س)',
-                },
+              _buildModernSection(
+                title: 'الإعدادات المالية والحوكمة',
+                children: [
+                  _buildModernInfoCard(
+                    context, ref,
+                    title: 'النسب الربحية والعملة',
+                    icon: Icons.account_balance_wallet_rounded,
+                    settingKey: 'profit_settings',
+                    data: _getSettingByKey(settings, 'profit_settings'),
+                    displayFields: {
+                      'ratio': 'نسبة الربح الافتراضية',
+                      'currency': 'العملة المعتمدة',
+                    },
+                    fieldsToEdit: {
+                      'ratio': 'نسبة الربح (مثلاً 0.15 لـ 15%)',
+                      'currency': 'رمز العملة (ر.س)',
+                    },
+                  ),
+                ],
               ),
 
               if (user?.role == UserRole.admin) ...[
                 const SizedBox(height: 32),
-                _buildSectionHeader('مركز التحكم في الأزمات (Admins Only)', isCritical: true),
-                _buildEmergencyControlCard(context, ref, isFrozen, isMaintenance),
-                const SizedBox(height: 16),
-                _buildActionCard(
-                  context,
-                  title: 'فحص نزاهة البيانات المتقدم',
-                  subtitle: 'مطابقة القيود المحاسبية آلياً مع أرصدة المستثمرين والعقود.',
-                  icon: Icons.health_and_safety_outlined,
-                  color: Colors.green.shade700,
-                  onTap: () => _confirmAction(context, 'بدء فحص النزاهة الشامل', Colors.green, () {
-                    ref.read(disasterRecoveryControllerProvider.notifier).runIntegrityCheck();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بدأت عملية الفحص والتدقيق في الخلفية...')));
-                  }),
-                ),
-                const SizedBox(height: 16),
-                _buildActionCard(
-                  context,
-                  title: 'مراقبة المهام الخلفية',
-                  subtitle: 'عرض وإدارة المهام المجدولة في الخلفية مثل التقارير والإشعارات.',
-                  icon: Icons.work_history_outlined,
-                  color: Colors.indigo.shade700,
-                  onTap: () => context.push('/settings/jobs'),
+                _buildModernSection(
+                  title: 'مركز التحكم في الأزمات والرقابة',
+                  isCritical: true,
+                  children: [
+                    _buildEmergencyControlDashboard(context, ref, isFrozen, isMaintenance),
+                    const SizedBox(height: 16),
+                    _buildModernActionTile(
+                      context,
+                      title: 'فحص نزاهة البيانات المتقدم',
+                      subtitle: 'مطابقة القيود المحاسبية آلياً مع أرصدة المستثمرين والعقود.',
+                      icon: Icons.shield_outlined,
+                      iconColor: Colors.green.shade700,
+                      onTap: () => _confirmAction(context, 'بدء فحص النزاهة الشامل', Colors.green, () async {
+                        await ref.read(disasterRecoveryControllerProvider.notifier).runIntegrityCheck();
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildModernActionTile(
+                      context,
+                      title: 'مراقبة المهام الخلفية',
+                      subtitle: 'عرض وإدارة المهام المجدولة في الخلفية مثل التقارير والإشعارات.',
+                      icon: Icons.history_toggle_off_rounded,
+                      iconColor: Colors.indigo.shade700,
+                      onTap: () => context.push('/settings/jobs'),
+                    ),
+                  ],
                 ),
               ],
+              const SizedBox(height: 40),
             ],
           ),
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-          error: (err, _) => Center(child: Text('خطأ في تحميل الإعدادات: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                Failure.fromException(err).message,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, {bool isCritical = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, right: 4),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: isCritical ? AppColors.errorRed : AppColors.primaryNavy.withOpacity(0.7),
+  Widget _buildModernSection({required String title, required List<Widget> children, bool isCritical = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16, right: 8),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: isCritical ? AppColors.errorRed : AppColors.primaryNavy,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isCritical ? AppColors.errorRed : AppColors.primaryNavy,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        ...children,
+      ],
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, WidgetRef ref, {
+  Widget _buildModernInfoCard(BuildContext context, WidgetRef ref, {
     required String title,
     required IconData icon,
     required String settingKey,
@@ -122,38 +178,77 @@ class SettingsScreen extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          )
+        ],
       ),
       child: Column(
         children: [
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppColors.primaryNavy.withOpacity(0.08),
-              child: Icon(icon, color: AppColors.primaryNavy, size: 20),
-            ),
-            title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit_note_rounded, color: AppColors.accentGold),
-              onPressed: () => _showEditDialog(context, ref, settingKey, data, fieldsToEdit),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 20, 8),
+            child: Row(
+              children: [
+                Icon(icon, color: AppColors.primaryNavy.withValues(alpha: 0.6), size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _showEditDialog(context, ref, settingKey, data, fieldsToEdit),
+                  icon: const Icon(Icons.edit_rounded, size: 16),
+                  label: const Text('تعديل'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.accentGold,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+              ],
             ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 20, endIndent: 20),
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Wrap(
-              spacing: 24,
-              runSpacing: 12,
-              children: displayFields.entries.map((e) {
-                final value = data[e.key]?.toString() ?? 'غير محدد';
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(e.value, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
-                    Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  ],
+            padding: const EdgeInsets.all(24.0),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 600;
+                return Wrap(
+                  spacing: 40,
+                  runSpacing: 20,
+                  children: displayFields.entries.map((e) {
+                    final value = data[e.key]?.toString() ?? 'غير محدد';
+                    return SizedBox(
+                      width: isWide ? (constraints.maxWidth - 120) / 3 : (constraints.maxWidth - 40) / 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            e.value,
+                            style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            value,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppColors.primaryNavy,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
           ),
         ],
@@ -161,32 +256,36 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmergencyControlCard(BuildContext context, WidgetRef ref, bool isFrozen, bool isMaintenance) {
+  Widget _buildEmergencyControlDashboard(BuildContext context, WidgetRef ref, bool isFrozen, bool isMaintenance) {
     return Container(
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.shade100, width: 1),
+        color: Colors.red.withValues(alpha: 0.02),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
-          _buildCriticalSwitch(
+          _buildModernSwitchTile(
             title: 'تجميد العمليات المالية',
-            subtitle: 'إيقاف فوري لكافة عمليات السداد والصرف في حالات الطوارئ القصوى.',
+            subtitle: 'إيقاف فوري لكافة عمليات السداد والصرف في حالات الطوارئ.',
             value: isFrozen,
             activeColor: Colors.red,
-            onChanged: (val) => _confirmAction(context, val ? 'تجميد النظام المالي' : 'إلغاء تجميد النظام', Colors.red, () {
-              ref.read(disasterRecoveryControllerProvider.notifier).toggleFreeze(val);
+            onChanged: (val) => _confirmAction(context, val ? 'تجميد النظام المالي' : 'إلغاء تجميد النظام', Colors.red, () async {
+              await ref.read(disasterRecoveryControllerProvider.notifier).toggleFreeze(val);
             }),
           ),
-          const Divider(height: 1),
-          _buildCriticalSwitch(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(color: Colors.red.withValues(alpha: 0.05)),
+          ),
+          _buildModernSwitchTile(
             title: 'وضع الصيانة العامة',
-            subtitle: 'منع دخول كافة المستخدمين للتطبيق (باستثناء الإدارة) أثناء التحديثات.',
+            subtitle: 'منع دخول المستخدمين للتطبيق أثناء التحديثات (باستثناء الإدارة).',
             value: isMaintenance,
-            activeColor: Colors.orange.shade700,
-            onChanged: (val) => _confirmAction(context, val ? 'تفعيل وضع الصيانة' : 'إيقاف وضع الصيانة', Colors.orange, () {
-              ref.read(settingsControllerProvider.notifier).toggleMaintenance(val, 'النظام تحت الصيانة المجدولة حالياً');
+            activeColor: Colors.orange.shade800,
+            onChanged: (val) => _confirmAction(context, val ? 'تفعيل وضع الصيانة' : 'إيقاف وضع الصيانة', Colors.orange, () async {
+              await ref.read(settingsControllerProvider.notifier).toggleMaintenance(val, 'النظام تحت الصيانة المجدولة حالياً');
             }),
           ),
         ],
@@ -194,42 +293,126 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCriticalSwitch({required String title, required String subtitle, required bool value, required Color activeColor, required ValueChanged<bool> onChanged}) {
-    return SwitchListTile(
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: value ? activeColor : AppColors.primaryNavy)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      value: value,
-      activeColor: activeColor,
-      onChanged: onChanged,
+  Widget _buildModernSwitchTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required Color activeColor,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: SwitchListTile(
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: value ? activeColor : AppColors.primaryNavy,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        ),
+        value: value,
+        activeColor: activeColor,
+        activeTrackColor: activeColor.withValues(alpha: 0.2),
+        onChanged: onChanged,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      ),
     );
   }
 
-  Widget _buildActionCard(BuildContext context, {required String title, required String subtitle, required IconData icon, required Color color, required VoidCallback onTap}) {
-    return ListTile(
-      tileColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      leading: Icon(icon, color: color, size: 28),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+  Widget _buildModernActionTile(BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade100),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primaryNavy),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_back_ios_new_rounded, size: 14, color: AppColors.primaryNavy),
+          ],
+        ),
+      ),
     );
   }
 
-  void _confirmAction(BuildContext context, String action, Color color, VoidCallback onConfirm) {
+  void _confirmAction(BuildContext context, String action, Color color, Future<void> Function() onConfirm) {
     showDialog(
       context: context,
-      builder: (context) => Directionality(
+      builder: (dialogContext) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text('تأكيد: $action'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(action, style: const TextStyle(fontWeight: FontWeight.bold)),
           content: const Text('هذا الإجراء حساس ويؤثر على سير العمل بالكامل. هل أنت متأكد؟'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () { onConfirm(); Navigator.pop(context); },
-              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white),
-              child: const Text('تأكيد التنفيذ'),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 8),
+              child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+                  try {
+                    await onConfirm();
+                    if (context.mounted) {
+                      SnackBarHelper.showSuccess(context, 'تم تنفيذ العملية بنجاح ✅');
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      SnackBarHelper.showError(context, e);
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('تأكيد التنفيذ'),
+              ),
             ),
           ],
         ),
@@ -256,34 +439,56 @@ class SettingsScreen extends ConsumerWidget {
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text('تعديل $key', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: fields.entries.map((f) => Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: TextField(
-                  controller: controllers[f.key],
-                  decoration: InputDecoration(
-                    labelText: f.value,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text('تعديل الإعدادات', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          content: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: fields.entries.map((f) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: TextField(
+                    controller: controllers[f.key],
+                    decoration: InputDecoration(
+                      labelText: f.value,
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                    ),
                   ),
-                ),
-              )).toList(),
+                )).toList(),
+              ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () async {
-                final newValue = <String, dynamic>{...currentValue};
-                controllers.forEach((k, v) => newValue[k] = v.text);
-                await ref.read(settingsControllerProvider.notifier).updateSetting(key, newValue);
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text('حفظ التعديلات'),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 8),
+              child: ElevatedButton(
+                onPressed: () async {
+                  final newValue = <String, dynamic>{...currentValue};
+                  controllers.forEach((k, v) => newValue[k] = v.text);
+                  await ref.read(settingsControllerProvider.notifier).updateSetting(key, newValue);
+                  if (context.mounted) Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryNavy,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('حفظ التعديلات'),
+              ),
             ),
           ],
         ),
@@ -291,5 +496,3 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 }
-
-
