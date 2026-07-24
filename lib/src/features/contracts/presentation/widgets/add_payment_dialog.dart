@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/contract.dart';
 import '../contract_controller.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class AddPaymentDialog extends ConsumerStatefulWidget {
   final Contract contract;
@@ -139,7 +140,7 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
 
       if (mounted && success) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تسجيل السداد بنجاح')));
+        SnackBarHelper.showSuccess(context, 'تم تسجيل السداد بنجاح');
       }
     }
   }

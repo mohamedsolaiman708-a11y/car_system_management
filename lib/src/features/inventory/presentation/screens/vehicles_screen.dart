@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/services/export_service.dart';
 import '../inventory_controller.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
@@ -40,7 +41,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildPremiumHeader(),
+                  _buildPremiumHeader(vehiclesAsync),
                 ],
               ),
             ),
@@ -98,7 +99,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     );
   }
 
-  Widget _buildPremiumHeader() {
+  Widget _buildPremiumHeader(AsyncValue<List<dynamic>> vehiclesAsync) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -112,21 +113,76 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
           ],
         ),
-        if (ResponsiveLayout.isDesktop(context))
-          ElevatedButton.icon(
-            onPressed: () => context.push('/inventory/new'),
-            icon: const Icon(Icons.add_road_rounded, size: 20),
-            label: const Text('إضافة مركبة للمخزون'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accentGold,
-              foregroundColor: AppColors.primaryNavy,
-              minimumSize: const Size(220, 54),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
+        Row(
+          children: [
+            if (vehiclesAsync.hasValue && vehiclesAsync.value!.isNotEmpty)
+              _buildExportButton(vehiclesAsync.value!),
+            const SizedBox(width: 12),
+            if (ResponsiveLayout.isDesktop(context))
+              ElevatedButton.icon(
+                onPressed: () => context.push('/inventory/new'),
+                icon: const Icon(Icons.add_road_rounded, size: 20),
+                label: const Text('إضافة مركبة للمخزون'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentGold,
+                  foregroundColor: AppColors.primaryNavy,
+                  minimumSize: const Size(220, 54),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+          ],
+        ),
       ],
     );
+  }
+
+  Widget _buildExportButton(List<dynamic> data) {
+    return PopupMenuButton<String>(
+      icon: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.file_download_outlined, color: Colors.white),
+      ),
+      tooltip: 'تصدير البيانات',
+      onSelected: (type) => _handleExport(type, data),
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'pdf', child: Row(children: [Icon(Icons.picture_as_pdf, color: Colors.red), SizedBox(width: 8), Text('تصدير PDF')])),
+        const PopupMenuItem(value: 'excel', child: Row(children: [Icon(Icons.table_view, color: Colors.green), SizedBox(width: 8), Text('تصدير Excel')])),
+        const PopupMenuItem(value: 'csv', child: Row(children: [Icon(Icons.description, color: Colors.blue), SizedBox(width: 8), Text('تصدير CSV')])),
+      ],
+    );
+  }
+
+  Future<void> _handleExport(String type, List<dynamic> data) async {
+    final exportService = ref.read(exportServiceProvider);
+    final columns = ['الماركة', 'الموديل', 'السنة', 'رقم اللوحة', 'الحالة', 'سعر الشراء'];
+    
+    if (type == 'csv') {
+      final rows = data.map((v) => [v.make, v.model, v.year, v.licensePlate, v.status, v.purchasePrice]).toList();
+      await exportService.exportToCsv(fileName: 'fleet_report', columns: columns, rows: rows);
+    } else if (type == 'excel') {
+      final jsonList = data.map((v) => {
+        'make': v.make,
+        'model': v.model,
+        'year': v.year,
+        'licensePlate': v.licensePlate,
+        'status': v.status,
+        'purchasePrice': v.purchasePrice,
+      }).toList();
+      await exportService.exportToExcel(
+        fileName: 'fleet_report',
+        columns: columns,
+        data: jsonList,
+        dataKeys: ['make', 'model', 'year', 'licensePlate', 'status', 'purchasePrice'],
+      );
+    } else if (type == 'pdf') {
+      final rows = data.map((v) => [v.make, v.model, v.year, v.licensePlate, v.status, v.purchasePrice.toString()]).toList();
+      await exportService.exportToPdf(title: 'تقرير أصول أسطول المركبات', columns: columns, rows: rows);
+    }
   }
 
   Widget _buildExecutiveStats(AsyncValue<Map<String, dynamic>> statsAsync) {

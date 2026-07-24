@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../crm_controller.dart';
 
 class DocumentManagerWidget extends ConsumerWidget {
@@ -132,10 +133,7 @@ class DocumentManagerWidget extends ConsumerWidget {
 
   void _previewDocument(BuildContext context, String? url) {
     if (url == null) return;
-    // في بيئة الويب أو الجوال نفتح الرابط
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('فتح المستند: $url')),
-    );
+    SnackBarHelper.showInfo(context, 'فتح المستند: $url');
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, Map<String, dynamic> doc) {
@@ -163,11 +161,7 @@ class DocumentManagerWidget extends ConsumerWidget {
   }
 
   void _simulateFileUpload(BuildContext context, WidgetRef ref) async {
-    // محاكاة لرفع ملف (لأننا نحتاج لـ file_picker كإضافة)
-    // سنقوم بإضافة ملف تجريبي لاختبار المنطق
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('جاري معالجة الملف...')),
-    );
+    SnackBarHelper.showInfo(context, 'جاري معالجة الملف...');
     
     await ref.read(crmControllerProvider.notifier).uploadDocument(
       customerId: customerId,

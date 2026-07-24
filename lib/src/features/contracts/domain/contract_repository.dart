@@ -18,7 +18,6 @@ abstract class ContractRepository {
   Future<List<Map<String, dynamic>>> getContractInstallments(String contractId);
   Future<List<Map<String, dynamic>>> getContractPayments(String contractId);
   
-  /// تنفيذ عملية تحصيل دفعة من العميل
   Future<void> processPayment({
     required String contractId,
     required double amount,
@@ -27,11 +26,17 @@ abstract class ContractRepository {
     String? idempotencyKey,
   });
 
-  /// عكس دفعة مالية مسجلة
   Future<void> reversePayment(String paymentId, String reason);
 
   // Phase 16: Activity Timeline
   Future<List<Map<String, dynamic>>> getContractTimeline(String contractId);
+  
+  /// إضافة سجل حدث يدوي للرقابة (مثل رفع المستندات)
+  Future<void> addContractLog({
+    required String contractId,
+    required String eventType,
+    Map<String, dynamic>? metadata,
+  });
 
   // Funding
   Future<List<Map<String, dynamic>>> getContractFunding(String contractId);

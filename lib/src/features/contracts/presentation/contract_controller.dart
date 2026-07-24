@@ -25,6 +25,21 @@ class ContractController extends _$ContractController {
     }
   }
 
+  Future<bool> updateContract(String id, Map<String, dynamic> data) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).updateContract(id, data));
+    
+    if (!result.hasError) {
+      ref.invalidate(contractDetailsProvider(id));
+      ref.invalidate(contractsListProvider);
+      state = const AsyncData(null);
+      return true;
+    } else {
+      state = AsyncError(result.error!, result.stackTrace!);
+      return false;
+    }
+  }
+
   Future<bool> activateContract(String id) async {
     if (state.isLoading) return false;
     state = const AsyncLoading();
@@ -100,7 +115,7 @@ class ContractController extends _$ContractController {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<Contract>> contractsList(ContractsListRef ref, {String? searchQuery, String? status}) {
   return ref.watch(contractRepositoryProvider).getContracts(searchQuery: searchQuery, status: status);
 }
@@ -110,7 +125,7 @@ Future<Contract?> contractDetails(ContractDetailsRef ref, String id) {
   return ref.watch(contractRepositoryProvider).getContractById(id);
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<Map<String, dynamic>> contractStats(ContractStatsRef ref) {
   return ref.watch(contractRepositoryProvider).getContractStats();
 }

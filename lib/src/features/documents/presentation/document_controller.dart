@@ -2,18 +2,17 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/supabase_document_repository.dart';
 import '../domain/document.dart';
+import '../../contracts/presentation/contract_timeline_controller.dart';
 
 part 'document_controller.g.dart';
 
-// Provider لتتبع تقدم الرفع (0.0 = لا يوجد رفع، 1.0 = مكتمل)
+// Provider لتتبع تقدم الرفع وإظهار شريط التحميل
 final uploadProgressProvider = StateProvider<double?>((ref) => null);
 
 @riverpod
 class DocumentController extends _$DocumentController {
   @override
-  FutureOr<void> build() {
-    // Initial build
-  }
+  FutureOr<void> build() {}
 
   Future<void> uploadDocument({
     String? customerId,
@@ -24,8 +23,6 @@ class DocumentController extends _$DocumentController {
     required List<int> fileBytes,
   }) async {
     state = const AsyncLoading();
-
-    // إعادة ضبط التقدم
     ref.read(uploadProgressProvider.notifier).state = 0.0;
 
     final result = await AsyncValue.guard(
@@ -43,19 +40,19 @@ class DocumentController extends _$DocumentController {
     );
 
     if (!result.hasError) {
-      // Invalidate the relevant lists
-      if (customerId != null) {
-        ref.invalidate(documentsListProvider(customerId: customerId));
-      }
+      // 1. تحديث قائمة المستندات فوراً (Real-time Simulation)
+      ref.invalidate(documentsListProvider);
+      
+      // 2. توثيق العملية في سجل أحداث العقد (Audit Trail)
       if (contractId != null) {
-        ref.invalidate(documentsListProvider(contractId: contractId));
-      }
-      if (investorId != null) {
-        ref.invalidate(documentsListProvider(investorId: investorId));
+        await ref.read(contractTimelineNotifierProvider(contractId).notifier).addLog(
+          eventType: 'document_uploaded',
+          metadata: {'file_name': fileName, 'type': type.name},
+        );
       }
     }
 
-    // إعادة الـ progress إلى null بعد الانتهاء
+    // تأخير بسيط لإعطاء انطباع سلاسة الواجهة
     await Future.delayed(const Duration(milliseconds: 600));
     ref.read(uploadProgressProvider.notifier).state = null;
     state = result;
@@ -73,23 +70,23 @@ class DocumentController extends _$DocumentController {
         () => ref.read(documentRepositoryProvider).deleteDocument(documentId, filePath));
 
     if (!result.hasError) {
-      if (customerId != null) {
-        ref.invalidate(documentsListProvider(customerId: customerId));
-      }
+      ref.invalidate(documentsListProvider);
+      
+      // توثيق الحذف في التايم لاين لضمان الرقابة
       if (contractId != null) {
-        ref.invalidate(documentsListProvider(contractId: contractId));
-      }
-      if (investorId != null) {
-        ref.invalidate(documentsListProvider(investorId: investorId));
+        await ref.read(contractTimelineNotifierProvider(contractId).notifier).addLog(
+          eventType: 'document_deleted',
+          metadata: {'file_path': filePath},
+        );
       }
     }
     state = result;
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<AppDocument>> documentsList(
-  Ref ref, {
+  DocumentsListRef ref, {
   String? customerId,
   String? contractId,
   String? investorId,

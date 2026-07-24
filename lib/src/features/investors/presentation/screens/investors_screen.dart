@@ -6,45 +6,62 @@ import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
+import '../../../../core/services/export_service.dart';
 import '../investor_controller.dart';
 import '../widgets/create_investor_dialog.dart';
 
-class InvestorsScreen extends ConsumerWidget {
+class InvestorsScreen extends ConsumerStatefulWidget {
   final int initialIndex;
   const InvestorsScreen({super.key, this.initialIndex = 0});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InvestorsScreen> createState() => _InvestorsScreenState();
+}
+
+class _InvestorsScreenState extends ConsumerState<InvestorsScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this, initialIndex: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: DefaultTabController(
-        length: 3,
-        initialIndex: initialIndex,
-        child: Scaffold(
-          backgroundColor: AppColors.bgGrey,
-          appBar: AppBar(
-            toolbarHeight: 180,
-            backgroundColor: AppColors.primaryNavy,
-            automaticallyImplyLeading: false,
-            elevation: 0,
-            flexibleSpace: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(32, 24, 32, 60),
-                child: _buildHeader(context, ref),
-              ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: _buildTabBar(),
+      child: Scaffold(
+        backgroundColor: AppColors.bgGrey,
+        appBar: AppBar(
+          toolbarHeight: 180,
+          backgroundColor: AppColors.primaryNavy,
+          automaticallyImplyLeading: false,
+          elevation: 0,
+          flexibleSpace: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(32, 24, 32, 60),
+              child: _buildHeader(context, ref),
             ),
           ),
-          body: const TabBarView(
-            children: [
-              ActiveInvestorsList(),
-              PendingInvestorsList(),
-              WithdrawalRequestsList(),
-            ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: _buildTabBar(),
           ),
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: const [
+            ActiveInvestorsList(),
+            PendingInvestorsList(),
+            WithdrawalRequestsList(),
+          ],
         ),
       ),
     );
@@ -93,26 +110,101 @@ class InvestorsScreen extends ConsumerWidget {
             ),
           ],
         ),
-        if (ResponsiveLayout.isDesktop(context))
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: ElevatedButton.icon(
-              onPressed: () => showDialog(
-                  context: context,
-                  builder: (context) => const CreateInvestorDialog()),
-              icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-              label: const Text('إضافة مستثمر جديد', style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accentGold,
-                foregroundColor: AppColors.primaryNavy,
-                minimumSize: const Size(220, 54),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
+        Row(
+          children: [
+            _buildExportMenu(ref),
+            const SizedBox(width: 12),
+            if (ResponsiveLayout.isDesktop(context))
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: ElevatedButton.icon(
+                  onPressed: () => showDialog(
+                      context: context,
+                      builder: (context) => const CreateInvestorDialog()),
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+                  label: const Text('إضافة مستثمر جديد', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accentGold,
+                    foregroundColor: AppColors.primaryNavy,
+                    minimumSize: const Size(220, 54),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                ),
               ),
-            ),
-          ),
+          ],
+        ),
       ],
     );
+  }
+
+  Widget _buildExportMenu(WidgetRef ref) {
+    return PopupMenuButton<String>(
+      icon: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.file_download_outlined, color: Colors.white),
+      ),
+      tooltip: 'تصدير البيانات',
+      onSelected: (type) => _handleExport(type, ref),
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'pdf', child: Row(children: [Icon(Icons.picture_as_pdf, color: Colors.red), SizedBox(width: 8), Text('تصدير PDF')])),
+        const PopupMenuItem(value: 'excel', child: Row(children: [Icon(Icons.table_view, color: Colors.green), SizedBox(width: 8), Text('تصدير Excel')])),
+        const PopupMenuItem(value: 'csv', child: Row(children: [Icon(Icons.description, color: Colors.blue), SizedBox(width: 8), Text('تصدير CSV')])),
+      ],
+    );
+  }
+
+  Future<void> _handleExport(String format, WidgetRef ref) async {
+    final exportService = ref.read(exportServiceProvider);
+    
+    if (_tabController.index == 0) {
+      final investors = ref.read(investorListControllerProvider).valueOrNull ?? [];
+      if (investors.isEmpty) return;
+
+      final columns = ['اسم المستثمر', 'البريد الإلكتروني', 'الرصيد المتاح', 'رأس المال الموظف'];
+      
+      if (format == 'pdf') {
+        final rows = investors.map((inv) => [
+          inv.fullName,
+          inv.email,
+          inv.availableBalance.toString(),
+          inv.deployedCapital.toString(),
+        ]).toList();
+        await exportService.exportToPdf(title: 'قائمة المستثمرين النشطين', columns: columns, rows: rows);
+      } else if (format == 'excel') {
+        await exportService.exportToExcel(
+          fileName: 'active_investors',
+          columns: columns,
+          data: investors.map((inv) => {
+            'fullName': inv.fullName,
+            'email': inv.email,
+            'availableBalance': inv.availableBalance,
+            'deployedCapital': inv.deployedCapital,
+          }).toList(),
+          dataKeys: ['fullName', 'email', 'availableBalance', 'deployedCapital'],
+        );
+      } else {
+        final rows = investors.map((inv) => [inv.fullName, inv.email, inv.availableBalance, inv.deployedCapital]).toList();
+        await exportService.exportToCsv(fileName: 'active_investors', columns: columns, rows: rows);
+      }
+    } else if (_tabController.index == 1) {
+      final pending = ref.read(pendingInvestorsControllerProvider).valueOrNull ?? [];
+      if (pending.isEmpty) return;
+      final columns = ['الاسم', 'البريد الإلكتروني', 'تاريخ الطلب'];
+      final rows = pending.map((p) => [p['full_name'], p['email'], p['created_at']]).toList();
+      
+      if (format == 'pdf') {
+        await exportService.exportToPdf(title: 'طلبات الانضمام المعلقة', columns: columns, rows: rows);
+      } else if (format == 'excel') {
+        await exportService.exportToExcel(fileName: 'pending_investors', columns: columns, data: pending, dataKeys: ['full_name', 'email', 'created_at']);
+      } else {
+        await exportService.exportToCsv(fileName: 'pending_investors', columns: columns, rows: rows);
+      }
+    }
   }
 
   Widget _buildQuickStat(String label, String value) {
@@ -127,7 +219,8 @@ class InvestorsScreen extends ConsumerWidget {
   }
 
   Widget _buildTabBar() {
-    return const TabBar(
+    return TabBar(
+      controller: _tabController,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       labelColor: Colors.white,
@@ -137,7 +230,7 @@ class InvestorsScreen extends ConsumerWidget {
       indicatorSize: TabBarIndicatorSize.label,
       labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       padding: EdgeInsets.symmetric(horizontal: 24),
-      tabs: [
+      tabs: const [
         Tab(text: 'المستثمرون النشطون'),
         Tab(text: 'طلبات الانضمام'),
         Tab(text: 'طلبات السحب'),

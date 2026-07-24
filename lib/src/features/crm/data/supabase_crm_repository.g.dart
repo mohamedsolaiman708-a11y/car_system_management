@@ -6,7 +6,7 @@ part of 'supabase_crm_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$crmRepositoryHash() => r'3858feaffe54c1876659284e97dbd7fd979ac89b';
+String _$crmRepositoryHash() => r'e2271c6d0cac1827ff258b6b490682bf713b9439';
 
 /// See also [crmRepository].
 @ProviderFor(crmRepository)

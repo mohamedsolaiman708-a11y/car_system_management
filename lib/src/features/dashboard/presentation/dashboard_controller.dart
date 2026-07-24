@@ -17,12 +17,12 @@ class DashboardController extends _$DashboardController {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<Map<String, dynamic>> staffStats(StaffStatsRef ref) async {
   return ref.watch(dashboardRepositoryProvider).getStaffStats();
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<Map<String, dynamic>>> monthlyGrowthData(MonthlyGrowthDataRef ref) async {
   return ref.watch(dashboardRepositoryProvider).getMonthlyGrowthData();
 }

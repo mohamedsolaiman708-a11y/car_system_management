@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/app_theme.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
@@ -8,118 +9,102 @@ class HelpCenterScreen extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
-          title: const Text('مركز المساعدة والدعم'),
+          backgroundColor: AppColors.primaryNavy,
+          elevation: 0,
+          toolbarHeight: 80,
+          title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('مركز المساعدة والدعم',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text('دليل الاستخدام والأسئلة الشائعة للنظام',
+                  style: TextStyle(color: Colors.white60, fontSize: 11)),
+            ],
+          ),
         ),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
           children: [
-            _buildSectionHeader('الأسئلة الشائعة (FAQ)'),
-            _buildFaqItem(
-              'كيف يمكنني إضافة مستثمر جديد؟',
-              'يمكنك إضافة مستثمر من خلال شاشة "إدارة المستثمرين" ثم الضغط على زر "إضافة مستثمر". سيحتاج المستثمر بعدها إلى تفعيل حسابه من قبل المسؤول.',
-            ),
-            _buildFaqItem(
-              'كيف يتم توزيع الأرباح؟',
-              'يتم توزيع الأرباح تلقائياً عند استلام دفعات من العملاء بناءً على نسبة الاستثمار المخصصة لكل مستثمر في العقد.',
-            ),
-            _buildFaqItem(
-              'ماذا أفعل في حالة تعثر العميل؟',
-              'يمكنك تغيير حالة العقد إلى "متعثر" من شاشة تفاصيل العقد، وسيظهر ذلك في تقرير المتأخرات للمتابعة القانونية.',
-            ),
-            const SizedBox(height: 24),
-            _buildSectionHeader('دليل المستخدم'),
-            _buildGuideItem(Icons.menu_book_outlined, 'دليل إدارة العقود', 'شرح تفصيلي لدورة حياة العقد من الإنشاء حتى الإغلاق.'),
-            _buildGuideItem(Icons.account_balance_outlined, 'الدليل المالي والمحاسبي', 'شرح كيفية قراءة التقارير المالية والقيود اليومية.'),
-            const SizedBox(height: 24),
-            _buildSectionHeader('الدعم الفني'),
-            _buildContactItem(Icons.support_agent, 'تحدث مع الدعم الفني', 'متاح من 9 صباحاً حتى 5 مساءً'),
-            _buildContactItem(Icons.email_outlined, 'ارسل بريد إلكتروني', 'support@carerp.com'),
-            const SizedBox(height: 24),
-            _buildSectionHeader('معلومات النظام'),
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _InfoRow(label: 'إصدار النظام', value: '1.0.0'),
-                    Divider(),
-                    _InfoRow(label: 'آخر تحديث', value: '2023-10-27'),
-                    Divider(),
-                    _InfoRow(label: 'بيئة العمل', value: 'Production'),
-                  ],
-                ),
-              ),
-            ),
+            _buildSectionTitle('الأسئلة الشائعة (FAQ)'),
+            _buildFaqItem('كيف يتم توزيع أرباح المستثمرين؟', 'يتم التوزيع آلياً بنظام FIFO (الأول في الأول)، حيث يتم سداد أصل رأس المال ثم الأرباح بناءً على نسبة المساهمة في كل عقد.'),
+            _buildFaqItem('هل يمكن عكس عملية دفع خاطئة؟', 'نعم، من خلال شاشة تفاصيل العقد -> سجل المدفوعات -> زر العكس. سيقوم النظام آلياً بتعديل القيود المحاسبية وإعادة فتح الأقساط.'),
+            _buildFaqItem('كيف أضيف موظفاً جديداً؟', 'من خلال إعدادات النظام -> إدارة فريق العمل -> دعوة موظف. سيصل للموظف بريد إلكتروني لإكمال بياناته.'),
+            
+            const SizedBox(height: 32),
+            _buildSectionTitle('دليل الاستخدام السريع'),
+            _buildStepItem(1, 'تكوين ملف العميل ورفع هويته الوطنية.'),
+            _buildStepItem(2, 'اختيار السيارة من المخزون أو إضافتها.'),
+            _buildStepItem(3, 'إنشاء مسودة العقد وتحديد الممولين.'),
+            _buildStepItem(4, 'تفعيل العقد للبدء في توليد جدول الأقساط.'),
+            
+            const SizedBox(height: 32),
+            _buildSectionTitle('معلومات النظام'),
+            _buildVersionCard(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey),
-      ),
+      padding: const EdgeInsets.only(bottom: 16, right: 8),
+      child: Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
     );
   }
 
   Widget _buildFaqItem(String question, String answer) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ExpansionTile(
-        title: Text(question, style: const TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(question, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(answer, style: const TextStyle(color: Colors.black87)),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Text(answer, style: const TextStyle(color: Colors.grey, fontSize: 13, height: 1.5)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGuideItem(IconData icon, String title, String subtitle) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, color: Colors.blue),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {},
-      ),
-    );
-  }
-
-  Widget _buildContactItem(IconData icon, String title, String subtitle) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, color: Colors.green),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        onTap: () {},
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildStepItem(int step, String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          CircleAvatar(radius: 14, backgroundColor: AppColors.accentGold, child: Text('$step', style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 12))),
+          const SizedBox(width: 16),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVersionCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      child: const Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('نسخة التطبيق', style: TextStyle(color: Colors.grey)),
+              Text('1.0.0 (Stable)', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          Divider(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('تاريخ التحديث', style: TextStyle(color: Colors.grey)),
+              Text('أكتوبر 2023', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
         ],
       ),
     );

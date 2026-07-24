@@ -16,5 +16,16 @@ class Investor with _$Investor {
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
   }) = _Investor;
 
-  factory Investor.fromJson(Map<String, dynamic> json) => _$InvestorFromJson(json);
+  factory Investor.fromJson(Map<String, dynamic> json) {
+    return Investor(
+      id: (json['id'] ?? '').toString(),
+      fullName: (json['full_name'] ?? json['name'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      availableBalance: (json['available_balance'] as num?)?.toDouble() ?? 0.0,
+      deployedCapital: (json['deployed_capital'] as num?)?.toDouble() ?? 0.0,
+      totalProfitEarned: (json['total_profit_earned'] as num?)?.toDouble() ?? 0.0,
+      createdAt: json['created_at'] != null ? (DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? (DateTime.tryParse(json['updated_at'].toString()) ?? DateTime.now()) : DateTime.now(),
+    );
+  }
 }

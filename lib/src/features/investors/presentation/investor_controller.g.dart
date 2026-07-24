@@ -156,15 +156,12 @@ class _InvestorProjectionsProviderElement
 }
 
 String _$investorListControllerHash() =>
-    r'9301c3c38f7bb51b4d1a0656a783c737dcd9d891';
+    r'59eca8aae1cd2461fd620ad3ea637862d5f206a8';
 
 /// See also [InvestorListController].
 @ProviderFor(InvestorListController)
 final investorListControllerProvider =
-    AutoDisposeAsyncNotifierProvider<
-      InvestorListController,
-      List<Investor>
-    >.internal(
+    AsyncNotifierProvider<InvestorListController, List<Investor>>.internal(
       InvestorListController.new,
       name: r'investorListControllerProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -174,7 +171,7 @@ final investorListControllerProvider =
       allTransitiveDependencies: null,
     );
 
-typedef _$InvestorListController = AutoDisposeAsyncNotifier<List<Investor>>;
+typedef _$InvestorListController = AsyncNotifier<List<Investor>>;
 String _$investorDetailsControllerHash() =>
     r'eec48056a516347b0447ed9d2bb980fbecde0a7c';
 
@@ -320,7 +317,7 @@ class _InvestorDetailsControllerProviderElement
 }
 
 String _$investorTransactionsControllerHash() =>
-    r'8e8449767e8be728eb4a1bd27789e6c986c38661';
+    r'98401e45dbc90b0d8b74e006e334057a45bf81ca';
 
 abstract class _$InvestorTransactionsController
     extends BuildlessAutoDisposeAsyncNotifier<List<InvestorTransaction>> {

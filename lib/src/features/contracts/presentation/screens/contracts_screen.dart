@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/export_helper.dart';
 import '../contract_controller.dart';
 
 class ContractsScreen extends ConsumerStatefulWidget {
@@ -37,7 +38,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
-              child: _buildPremiumHeader(),
+              child: _buildPremiumHeader(contractsAsync),
             ),
           ),
         ),
@@ -88,7 +89,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
     );
   }
 
-  Widget _buildPremiumHeader() {
+  Widget _buildPremiumHeader(AsyncValue<List<dynamic>> contractsAsync) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -103,21 +104,72 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
           ],
         ),
-        if (ResponsiveLayout.isDesktop(context))
-          ElevatedButton.icon(
-            onPressed: () => context.push('/contracts/new'),
-            icon: const Icon(Icons.add_task_rounded, size: 20),
-            label: const Text('إصدار عقد تمويل جديد'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accentGold,
-              foregroundColor: AppColors.primaryNavy,
-              minimumSize: const Size(220, 54),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
+        Row(
+          children: [
+            if (contractsAsync.hasValue && contractsAsync.value!.isNotEmpty)
+              _buildExportButton(contractsAsync.value!),
+            const SizedBox(width: 12),
+            if (ResponsiveLayout.isDesktop(context))
+              ElevatedButton.icon(
+                onPressed: () => context.push('/contracts/new'),
+                icon: const Icon(Icons.add_task_rounded, size: 20),
+                label: const Text('إصدار عقد تمويل جديد'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentGold,
+                  foregroundColor: AppColors.primaryNavy,
+                  minimumSize: const Size(220, 54),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+          ],
+        ),
       ],
     );
+  }
+
+  Widget _buildExportButton(List<dynamic> data) {
+    return PopupMenuButton<String>(
+      icon: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.file_download_outlined, color: Colors.white),
+      ),
+      tooltip: 'تصدير البيانات',
+      onSelected: (type) => _handleExport(type, data),
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'pdf', child: Row(children: [Icon(Icons.picture_as_pdf, color: Colors.red), SizedBox(width: 8), Text('تصدير PDF')])),
+        const PopupMenuItem(value: 'excel', child: Row(children: [Icon(Icons.table_view, color: Colors.green), SizedBox(width: 8), Text('تصدير Excel')])),
+        const PopupMenuItem(value: 'csv', child: Row(children: [Icon(Icons.description, color: Colors.blue), SizedBox(width: 8), Text('تصدير CSV')])),
+      ],
+    );
+  }
+
+  Future<void> _handleExport(String type, List<dynamic> data) async {
+    final headers = ['رقم العقد', 'العميل', 'السيارة', 'القيمة الإجمالية', 'الحالة', 'التاريخ'];
+    final rows = data.map((c) => [
+      c.contractNo,
+      c.customer?['full_name'] ?? '-',
+      '${c.vehicle?['make'] ?? ''} ${c.vehicle?['model'] ?? ''}',
+      c.totalContractValue.toString(),
+      c.status,
+      intl.DateFormat('yyyy/MM/dd').format(c.createdAt),
+    ]).toList();
+
+    switch (type) {
+      case 'csv':
+        await ExportHelper.exportToCsv(fileName: 'contracts_report', headers: headers, rows: rows);
+        break;
+      case 'excel':
+        await ExportHelper.exportToExcel(fileName: 'contracts_report', headers: headers, rows: rows);
+        break;
+      case 'pdf':
+        await ExportHelper.exportToPdfTable(title: 'تقرير سجل العقود والتمويل', headers: headers, rows: rows);
+        break;
+    }
   }
 
   Widget _buildExecutiveStats(AsyncValue<Map<String, dynamic>> statsAsync, intl.NumberFormat f) {

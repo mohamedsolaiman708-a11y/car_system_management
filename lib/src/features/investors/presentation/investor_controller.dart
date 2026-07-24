@@ -1,15 +1,16 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../contracts/presentation/contract_timeline_controller.dart';
 import '../data/supabase_investor_repository.dart';
 import '../domain/investor.dart';
 import '../domain/investor_transaction.dart';
 import '../domain/investor_transaction_type.dart';
 import '../../documents/domain/document.dart';
-// استيراد متحكم العقود لعمل تحديث للبيانات
 import '../../contracts/presentation/contract_controller.dart';
+import '../../contracts/data/supabase_contract_repository.dart';
 
 part 'investor_controller.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class InvestorListController extends _$InvestorListController {
   @override
   FutureOr<List<Investor>> build() {
@@ -23,10 +24,14 @@ class InvestorListController extends _$InvestorListController {
 
   Future<void> createInvestor(String fullName, String email, String? phone) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       await ref.read(investorRepositoryProvider).createInvestor(fullName, email, phone);
       return ref.read(investorRepositoryProvider).getInvestors();
     });
+    state = result;
+    if (result.hasError) {
+      throw result.error!;
+    }
   }
 }
 
@@ -52,6 +57,58 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
     return ref.watch(investorRepositoryProvider).getInvestorTransactions(investorId);
   }
 
+  Future<bool> allocateFunding({
+    required String investorId,
+    required String contractId,
+    required double amount,
+  }) async {
+    state = const AsyncLoading();
+    
+    try {
+      final repository = ref.read(investorRepositoryProvider);
+      final contractRepo = ref.read(contractRepositoryProvider);
+      
+      // جلب أحدث البيانات لحظياً لضمان الدقة المالية
+      final investor = await repository.getInvestorById(investorId);
+      final contract = await contractRepo.getContractById(contractId);
+      final fundingRecords = await contractRepo.getContractFunding(contractId);
+
+      if (investor == null || contract == null) {
+        throw Exception('بيانات المستثمر أو العقد غير موجودة');
+      }
+
+      // 1. تحقق الرصيد (منع الرصيد السالب)
+      if (investor.availableBalance < amount) {
+        throw Exception('رصيد المستثمر غير كافٍ. المتاح: ${investor.availableBalance} ر.س');
+      }
+
+      // 2. تحقق سعة العقد (منع التمويل الزائد)
+      double totalFunded = fundingRecords.fold(0.0, (sum, item) => sum + (item['amount_allocated'] as num).toDouble());
+      double remainingRequired = contract.principalAmount - totalFunded;
+
+      if (amount > (remainingRequired + 0.01)) {
+        throw Exception('المبلغ يتجاوز المطلوب للعقد. المتبقي المطلوب: $remainingRequired ر.س');
+      }
+
+      // 3. تنفيذ العملية
+      await repository.allocateFunding(contractId, investorId, amount);
+
+      // 4. تحديث الحالات لضمان المزامنة الفورية
+      contractRepo.clearCache();
+      ref.invalidate(investorDetailsControllerProvider(investorId));
+      ref.invalidate(investorListControllerProvider);
+      ref.invalidate(contractFundingProvider(contractId));
+      ref.invalidate(contractDetailsProvider(contractId));
+      ref.invalidate(contractStatsProvider);
+      
+      state = const AsyncData([]);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
   Future<bool> addTransaction({
     required String investorId,
     required double amount,
@@ -61,7 +118,15 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
     final repository = ref.read(investorRepositoryProvider);
     state = const AsyncLoading();
 
-    final result = await AsyncValue.guard(() async {
+    try {
+      // تحقق من الرصيد في حالة السحب
+      if (type == InvestorTransactionType.withdrawal) {
+        final investor = await repository.getInvestorById(investorId);
+        if (investor != null && investor.availableBalance < amount) {
+          throw Exception('رصيد المستثمر غير كافٍ للسحب. المتاح: ${investor.availableBalance} ر.س');
+        }
+      }
+
       if (type == InvestorTransactionType.deposit) {
         await repository.processDeposit(investorId, amount, description ?? '');
       } else if (type == InvestorTransactionType.withdrawal) {
@@ -76,41 +141,15 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
           description: description,
         ));
       }
-      return repository.getInvestorTransactions(investorId);
-    });
-
-    state = result;
-    if (!result.hasError) {
-      ref.invalidate(investorDetailsControllerProvider(investorId));
-    }
-    return !result.hasError;
-  }
-
-  Future<bool> allocateFunding({
-    required String investorId,
-    required String contractId,
-    required double amount,
-  }) async {
-    final repository = ref.read(investorRepositoryProvider);
-    state = const AsyncLoading();
-
-    final result = await AsyncValue.guard(() async {
-      await repository.allocateFunding(contractId, investorId, amount);
-      return repository.getInvestorTransactions(investorId);
-    });
-
-    state = result;
-    if (!result.hasError) {
-      // 1. تحديث بيانات المستثمر (الرصيد المتاح)
-      ref.invalidate(investorDetailsControllerProvider(investorId));
-      ref.invalidate(investorListControllerProvider);
       
-      // 2. الأهم: تحديث بيانات العقد لكي يظهر المبلغ الممول فوراً في الواجهة
-      ref.invalidate(contractFundingProvider(contractId));
-      ref.invalidate(contractDetailsProvider(contractId));
-      ref.invalidate(contractStatsProvider);
+      final updatedTransactions = await repository.getInvestorTransactions(investorId);
+      state = AsyncData(updatedTransactions);
+      ref.invalidate(investorDetailsControllerProvider(investorId));
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
     }
-    return !result.hasError;
   }
 
   Future<bool> distributeProfit({
@@ -121,16 +160,16 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
     final repository = ref.read(investorRepositoryProvider);
     state = const AsyncLoading();
 
-    final result = await AsyncValue.guard(() async {
+    try {
       await repository.distributeProfit(investorId, amount, description);
-      return repository.getInvestorTransactions(investorId);
-    });
-
-    state = result;
-    if (!result.hasError) {
+      final updatedTransactions = await repository.getInvestorTransactions(investorId);
+      state = AsyncData(updatedTransactions);
       ref.invalidate(investorDetailsControllerProvider(investorId));
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
     }
-    return !result.hasError;
   }
 }
 

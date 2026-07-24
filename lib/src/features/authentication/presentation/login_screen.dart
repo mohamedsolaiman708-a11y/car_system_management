@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/snack_bar_helper.dart';
 import 'auth_controller.dart';
 
 /// A production-ready Login Screen for the finance system.
@@ -35,14 +36,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       
       if (!success) {
-        // Business Requirement: Feedback for failed identity verification.
-        // The AuthController already handles the audit trail logging for failure.
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Authentication failed. Please verify your corporate credentials.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.showError(
+          context,
+          'تعذر الاتصال بالخادم. يرجى التحقق من جودة الإنترنت لديك أو صحة البيانات.',
         );
       }
       // Note: Redirection to Staff Dashboard or Investor Portal is handled 

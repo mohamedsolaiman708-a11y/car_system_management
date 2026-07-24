@@ -7,7 +7,6 @@ import '../../../../core/utils/snack_bar_helper.dart';
 import '../../../crm/presentation/crm_controller.dart';
 import '../../../inventory/presentation/inventory_controller.dart';
 import '../../../inventory/domain/vehicle.dart';
-import '../../../investors/presentation/investor_controller.dart';
 import '../contract_controller.dart';
 import '../../../settings/presentation/settings_controller.dart';
 import '../../../settings/domain/system_setting.dart';
@@ -31,15 +30,29 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
   final _profitRateController = TextEditingController(text: '15');
   final _durationController = TextEditingController(text: '12');
 
-  final _moroorFeesController = TextEditingController(text: '0');
+  final _downPaymentController = TextEditingController(text: '0');
+  final _moroorFeesController = TextEditingController(text: '250');
   final _tammFeesController = TextEditingController(text: '0');
-  final _insuranceFeesController = TextEditingController(text: '0');
+  final _insuranceFeesController = TextEditingController(text: '900');
+  final _inspectionFeesController = TextEditingController(text: '120');
+  final _plateFeesController = TextEditingController(text: '500');
+  final _violationsFeesController = TextEditingController(text: '350');
+  final _otherFeesController = TextEditingController(text: '80');
   final _vatController = TextEditingController(text: '0');
 
+  // الكفيل الأول
   final _g1NameController = TextEditingController();
   final _g1IdController = TextEditingController();
   final _g1PhoneController = TextEditingController();
   final _g1WorkController = TextEditingController();
+  final _g1AddressController = TextEditingController();
+
+  // الكفيل الثاني
+  final _g2NameController = TextEditingController();
+  final _g2IdController = TextEditingController();
+  final _g2PhoneController = TextEditingController();
+  final _g2WorkController = TextEditingController();
+  final _g2AddressController = TextEditingController();
 
   final _witness1NameController = TextEditingController();
   final _witness2NameController = TextEditingController();
@@ -58,14 +71,25 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     _principalController.dispose();
     _profitRateController.dispose();
     _durationController.dispose();
+    _downPaymentController.dispose();
     _moroorFeesController.dispose();
     _tammFeesController.dispose();
     _insuranceFeesController.dispose();
+    _inspectionFeesController.dispose();
+    _plateFeesController.dispose();
+    _violationsFeesController.dispose();
+    _otherFeesController.dispose();
     _vatController.dispose();
     _g1NameController.dispose();
     _g1IdController.dispose();
     _g1PhoneController.dispose();
     _g1WorkController.dispose();
+    _g1AddressController.dispose();
+    _g2NameController.dispose();
+    _g2IdController.dispose();
+    _g2PhoneController.dispose();
+    _g2WorkController.dispose();
+    _g2AddressController.dispose();
     _witness1NameController.dispose();
     _witness2NameController.dispose();
     super.dispose();
@@ -79,12 +103,18 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
     final moroor = double.tryParse(_moroorFeesController.text) ?? 0;
     final tamm = double.tryParse(_tammFeesController.text) ?? 0;
     final insurance = double.tryParse(_insuranceFeesController.text) ?? 0;
+    final inspection = double.tryParse(_inspectionFeesController.text) ?? 0;
+    final plate = double.tryParse(_plateFeesController.text) ?? 0;
+    final violations = double.tryParse(_violationsFeesController.text) ?? 0;
+    final other = double.tryParse(_otherFeesController.text) ?? 0;
     final vat = double.tryParse(_vatController.text) ?? 0;
 
     if (mounted) {
       setState(() {
-        _totalValue = principal + (principal * (rate / 100)) + moroor + tamm + insurance + vat;
-        _monthlyInstallment = (_contractType == 'installments' && months > 0) ? _totalValue / months : 0;
+        _totalValue = principal + (principal * (rate / 100)) + moroor + tamm + insurance + inspection + plate + violations + other + vat;
+        final downPayment = double.tryParse(_downPaymentController.text) ?? 0;
+        final remaining = _totalValue - downPayment;
+        _monthlyInstallment = (_contractType == 'installments' && months > 0) ? (remaining > 0 ? remaining / months : 0) : 0;
       });
     }
   }
@@ -107,17 +137,28 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
       'finance_profit_rate': _contractType == 'installments' ? (double.tryParse(_profitRateController.text) ?? 0.0) : 0.0,
       'total_contract_value': _totalValue,
       'duration_months': _contractType == 'installments' ? (int.tryParse(_durationController.text) ?? 1) : 1,
+      'down_payment': double.tryParse(_downPaymentController.text) ?? 0.0,
       'status': 'draft',
       'type': _contractType,
       'guarantor_1_name': _g1NameController.text.trim(),
       'guarantor_1_id': _g1IdController.text.trim(),
       'guarantor_1_phone': _g1PhoneController.text.trim(),
       'guarantor_1_work': _g1WorkController.text.trim(),
+      'guarantor_1_address': _g1AddressController.text.trim(),
+      'guarantor_2_name': _g2NameController.text.trim(),
+      'guarantor_2_id': _g2IdController.text.trim(),
+      'guarantor_2_phone': _g2PhoneController.text.trim(),
+      'guarantor_2_work': _g2WorkController.text.trim(),
+      'guarantor_2_address': _g2AddressController.text.trim(),
       'witness_1': _witness1NameController.text.trim(),
       'witness_2': _witness2NameController.text.trim(),
       'moroor_fees': double.tryParse(_moroorFeesController.text) ?? 0.0,
       'tamm_fees': double.tryParse(_tammFeesController.text) ?? 0.0,
       'insurance_fees': double.tryParse(_insuranceFeesController.text) ?? 0.0,
+      'inspection_fees': double.tryParse(_inspectionFeesController.text) ?? 0.0,
+      'plate_fees': double.tryParse(_plateFeesController.text) ?? 0.0,
+      'traffic_violations_fees': double.tryParse(_violationsFeesController.text) ?? 0.0,
+      'other_fees': double.tryParse(_otherFeesController.text) ?? 0.0,
       'vat_amount': double.tryParse(_vatController.text) ?? 0.0,
     };
 
@@ -214,24 +255,44 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                     ),
                     const SizedBox(height: 24),
                     _buildSectionCard(
-                      title: 'القيم المالية والرسوم الإدارية',
+                      title: 'الرسوم والخدمات الإدارية',
                       icon: Icons.account_balance_wallet_rounded,
                       children: [
                         _buildPremiumTextField(_principalController, 'قيمة المركبة (أصل المبلغ) *', Icons.payments_rounded, isNumber: true, isRequired: true),
                         const SizedBox(height: 20),
+                        // صف 1: رسوم نقل الملكية + التأمين
                         Row(
                           children: [
-                            Expanded(child: _buildPremiumTextField(_moroorFeesController, 'رسوم النقل', Icons.assignment_turned_in_rounded, isNumber: true)),
+                            Expanded(child: _buildPremiumTextField(_moroorFeesController, 'رسوم نقل الملكية', Icons.assignment_turned_in_rounded, isNumber: true)),
                             const SizedBox(width: 16),
-                            Expanded(child: _buildPremiumTextField(_tammFeesController, 'رسوم تم', Icons.app_registration_rounded, isNumber: true)),
+                            Expanded(child: _buildPremiumTextField(_insuranceFeesController, 'التأمين', Icons.security_rounded, isNumber: true)),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
+                        // صف 2: الفحص الدوري + إصدار اللوحات
                         Row(
                           children: [
-                            Expanded(child: _buildPremiumTextField(_insuranceFeesController, 'رسوم التأمين', Icons.security_rounded, isNumber: true)),
+                            Expanded(child: _buildPremiumTextField(_inspectionFeesController, 'الفحص الدوري', Icons.car_repair_rounded, isNumber: true)),
                             const SizedBox(width: 16),
-                            Expanded(child: _buildPremiumTextField(_vatController, 'ضريبة القيمة (VAT)', Icons.calculate_rounded, isNumber: true)),
+                            Expanded(child: _buildPremiumTextField(_plateFeesController, 'إصدار اللوحات', Icons.credit_card_rounded, isNumber: true)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // صف 3: المخالفات المرورية + رسوم أخرى
+                        Row(
+                          children: [
+                            Expanded(child: _buildPremiumTextField(_violationsFeesController, 'سداد المخالفات المرورية', Icons.traffic_rounded, isNumber: true)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildPremiumTextField(_otherFeesController, 'رسوم أخرى', Icons.more_horiz_rounded, isNumber: true)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // صف 4: رسوم تم + ضريبة القيمة
+                        Row(
+                          children: [
+                            Expanded(child: _buildPremiumTextField(_tammFeesController, 'رسوم تم', Icons.app_registration_rounded, isNumber: true)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildPremiumTextField(_vatController, 'ضريبة القيمة المضافة (VAT)', Icons.calculate_rounded, isNumber: true)),
                           ],
                         ),
                       ],
@@ -239,9 +300,11 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                     if (_contractType == 'installments') ...[
                       const SizedBox(height: 24),
                       _buildSectionCard(
-                        title: 'شروط السداد والأرباح',
+                        title: 'شروط السداد والدفعة الأولى',
                         icon: Icons.calendar_month_rounded,
                         children: [
+                          _buildPremiumTextField(_downPaymentController, 'الدفعة المقدمة (ريال)', Icons.account_balance_rounded, isNumber: true),
+                          const SizedBox(height: 16),
                           Row(
                             children: [
                               Expanded(child: _buildPremiumTextField(_profitRateController, 'نسبة الربح %', Icons.trending_up_rounded, isNumber: true, isRequired: true)),
@@ -253,21 +316,68 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
                       ),
                     ],
                     const SizedBox(height: 24),
+                    // الكفيل الأول
                     _buildSectionCard(
-                      title: 'بيانات الكفيل الغارم والشهود',
+                      title: 'بيانات الكفيل الأول',
                       icon: Icons.gpp_good_rounded,
                       children: [
                         _buildPremiumTextField(_g1NameController, 'اسم الكفيل الكامل', Icons.person_add_rounded),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         Row(
                           children: [
-                            Expanded(child: _buildPremiumTextField(_g1IdController, 'هوية الكفيل', Icons.badge_rounded)),
+                            Expanded(child: _buildPremiumTextField(_g1IdController, 'رقم الهوية', Icons.badge_rounded)),
                             const SizedBox(width: 16),
-                            Expanded(child: _buildPremiumTextField(_g1PhoneController, 'جوال الكفيل', Icons.phone_android_rounded)),
+                            Expanded(child: _buildPremiumTextField(_g1PhoneController, 'الجوال', Icons.phone_android_rounded)),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        _buildPremiumTextField(_g1WorkController, 'مقر عمل الكفيل', Icons.work_outline_rounded),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: _buildPremiumTextField(_g1WorkController, 'جهة العمل', Icons.work_outline_rounded)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildPremiumTextField(_g1AddressController, 'العنوان', Icons.location_on_rounded)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // الكفيل الثاني
+                    _buildSectionCard(
+                      title: 'بيانات الكفيل الثاني (اختياري)',
+                      icon: Icons.gpp_maybe_rounded,
+                      children: [
+                        _buildPremiumTextField(_g2NameController, 'اسم الكفيل الثاني', Icons.person_add_outlined),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: _buildPremiumTextField(_g2IdController, 'رقم الهوية', Icons.badge_outlined)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildPremiumTextField(_g2PhoneController, 'الجوال', Icons.phone_iphone_rounded)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: _buildPremiumTextField(_g2WorkController, 'جهة العمل', Icons.work_rounded)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildPremiumTextField(_g2AddressController, 'العنوان', Icons.location_city_rounded)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // الشهود
+                    _buildSectionCard(
+                      title: 'بيانات الشهود',
+                      icon: Icons.people_rounded,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: _buildPremiumTextField(_witness1NameController, 'الشاهد الأول', Icons.person_rounded)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildPremiumTextField(_witness2NameController, 'الشاهد الثاني', Icons.person_outline_rounded)),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -416,15 +526,21 @@ class _CreateContractScreenState extends ConsumerState<CreateContractScreen> {
 
   Widget _buildExecutiveSummary() {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+    final downPayment = double.tryParse(_downPaymentController.text) ?? 0;
+    final remaining = _totalValue - downPayment;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: AppColors.primaryNavy, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('إجمالي قيمة مديونية العقد', style: TextStyle(color: Colors.white70)), Text('${f.format(_totalValue)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 24, fontWeight: FontWeight.bold))]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('إجمالي قيمة العقد', style: TextStyle(color: Colors.white70)), Text('${f.format(_totalValue)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 22, fontWeight: FontWeight.bold))]),
           if (_contractType == 'installments') ...[
-            const Divider(color: Colors.white10, height: 32),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('قيمة القسط الشهري', style: TextStyle(color: Colors.white70)), Text('${f.format(_monthlyInstallment)} ر.س', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))]),
+            const Divider(color: Colors.white10, height: 24),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('الدفعة المقدمة', style: TextStyle(color: Colors.white70)), Text('${f.format(downPayment)} ر.س', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))]),
+            const SizedBox(height: 8),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('المبلغ المتبقي بالأقساط', style: TextStyle(color: Colors.white70)), Text('${f.format(remaining > 0 ? remaining : 0)} ر.س', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))]),
+            const Divider(color: Colors.white10, height: 24),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('قيمة القسط الشهري', style: TextStyle(color: Colors.white70)), Text('${f.format(_monthlyInstallment)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 20, fontWeight: FontWeight.bold))]),
           ],
         ],
       ),

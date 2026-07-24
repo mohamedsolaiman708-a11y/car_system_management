@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../investor_controller.dart';
 import '../../domain/investor_transaction_type.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class AddTransactionDialog extends ConsumerStatefulWidget {
   final String investorId;
@@ -214,24 +215,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       if (mounted) {
         if (success) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('تمت العملية بنجاح وتحديث السجلات'),
-                ],
-              ),
-              backgroundColor: AppColors.successGreen,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+          SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح وتحديث السجلات');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('فشلت العملية. يرجى مراجعة الرصيد المتاح.')),
-          );
+          SnackBarHelper.showError(context, 'فشلت العملية. يرجى مراجعة الرصيد المتاح.');
         }
       }
     } finally {

@@ -22,6 +22,9 @@ class AuditLogController extends _$AuditLogController {
     String? tableName,
     String? eventType,
     String? profileId,
+    String? recordId,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
@@ -31,6 +34,9 @@ class AuditLogController extends _$AuditLogController {
             tableName: tableName,
             eventType: eventType,
             profileId: profileId,
+            recordId: recordId,
+            startDate: startDate,
+            endDate: endDate,
           ),
     );
   }

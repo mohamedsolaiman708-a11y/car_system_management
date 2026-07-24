@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/document.dart';
@@ -11,31 +11,33 @@ class SupabaseDocumentRepository implements DocumentRepository {
   final SupabaseClient _client;
   SupabaseDocumentRepository(this._client);
 
+
   @override
   Future<List<AppDocument>> getDocuments({
     String? customerId,
     String? contractId,
     String? investorId,
   }) async {
-    // استخدام filter('column', 'is', null) هو الحل الأكثر أماناً للتحقق من القيم الفارغة
-    var query = _client
-        .from('contract_documents')
-        .select()
-        .filter('deleted_at', 'is', null);
+    var query = _client.from('contract_documents').select().isFilter('deleted_at', null);
 
-    if (contractId != null) {
-      query = query.eq('contract_id', contractId);
-    } else if (customerId != null) {
-      query = query.eq('customer_id', customerId);
-    } else if (investorId != null) {
-      query = query.eq('investor_id', investorId);
+    List<String> filters = [];
+    if (contractId != null) filters.add('contract_id.eq.$contractId');
+    if (customerId != null) filters.add('customer_id.eq.$customerId');
+    if (investorId != null) filters.add('investor_id.eq.$investorId');
+
+    if (filters.isNotEmpty) {
+      query = query.or(filters.join(','));
     }
 
     final response = await query.order('created_at', ascending: false);
 
-    return (response as List)
-        .map((json) => AppDocument.fromJson(json))
-        .toList();
+    return (response as List).map((json) {
+      try {
+        return AppDocument.fromJson(json);
+      } catch (e) {
+        return null;
+      }
+    }).whereType<AppDocument>().toList();
   }
 
   @override
@@ -49,39 +51,22 @@ class SupabaseDocumentRepository implements DocumentRepository {
     void Function(double progress)? onProgress,
   }) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final folder = investorId != null
-        ? 'investors/$investorId'
-        : contractId != null
-        ? 'contracts/$contractId'
-        : 'customers/$customerId';
-
+    final folder = investorId != null ? 'investors/$investorId' : contractId != null ? 'contracts/$contractId' : 'customers/$customerId';
     final fileExtension = fileName.split('.').last;
-    final storagePath =
-        '$folder/${type.name.toUpperCase()}_$timestamp.$fileExtension';
+    final storagePath = '$folder/${type.name.toUpperCase()}_$timestamp.$fileExtension';
 
-    // محاكاة تقدم الرفع من 0% إلى 70% أثناء الرفع
-    onProgress?.call(0.05);
+    onProgress?.call(0.1);
 
-    // رفع الملف إلى Storage
-    await _client.storage
-        .from('documents')
-        .uploadBinary(
-          storagePath,
-          fileBytes as dynamic,
-          fileOptions: FileOptions(
-            contentType: _getContentType(fileExtension),
-            upsert: false,
-          ),
-        );
+    // استخدام Uint8List لضمان التوافق مع Supabase Storage
+    await _client.storage.from('documents').uploadBinary(
+      storagePath,
+      Uint8List.fromList(fileBytes),
+      fileOptions: FileOptions(contentType: _getContentType(fileExtension), upsert: false),
+    );
 
-    onProgress?.call(0.75);
-
-    // جلب الرابط العام
+    onProgress?.call(0.8);
     final fileUrl = _client.storage.from('documents').getPublicUrl(storagePath);
 
-    onProgress?.call(0.85);
-
-    // تسجيل البيانات في قاعدة البيانات
     await _client.from('contract_documents').insert({
       'customer_id': customerId,
       'contract_id': contractId,
@@ -98,11 +83,7 @@ class SupabaseDocumentRepository implements DocumentRepository {
 
   @override
   Future<void> deleteDocument(String documentId, String filePath) async {
-    // تنفيذ الحذف الناعم (Soft Delete)
-    await _client
-        .from('contract_documents')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
-        .eq('id', documentId);
+    await _client.from('contract_documents').update({'deleted_at': DateTime.now().toIso8601String()}).eq('id', documentId);
   }
 
   @override
@@ -112,15 +93,11 @@ class SupabaseDocumentRepository implements DocumentRepository {
 
   String _getContentType(String extension) {
     switch (extension.toLowerCase()) {
-      case 'pdf':
-        return 'application/pdf';
+      case 'pdf': return 'application/pdf';
       case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      default:
-        return 'application/octet-stream';
+      case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      default: return 'application/octet-stream';
     }
   }
 }

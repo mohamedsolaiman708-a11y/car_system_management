@@ -64,7 +64,7 @@ class CrmController extends _$CrmController {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<Customer>> customersList(
     CustomersListRef ref, {
   String? searchQuery,

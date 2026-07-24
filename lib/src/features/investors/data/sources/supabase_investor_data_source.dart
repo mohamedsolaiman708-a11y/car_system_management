@@ -43,12 +43,29 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
 
   @override
   Future<Map<String, dynamic>> createInvestor(Map<String, dynamic> data) async {
-    final response = await _client
-        .from('investors')
-        .insert(data)
-        .select()
-        .single();
-    return response;
+    final payload = Map<String, dynamic>.from(data);
+    payload.removeWhere((key, value) => value == null);
+
+    try {
+      final response = await _client
+          .from('investors')
+          .insert(payload)
+          .select()
+          .single();
+      return response;
+    } catch (e) {
+      // If insertion failed because 'phone' column does not exist in 'investors' table, retry without 'phone'
+      if (payload.containsKey('phone')) {
+        payload.remove('phone');
+        final response = await _client
+            .from('investors')
+            .insert(payload)
+            .select()
+            .single();
+        return response;
+      }
+      rethrow;
+    }
   }
 
   @override

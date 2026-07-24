@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 import '../../../../core/services/export_service.dart';
 import '../crm_controller.dart';
 
@@ -279,9 +280,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
     if (customers == null || customers.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('لا توجد بيانات لتصديرها')),
-        );
+        SnackBarHelper.showWarning(context, 'لا توجد بيانات لتصديرها');
       }
       return;
     }
@@ -316,9 +315,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ أثناء التصدير: $e')),
-        );
+        SnackBarHelper.showError(context, 'خطأ أثناء التصدير: $e');
       }
     }
   }

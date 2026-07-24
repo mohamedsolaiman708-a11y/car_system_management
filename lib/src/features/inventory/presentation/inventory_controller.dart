@@ -49,7 +49,7 @@ class InventoryController extends _$InventoryController {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<Map<String, dynamic>> inventoryStats(InventoryStatsRef ref) {
   return ref.watch(inventoryRepositoryProvider).getInventoryStats();
 }
@@ -59,7 +59,7 @@ Future<List<Map<String, dynamic>>> vehicleMaintenanceLogs(VehicleMaintenanceLogs
   return ref.watch(inventoryRepositoryProvider).getMaintenanceLogs(vehicleId);
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<Vehicle>> vehiclesList(
   VehiclesListRef ref, {
   String? searchQuery,

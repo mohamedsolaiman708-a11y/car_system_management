@@ -6,7 +6,7 @@ part of 'crm_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$customersListHash() => r'620be9c8dc7dea375131f44c925b5ef0f0f1f131';
+String _$customersListHash() => r'3693c5813f0db122c67a8c40b28c354fb0675f38';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -78,7 +78,7 @@ class CustomersListFamily extends Family<AsyncValue<List<Customer>>> {
 }
 
 /// See also [customersList].
-class CustomersListProvider extends AutoDisposeFutureProvider<List<Customer>> {
+class CustomersListProvider extends FutureProvider<List<Customer>> {
   /// See also [customersList].
   CustomersListProvider({String? searchQuery, String? status, String? city})
     : this._internal(
@@ -138,7 +138,7 @@ class CustomersListProvider extends AutoDisposeFutureProvider<List<Customer>> {
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<Customer>> createElement() {
+  FutureProviderElement<List<Customer>> createElement() {
     return _CustomersListProviderElement(this);
   }
 
@@ -163,7 +163,7 @@ class CustomersListProvider extends AutoDisposeFutureProvider<List<Customer>> {
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin CustomersListRef on AutoDisposeFutureProviderRef<List<Customer>> {
+mixin CustomersListRef on FutureProviderRef<List<Customer>> {
   /// The parameter `searchQuery` of this provider.
   String? get searchQuery;
 
@@ -175,7 +175,7 @@ mixin CustomersListRef on AutoDisposeFutureProviderRef<List<Customer>> {
 }
 
 class _CustomersListProviderElement
-    extends AutoDisposeFutureProviderElement<List<Customer>>
+    extends FutureProviderElement<List<Customer>>
     with CustomersListRef {
   _CustomersListProviderElement(super.provider);
 

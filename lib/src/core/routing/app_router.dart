@@ -14,6 +14,7 @@ import '../../features/authentication/presentation/screens/pending_approval_scre
 import '../../features/authentication/presentation/screens/account_rejected_screen.dart';
 import '../../features/authentication/presentation/screens/session_expired_screen.dart';
 import '../../features/authentication/presentation/screens/staff_management_screen.dart';
+import '../../features/authentication/presentation/screens/account_disabled_screen.dart';
 import '../../features/authentication/domain/user_role.dart';
 
 // CRM Screens
@@ -32,6 +33,7 @@ import '../../features/inventory/presentation/screens/edit_vehicle_screen.dart';
 import '../../features/contracts/presentation/screens/contracts_screen.dart';
 import '../../features/contracts/presentation/screens/create_contract_screen.dart';
 import '../../features/contracts/presentation/screens/contract_details_screen.dart';
+import '../../features/contracts/presentation/screens/edit_contract_screen.dart';
 
 // Investor Management
 import '../../features/investors/presentation/screens/investors_screen.dart';
@@ -71,28 +73,46 @@ import '../../features/accounting/presentation/screens/account_ledger_screen.dar
 // Background Jobs
 import '../../features/jobs/presentation/screens/jobs_screen.dart';
 
+// Documents
+import '../../features/documents/presentation/screens/documents_screen.dart';
+
+// Vouchers
+import '../../features/vouchers/presentation/voucher_screen.dart';
+
 import 'main_scaffold.dart';
 
 part 'app_router.g.dart';
 
 // ---------------------------------------------------------------------------
-// RouterNotifier — يراقب حالة المصادقة ووضع الصيانة ويُخطر GoRouter فوراً
+// RouterNotifier — يراقب الحالة ويخطر GoRouter عند التغيير
 // ---------------------------------------------------------------------------
 
 @riverpod
-class RouterNotifier extends _$RouterNotifier with ChangeNotifier {
+class RouterNotifier extends _$RouterNotifier implements Listenable {
+  VoidCallback? _routerListener;
+
   @override
   void build() {
-    // مراقبة كلا الـ providers — أي تغيير يُعيد بناء هذا الـ notifier
-    ref.watch(authStateProvider);
-    ref.watch(isMaintenanceModeProvider);
+    // مراقبة التغييرات في الحالات الأساسية (Authentication & Maintenance)
+    // لا نحتاج لـ Future هنا، الـ build المتزامن أفضل للـ Listenable
+    ref.listen(authStateProvider, (previous, next) {
+      if (!next.isLoading) {
+        _routerListener?.call();
+      }
+    });
 
-    // عند إعادة البناء، أخبر GoRouter بإعادة تقييم الـ redirect
-    ref.listenSelf((_, __) => notifyListeners());
+    ref.listen(isMaintenanceModeProvider, (previous, next) {
+      if (!next.isLoading) {
+        _routerListener?.call();
+      }
+    });
   }
 
-  AsyncValue get authState => ref.read(authStateProvider);
-  bool get isInMaintenance => ref.read(isMaintenanceModeProvider).value == true;
+  @override
+  void addListener(VoidCallback listener) => _routerListener = listener;
+
+  @override
+  void removeListener(VoidCallback listener) => _routerListener = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,12 +127,14 @@ GoRouter goRouter(GoRouterRef ref) {
     initialLocation: '/',
     refreshListenable: notifier,
     redirect: (context, state) {
-      final authState = notifier.authState;
-      final isInMaintenance = notifier.isInMaintenance;
+      final authValue = ref.read(authStateProvider);
+      final maintenanceValue = ref.read(isMaintenanceModeProvider);
 
-      if (authState.isLoading) return null;
+      // منع أي توجيه أثناء التحميل الأولي
+      if (authValue.isLoading || maintenanceValue.isLoading) return null;
 
-      final user = authState.valueOrNull;
+      final user = authValue.valueOrNull;
+      final isInMaintenance = maintenanceValue.valueOrNull == true;
       final isLoggedIn = user != null;
       final path = state.matchedLocation;
 
@@ -132,15 +154,24 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/portal-selection';
       }
 
+      // --- التحقق من تعطيل الحساب (Phase 21) ---
       final isStaff = user.role != UserRole.investor;
-
+      
       if (isStaff) {
-        if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
+        if (!user.isActive && path != '/auth/disabled') {
+          return '/auth/disabled';
+        }
+        if (user.isActive && path == '/auth/disabled') {
           return '/dashboard';
+        }
+
+        if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
+          if (path != '/auth/disabled') return '/dashboard';
         }
         return null;
       }
 
+      // --- لوجيك المستثمرين ---
       if (user.status == 'pending' && path != '/auth/pending') return '/auth/pending';
       if (user.status == 'rejected' && path != '/auth/rejected') return '/auth/rejected';
 
@@ -151,7 +182,7 @@ GoRouter goRouter(GoRouterRef ref) {
 
       final staffPaths = [
         '/dashboard', '/crm', '/inventory', '/contracts',
-        '/investors', '/accounting', '/settings', '/staff-management'
+        '/investors', '/accounting', '/settings', '/staff-management', '/documents'
       ];
       if (user.role == UserRole.investor && staffPaths.any((p) => path.startsWith(p))) {
         return '/investor-portal';
@@ -178,108 +209,178 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(path: '/auth/verify-email', builder: (context, state) => const EmailVerificationScreen()),
       GoRoute(path: '/auth/pending', builder: (context, state) => const PendingApprovalScreen()),
       GoRoute(path: '/auth/rejected', builder: (context, state) => const AccountRejectedScreen()),
+      GoRoute(path: '/auth/disabled', builder: (context, state) => const AccountDisabledScreen()),
       GoRoute(path: '/auth/session-expired', builder: (context, state) => const SessionExpiredScreen()),
 
-      ShellRoute(
-        builder: (context, state, child) => MainScaffold(child: child),
-        routes: [
-          GoRoute(path: '/dashboard', builder: (context, state) => const StaffDashboardScreen()),
-          GoRoute(path: '/search', builder: (context, state) => const GlobalSearchScreen()),
-          GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
-          GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
-
-          GoRoute(
-            path: '/crm/customers',
-            builder: (context, state) => const CustomersScreen(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => MainScaffold(child: navigationShell),
+        branches: [
+          StatefulShellBranch(
             routes: [
-              GoRoute(path: 'new', builder: (context, state) => const CreateCustomerScreen()),
+              GoRoute(path: '/dashboard', builder: (context, state) => const StaffDashboardScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/search', builder: (context, state) => const GlobalSearchScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
               GoRoute(
-                path: ':id',
-                builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
+                path: '/crm/customers',
+                builder: (context, state) => const CustomersScreen(),
                 routes: [
+                  GoRoute(path: 'new', builder: (context, state) => const CreateCustomerScreen()),
                   GoRoute(
-                    path: 'edit',
-                    builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!),
-                  )
+                    path: ':id',
+                    builder: (context, state) => CustomerDetailsScreen(id: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) => EditCustomerScreen(id: state.pathParameters['id']!),
+                      )
+                    ],
+                  ),
                 ],
               ),
             ],
           ),
-
-          GoRoute(
-            path: '/inventory',
-            builder: (context, state) => const VehiclesScreen(),
+          StatefulShellBranch(
             routes: [
-              GoRoute(path: 'new', builder: (context, state) => const CreateVehicleScreen()),
               GoRoute(
-                path: ':id',
-                builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
+                path: '/inventory',
+                builder: (context, state) => const VehiclesScreen(),
                 routes: [
+                  GoRoute(path: 'new', builder: (context, state) => const CreateVehicleScreen()),
                   GoRoute(
-                    path: 'edit',
-                    builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!),
-                  )
+                    path: ':id',
+                    builder: (context, state) => VehicleDetailsScreen(id: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) => EditVehicleScreen(id: state.pathParameters['id']!),
+                      )
+                    ],
+                  ),
                 ],
               ),
             ],
           ),
-
-          GoRoute(
-            path: '/contracts',
-            builder: (context, state) => const ContractsScreen(),
-            routes: [
-              GoRoute(path: 'new', builder: (context, state) => const CreateContractScreen()),
-              GoRoute(path: ':id', builder: (context, state) => ContractDetailsScreen(id: state.pathParameters['id']!)),
-            ],
-          ),
-
-          GoRoute(
-            path: '/investors',
-            builder: (context, state) {
-              final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
-              return InvestorsScreen(initialIndex: tab);
-            },
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: ':id',
+                path: '/contracts',
+                builder: (context, state) => const ContractsScreen(),
+                routes: [
+                  GoRoute(path: 'new', builder: (context, state) => const CreateContractScreen()),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => ContractDetailsScreen(id: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) => EditContractScreen(id: state.pathParameters['id']!),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/investors',
                 builder: (context, state) {
-                  final id = state.pathParameters['id']!;
                   final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
-                  return InvestorDetailsScreen(id: id, initialTab: tab);
+                  return InvestorsScreen(initialIndex: tab);
                 },
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
+                      return InvestorDetailsScreen(id: id, initialTab: tab);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-
-          GoRoute(
-            path: '/accounting',
-            builder: (context, state) => const AccountsScreen(),
+          StatefulShellBranch(
             routes: [
-              GoRoute(path: 'journal', builder: (context, state) => const JournalEntriesScreen()),
-              GoRoute(path: 'trial-balance', builder: (context, state) => const TrialBalanceScreen()),
               GoRoute(
-                path: 'ledger/:id',
-                builder: (context, state) {
-                  final id = state.pathParameters['id']!;
-                  final name = state.uri.queryParameters['name'] ?? 'كشف حساب';
-                  return AccountLedgerScreen(accountId: id, accountName: name);
-                },
+                path: '/accounting',
+                builder: (context, state) => const AccountsScreen(),
+                routes: [
+                  GoRoute(path: 'journal', builder: (context, state) => const JournalEntriesScreen()),
+                  GoRoute(path: 'trial-balance', builder: (context, state) => const TrialBalanceScreen()),
+                  GoRoute(
+                    path: 'ledger/:id',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      final name = state.uri.queryParameters['name'] ?? 'كشف حساب';
+                      return AccountLedgerScreen(accountId: id, accountName: name);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-
-          GoRoute(
-            path: '/settings',
-            builder: (context, state) => const SettingsScreen(),
+          StatefulShellBranch(
             routes: [
-              GoRoute(path: 'company', builder: (context, state) => const CompanySettingsScreen()),
-              GoRoute(path: 'jobs', builder: (context, state) => const BackgroundJobsScreen()),
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(path: 'company', builder: (context, state) => const CompanySettingsScreen()),
+                  GoRoute(path: 'jobs', builder: (context, state) => const BackgroundJobsScreen()),
+                ],
+              ),
             ],
           ),
-
-          GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
-          GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
-          GoRoute(path: '/help-center', builder: (context, state) => const HelpCenterScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/staff-management', builder: (context, state) => const StaffManagementScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/audit-logs', builder: (context, state) => const AuditLogsScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/help-center', builder: (context, state) => const HelpCenterScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/documents', builder: (context, state) => const DocumentsScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/vouchers/receipt', builder: (context, state) => const VoucherScreen(type: 'receipt')),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/vouchers/payment', builder: (context, state) => const VoucherScreen(type: 'payment')),
+            ],
+          ),
         ],
       ),
 

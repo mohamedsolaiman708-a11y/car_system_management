@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/supabase_settings_repository.dart';
 import '../domain/system_setting.dart';
+import '../domain/company_settings.dart';
 
 part 'settings_controller.g.dart';
 
@@ -19,16 +20,25 @@ class SettingsController extends _$SettingsController {
     });
   }
 
-  /// تبديل وضع الصيانة
-  /// لا يلمس [state] (قائمة الإعدادات) لتجنب تعطل الشاشة عند الفشل.
   Future<void> toggleMaintenance(bool isActive, String message) async {
     await ref.read(settingsRepositoryProvider).toggleMaintenanceMode(isActive, message);
-    ref.invalidate(isMaintenanceModeProvider); // تحديث الحالة عالمياً
+    ref.invalidate(isMaintenanceModeProvider);
   }
 }
 
-/// موفر حالة الصيانة الحالية (للمراقبة في الـ Router)
 @riverpod
 Future<bool> isMaintenanceMode(IsMaintenanceModeRef ref) {
   return ref.watch(settingsRepositoryProvider).isMaintenanceMode();
 }
+
+/// Provider مخصص لجلب إعدادات المنشأة فقط لاستخدامها في التقارير والـ UI
+@riverpod
+Future<CompanySettings> companySettings(CompanySettingsRef ref) async {
+  final settings = await ref.watch(settingsRepositoryProvider).getSettings();
+  final companyItem = settings.firstWhere(
+    (s) => s.key == 'company_profile',
+    orElse: () => throw Exception('Company settings not found'),
+  );
+  return CompanySettings.fromJson(companyItem.value);
+}
+

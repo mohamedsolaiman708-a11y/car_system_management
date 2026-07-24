@@ -184,6 +184,19 @@ class _Sidebar extends ConsumerWidget {
                 ],
 
                 _SidebarLink(Icons.history_edu_rounded, 'العقود', '/contracts', isCollapsed),
+                
+                // أرشفة المستندات (Phase 17)
+                _SidebarLink(Icons.folder_copy_rounded, 'مركز المستندات', '/documents', isCollapsed),
+
+                // السندات المالية
+                if (!isCollapsed)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 16, top: 12, bottom: 4),
+                    child: Text('السندات المالية',
+                        style: TextStyle(color: Colors.white30, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  ),
+                _SidebarLink(Icons.arrow_circle_down_rounded, 'سند القبض', '/vouchers/receipt', isCollapsed),
+                _SidebarLink(Icons.arrow_circle_up_rounded, 'سند الصرف', '/vouchers/payment', isCollapsed),
 
                 if (role == UserRole.admin || role == UserRole.accountant)
                   _SidebarLink(Icons.account_tree_rounded, 'المحاسبة', '/accounting', isCollapsed),

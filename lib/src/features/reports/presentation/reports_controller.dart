@@ -53,6 +53,16 @@ Future<List<Map<String, dynamic>>> cashFlowReport(
 }
 
 @riverpod
+Future<List<Map<String, dynamic>>> overdueReport(OverdueReportRef ref) {
+  return ref.watch(reportRepositoryProvider).getOverdueReport();
+}
+
+@riverpod
+Future<List<Map<String, dynamic>>> investorsPerformance(InvestorsPerformanceRef ref) {
+  return ref.watch(reportRepositoryProvider).getInvestorsPerformance();
+}
+
+@riverpod
 Future<List<Map<String, dynamic>>> contractsSummary(ContractsSummaryRef ref) {
   return ref.watch(reportRepositoryProvider).getContractsSummary();
 }

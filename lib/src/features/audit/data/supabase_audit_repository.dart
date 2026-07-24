@@ -8,7 +8,6 @@ part 'supabase_audit_repository.g.dart';
 
 class SupabaseAuditRepository {
   final SupabaseClient _client;
-  final Map<String, dynamic> _memCache = {};
 
   SupabaseAuditRepository(this._client);
 
@@ -16,29 +15,44 @@ class SupabaseAuditRepository {
     String? eventType,
     String? tableName,
     String? profileId,
-    int limit = 50,
+    String? recordId,
+    DateTime? startDate,
+    DateTime? endDate,
+    int limit = 100,
   }) async {
-    final key = 'audit_logs_${eventType}_${tableName}_${profileId}_$limit';
     try {
       var query = _client
           .from('audit_logs')
           .select('*, profiles(full_name)');
 
-      if (eventType != null) query = query.eq('event_type', eventType);
-      if (tableName != null) query = query.eq('table_name', tableName);
-      if (profileId != null) query = query.eq('profile_id', profileId);
+      if (eventType != null && eventType.isNotEmpty) {
+        query = query.eq('event_type', eventType);
+      }
+      if (tableName != null && tableName.isNotEmpty) {
+        query = query.eq('table_name', tableName);
+      }
+      if (profileId != null && profileId.isNotEmpty) {
+        query = query.eq('profile_id', profileId);
+      }
+      if (recordId != null && recordId.isNotEmpty) {
+        query = query.ilike('record_id', '%$recordId%');
+      }
+      
+      if (startDate != null) {
+        query = query.gte('created_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        // إضافة يوم واحد لنهاية النطاق ليشمل اليوم المختار بالكامل
+        final nextDay = endDate.add(const Duration(days: 1));
+        query = query.lt('created_at', nextDay.toIso8601String());
+      }
 
       final response = await query
           .order('created_at', ascending: false)
           .limit(limit);
 
-      final list = (response as List).map((json) => AuditLog.fromJson(json)).toList();
-      _memCache[key] = list;
-      return list;
+      return (response as List).map((json) => AuditLog.fromJson(json)).toList();
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<AuditLog>;
-      }
       throw Failure.fromException(e);
     }
   }
@@ -47,9 +61,4 @@ class SupabaseAuditRepository {
 @riverpod
 SupabaseAuditRepository auditRepository(AuditRepositoryRef ref) {
   return SupabaseAuditRepository(ref.watch(supabaseClientProvider));
-}
-
-@riverpod
-Future<List<AuditLog>> auditLogsList(AuditLogsListRef ref) {
-  return ref.watch(auditRepositoryProvider).getAuditLogs();
 }

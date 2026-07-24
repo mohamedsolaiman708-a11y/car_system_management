@@ -64,7 +64,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             _buildExecutiveSummary(reportData),
             const SizedBox(height: 40),
 
-            // شبكة أنواع التقارير
+            // شبكة أنواع التقارير (تم توسيعها لتشمل Phase 18)
             const Text('كتالوج التقارير المتخصصة',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
             const SizedBox(height: 20),
@@ -158,14 +158,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 4,
+      crossAxisCount: 3,
       mainAxisSpacing: 20,
       crossAxisSpacing: 20,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.5,
       children: [
         _buildCategoryCard('تقرير الأرباح', 'تحليل العوائد والنمو', Icons.pie_chart_rounded, Colors.indigo, 'profit'),
         _buildCategoryCard('سجل التحصيل', 'متابعة الدفعات المستلمة', Icons.receipt_long_rounded, Colors.teal, 'collections'),
+        _buildCategoryCard('تقرير المتأخرات', 'حصر الأقساط المتعثرة', Icons.warning_amber_rounded, Colors.red, 'overdue'),
         _buildCategoryCard('التدفق النقدي', 'مراقبة حركة السيولة', Icons.swap_horizontal_circle_rounded, Colors.orange, 'cashflow'),
+        _buildCategoryCard('أداء المستثمرين', 'تحليل محافظ الشركاء', Icons.analytics_rounded, Colors.blue, 'investors'),
         _buildCategoryCard('ميزان المراجعة', 'التقرير المحاسبي العام', Icons.account_tree_rounded, Colors.blueGrey, 'trial_balance'),
       ],
     );
@@ -260,71 +262,62 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Future<void> _openReport(String type) async {
     switch (type) {
       case 'collections':
-      // سجل التحصيل له شاشة خاصة جاهزة
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CollectionsReportScreen()),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const CollectionsReportScreen()));
+        break;
+
+      case 'overdue':
+        final data = await ref.read(overdueReportProvider.future);
+        if (!mounted) return;
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailScreen(
+          title: 'تقرير المتأخرات والمتعثرين',
+          columns: const ['رقم العقد', 'العميل', 'المبلغ المتأخر', 'تاريخ الاستحقاق'],
+          data: data,
+          dataKeys: const ['contract_no', 'customer_name', 'expected_amount', 'due_date'],
+        )));
+        break;
+
+      case 'investors':
+        final data = await ref.read(investorsPerformanceProvider.future);
+        if (!mounted) return;
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailScreen(
+          title: 'تقرير أداء المستثمرين والشركاء',
+          columns: const ['المستثمر', 'رأس المال الموظف', 'إجمالي الربح المحقق', 'العائد'],
+          data: data,
+          dataKeys: const ['investor_name', 'deployed_capital', 'total_profit', 'return_rate'],
+        )));
         break;
 
       case 'profit':
-      // تقرير الأرباح - بنسحب الداتا ونعرضها في الشاشة العامة
-        final data = await ref.read(profitReportProvider(
-          startDate: dateRange.start,
-          endDate: dateRange.end,
-        ).future);
-
+        final data = await ref.read(profitReportProvider(startDate: dateRange.start, endDate: dateRange.end).future);
         if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReportDetailScreen(
-              title: 'تقرير الأرباح التفصيلي',
-              columns: const ['الفترة', 'إجمالي الربح', 'حصة المستثمر', 'صافي الشركة'],
-              data: data,
-              dataKeys: const ['period_text', 'gross_profit', 'investor_share', 'company_net_profit'],
-            ),
-          ),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailScreen(
+          title: 'تقرير الأرباح التفصيلي',
+          columns: const ['الفترة', 'إجمالي الربح', 'حصة المستثمر', 'صافي الشركة'],
+          data: data,
+          dataKeys: const ['period_text', 'gross_profit', 'investor_share', 'company_net_profit'],
+        )));
         break;
 
       case 'cashflow':
-      // التدفق النقدي
-        final data = await ref.read(cashFlowReportProvider(
-          startDate: dateRange.start,
-          endDate: dateRange.end,
-        ).future);
-
+        final data = await ref.read(cashFlowReportProvider(startDate: dateRange.start, endDate: dateRange.end).future);
         if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReportDetailScreen(
-              title: 'تقرير التدفق النقدي',
-              columns: const ['التاريخ', 'البيان', 'داخل (إيداع)', 'خارج (سحب)'],
-              data: data,
-              dataKeys: const ['date', 'description', 'inflow', 'outflow'],
-            ),
-          ),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailScreen(
+          title: 'تقرير التدفق النقدي',
+          columns: const ['التاريخ', 'البيان', 'داخل (إيداع)', 'خارج (سحب)'],
+          data: data,
+          dataKeys: const ['date', 'description', 'inflow', 'outflow'],
+        )));
         break;
 
       case 'trial_balance':
-      // ميزان المراجعة
         final data = await ref.read(trialBalanceProvider.future);
-
         if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReportDetailScreen(
-              title: 'ميزان المراجعة العام',
-              columns: const ['كود الحساب', 'اسم الحساب', 'مدين', 'دائن'],
-              data: data,
-              dataKeys: const ['account_code', 'account_name', 'total_debit', 'total_credit'],
-            ),
-          ),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailScreen(
+          title: 'ميزان المراجعة العام',
+          columns: const ['كود الحساب', 'اسم الحساب', 'مدين', 'دائن'],
+          data: data,
+          dataKeys: const ['account_code', 'account_name', 'total_debit', 'total_credit'],
+        )));
         break;
     }
   }
@@ -340,8 +333,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         child: child!,
       ),
     );
-    if (picked != null) {
-      setState(() => dateRange = picked);
-    }
+    if (picked != null) setState(() => dateRange = picked);
   }
 }

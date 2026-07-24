@@ -6,30 +6,29 @@ part of 'dashboard_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$staffStatsHash() => r'db2b25bead26eb137736f43f669edaa4a1e3a34e';
+String _$staffStatsHash() => r'7bb4a52c2cb42024ccfb1a98683494b2168a7479';
 
 /// See also [staffStats].
 @ProviderFor(staffStats)
-final staffStatsProvider =
-    AutoDisposeFutureProvider<Map<String, dynamic>>.internal(
-      staffStats,
-      name: r'staffStatsProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$staffStatsHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
+final staffStatsProvider = FutureProvider<Map<String, dynamic>>.internal(
+  staffStats,
+  name: r'staffStatsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$staffStatsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef StaffStatsRef = AutoDisposeFutureProviderRef<Map<String, dynamic>>;
-String _$monthlyGrowthDataHash() => r'935df0cd711f0e30f9fc6b34980818e99bfe476f';
+typedef StaffStatsRef = FutureProviderRef<Map<String, dynamic>>;
+String _$monthlyGrowthDataHash() => r'1557ba9efd3136e38c70543ac50c15056f0be68b';
 
 /// See also [monthlyGrowthData].
 @ProviderFor(monthlyGrowthData)
 final monthlyGrowthDataProvider =
-    AutoDisposeFutureProvider<List<Map<String, dynamic>>>.internal(
+    FutureProvider<List<Map<String, dynamic>>>.internal(
       monthlyGrowthData,
       name: r'monthlyGrowthDataProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -41,8 +40,7 @@ final monthlyGrowthDataProvider =
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef MonthlyGrowthDataRef =
-    AutoDisposeFutureProviderRef<List<Map<String, dynamic>>>;
+typedef MonthlyGrowthDataRef = FutureProviderRef<List<Map<String, dynamic>>>;
 String _$systemIntegrityStatusHash() =>
     r'478ffe9f2a2f49d1a1444e13ddf85c6b36541fd0';
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../investor_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/snack_bar_helper.dart';
 
 class CreateInvestorDialog extends ConsumerStatefulWidget {
   const CreateInvestorDialog({super.key});
@@ -101,7 +102,11 @@ class _CreateInvestorDialogState extends ConsumerState<CreateInvestorDialog> {
           );
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إنشاء ملف المستثمر بنجاح')));
+        SnackBarHelper.showSuccess(context, 'تم إنشاء ملف المستثمر بنجاح');
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

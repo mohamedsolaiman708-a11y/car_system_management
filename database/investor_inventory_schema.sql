@@ -181,6 +181,47 @@ CREATE TABLE public.financing_contracts (
     duration_months INTEGER NOT NULL,
     start_date DATE,
     status public.contract_status DEFAULT 'draft',
+    -- نوع العقد (installments = بالأجل | cash = نقدي)
+    type TEXT DEFAULT 'installments',
+
+    -- الكفيل الأول (Guarantor 1)
+    guarantor_1_name TEXT,
+    guarantor_1_id TEXT,
+    guarantor_1_phone TEXT,
+    guarantor_1_work TEXT,
+    guarantor_1_address TEXT,
+
+    -- الكفيل الثاني (Guarantor 2)
+    guarantor_2_name TEXT,
+    guarantor_2_id TEXT,
+    guarantor_2_phone TEXT,
+    guarantor_2_work TEXT,
+    guarantor_2_address TEXT,
+
+    -- الشهود
+    witness_1 TEXT,
+    witness_2 TEXT,
+
+    -- الدفعة المقدمة (Down Payment)
+    down_payment DECIMAL(15,2) DEFAULT 0.00,
+
+    -- الرسوم التفصيلية (6 Service Fees)
+    moroor_fees DECIMAL(15,2) DEFAULT 0.00,           -- رسوم نقل الملكية
+    tamm_fees DECIMAL(15,2) DEFAULT 0.00,             -- رسوم تم
+    insurance_fees DECIMAL(15,2) DEFAULT 0.00,        -- التأمين
+    inspection_fees DECIMAL(15,2) DEFAULT 0.00,       -- الفحص الدوري
+    plate_fees DECIMAL(15,2) DEFAULT 0.00,            -- إصدار اللوحات
+    traffic_violations_fees DECIMAL(15,2) DEFAULT 0.00, -- سداد المخالفات
+    other_fees DECIMAL(15,2) DEFAULT 0.00,            -- رسوم أخرى
+    vat_amount DECIMAL(15,2) DEFAULT 0.00,            -- ضريبة القيمة المضافة
+
+    -- ملاحظات عامة
+    notes TEXT,
+
+    -- قائمة السيارات (للعقود متعددة السيارات)
+    -- مثال: [{"make":"كيا","model":"2022","plate":"أ ب ج 123","chassis":"XYZ"}]
+    vehicles_list JSONB DEFAULT '[]'::jsonb,
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
