@@ -219,6 +219,15 @@ class _InvestorsScreenState extends ConsumerState<InvestorsScreen> with SingleTi
   }
 
   Widget _buildTabBar() {
+    final pendingCount = ref.watch(pendingInvestorsControllerProvider).maybeWhen(
+      data: (list) => list.length,
+      orElse: () => 0,
+    );
+    final withdrawalCount = ref.watch(withdrawalRequestsControllerProvider()).maybeWhen(
+      data: (list) => list.where((r) => r['status'].toString().toLowerCase() == 'pending').length,
+      orElse: () => 0,
+    );
+
     return TabBar(
       controller: _tabController,
       isScrollable: true,
@@ -228,12 +237,40 @@ class _InvestorsScreenState extends ConsumerState<InvestorsScreen> with SingleTi
       indicatorColor: AppColors.accentGold,
       indicatorWeight: 4,
       indicatorSize: TabBarIndicatorSize.label,
-      labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-      padding: EdgeInsets.symmetric(horizontal: 24),
-      tabs: const [
-        Tab(text: 'المستثمرون النشطون'),
-        Tab(text: 'طلبات الانضمام'),
-        Tab(text: 'طلبات السحب'),
+      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      tabs: [
+        const Tab(text: 'المستثمرون النشطون'),
+        Tab(
+          child: Row(
+            children: [
+              const Text('طلبات الانضمام'),
+              if (pendingCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
+                  child: Text('$pendingCount', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Tab(
+          child: Row(
+            children: [
+              const Text('طلبات السحب'),
+              if (withdrawalCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
+                  child: Text('$withdrawalCount', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -673,7 +710,17 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
   Widget build(BuildContext context) {
     final req = widget.req;
     final amount = (req['amount'] as num?)?.toDouble() ?? 0;
-    final investorName = req['investors']?['full_name'] ?? 'مستثمر';
+    final String rawInvName  = req['investors']?['full_name'] ?? '';
+    final String rawProfName = req['profiles']?['full_name'] ?? '';
+    final String rawFallback = req['full_name'] ?? '';
+
+    final String investorName = (rawInvName.isNotEmpty && rawInvName != 'مستثمر') 
+        ? rawInvName 
+        : (rawProfName.isNotEmpty ? rawProfName : (rawFallback.isNotEmpty ? rawFallback : 'مستثمر'));
+    final bankDetails = (req['bank_account_details'] ?? req['bank_details'] ?? '') as String;
+    final createdAtStr = req['created_at'] != null 
+        ? intl.DateFormat('yyyy/MM/dd • hh:mm a').format(DateTime.parse(req['created_at']))
+        : 'تاريخ غير محدد';
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return Container(
@@ -682,38 +729,94 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.05)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.red, size: 24),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(investorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
-                const SizedBox(height: 4),
-                Text('طلب سحب: ${f.format(amount)} ر.س', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700, fontSize: 13)),
-              ],
-            ),
-          ),
-          if (_isLoading)
-            const CircularProgressIndicator(strokeWidth: 2)
-          else
-            ElevatedButton(
-              onPressed: _approve,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryNavy, 
-                foregroundColor: Colors.white,
-                minimumSize: const Size(0, 44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.orange, size: 24),
               ),
-              child: const Text('صرف المبلغ'),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(investorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
+                    const SizedBox(height: 2),
+                    Text(createdAtStr, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                  ],
+                ),
+              ),
+              Text(
+                '${f.format(amount)} ر.س',
+                style: const TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.w900, fontSize: 18),
+              ),
+            ],
+          ),
+          if (bankDetails.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.account_balance_rounded, size: 16, color: Colors.blueGrey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'الحساب البنكي / IBAN: $bankDetails',
+                      style: const TextStyle(fontSize: 12, color: AppColors.primaryNavy, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryNavy))
+          else
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _approve,
+                    icon: const Icon(Icons.check_circle_rounded, size: 18),
+                    label: const Text('اعتماد وصرف المبلغ'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.successGreen,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _reject,
+                    icon: const Icon(Icons.cancel_outlined, size: 18, color: AppColors.errorRed),
+                    label: const Text('رفض الطلب', style: TextStyle(color: AppColors.errorRed)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.errorRed),
+                      minimumSize: const Size(0, 44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
             ),
         ],
       ),
@@ -722,7 +825,59 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
 
   Future<void> _approve() async {
     setState(() => _isLoading = true);
-    await ref.read(withdrawalRequestsControllerProvider().notifier).approveRequest(widget.req['id']);
-    if (mounted) setState(() => _isLoading = false);
+    try {
+      await ref.read(withdrawalRequestsControllerProvider().notifier).approveRequest(widget.req['id']);
+      if (mounted) SnackBarHelper.showSuccess(context, 'تم اعتماد صرف المبلغ وقيد العملية المحاسبية بنجاح ✓');
+    } catch (e) {
+      if (mounted) SnackBarHelper.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _reject() async {
+    final reasonCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('رفض طلب السحب'),
+          content: TextField(
+            controller: reasonCtrl,
+            decoration: const InputDecoration(
+              labelText: 'سبب الرفض (إلزامي)',
+              hintText: 'أدخل سبب عدم قبول الطلب...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.errorRed,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 44),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('تأكيد الرفض'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && reasonCtrl.text.trim().isNotEmpty) {
+      setState(() => _isLoading = true);
+      try {
+        await ref.read(withdrawalRequestsControllerProvider().notifier).rejectRequest(widget.req['id'], reasonCtrl.text.trim());
+        if (mounted) SnackBarHelper.showInfo(context, 'تم رفض طلب السحب');
+      } catch (e) {
+        if (mounted) SnackBarHelper.showError(context, e);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 }

@@ -237,7 +237,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? investorId, String? status}) async {
     try {
-      var query = _client.from('withdrawal_requests').select('*, investors(full_name)');
+      var query = _client.from('withdrawal_requests').select('*, investors(full_name, email), profiles:investor_id(full_name, email)');
       
       if (investorId != null) {
         query = query.eq('investor_id', investorId);
@@ -250,7 +250,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       return List<Map<String, dynamic>>.from(response);
     } catch (_) {
       try {
-        var query = _client.from('withdrawal_requests').select();
+        var query = _client.from('withdrawal_requests').select('*, profiles:investor_id(full_name, email)');
         if (investorId != null) {
           query = query.eq('investor_id', investorId);
         }
