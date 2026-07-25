@@ -93,9 +93,10 @@ class _InvestorSliverAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
     final total = investor.availableBalance + investor.deployedCapital;
+    final topPadding = MediaQuery.of(context).padding.top;
 
     return SliverAppBar(
-      expandedHeight: 280,
+      expandedHeight: 320,
       floating: false,
       pinned: true,
       backgroundColor: _navy,
@@ -126,22 +127,22 @@ class _InvestorSliverAppBar extends StatelessWidget {
               Positioned(bottom: 60, right: -30, child: _Circle(100, _gold.withValues(alpha: 0.07))),
               Positioned(top: 80, right: 40, child: _Circle(50, Colors.white.withValues(alpha: 0.04))),
               SafeArea(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
                               CircleAvatar(
-                                radius: 22,
+                                radius: 24,
                                 backgroundColor: _gold.withValues(alpha: 0.2),
                                 child: Text(
                                   investor.fullName.isNotEmpty ? investor.fullName[0] : 'م',
-                                  style: const TextStyle(color: _gold, fontWeight: FontWeight.bold, fontSize: 18),
+                                  style: const TextStyle(color: _gold, fontWeight: FontWeight.bold, fontSize: 20),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -152,73 +153,65 @@ class _InvestorSliverAppBar extends StatelessWidget {
                                     const Text('مرحباً،', style: TextStyle(color: Colors.white54, fontSize: 12)),
                                     Text(
                                       investor.fullName,
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _green.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: _green.withValues(alpha: 0.4)),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.circle, color: _green, size: 8),
-                                    SizedBox(width: 6),
-                                    Text('نشط', style: TextStyle(color: _green, fontSize: 11, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          const Spacer(),
                           Center(
                             child: Column(
                               children: [
-                                const Text('إجمالي قيمة المحفظة', style: TextStyle(color: Colors.white54, fontSize: 13)),
-                                const SizedBox(height: 6),
+                                const Text('إجمالي قيمة المحفظة', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                                const SizedBox(height: 8),
                                 Text(
                                   '${f.format(total)} ر.س',
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 32,
+                                    fontSize: 40,
                                     fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.0,
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              _HeroStat(
-                                label: 'رصيد متاح للسحب',
-                                value: '${f.format(investor.availableBalance)} ر.س',
-                                icon: Icons.account_balance_wallet_rounded,
-                                color: const Color(0xFF4ADE80),
-                              ),
-                              Container(width: 1, height: 40, color: Colors.white12, margin: const EdgeInsets.symmetric(horizontal: 16)),
-                              _HeroStat(
-                                label: 'رأس مال مشغّل',
-                                value: '${f.format(investor.deployedCapital)} ر.س',
-                                icon: Icons.rocket_launch_rounded,
-                                color: const Color(0xFF60A5FA),
-                              ),
-                              Container(width: 1, height: 40, color: Colors.white12, margin: const EdgeInsets.symmetric(horizontal: 16)),
-                              _HeroStat(
-                                label: 'إجمالي الأرباح',
-                                value: '${f.format(investor.totalProfitEarned)} ر.س',
-                                icon: Icons.trending_up_rounded,
-                                color: _gold,
-                              ),
-                            ],
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              children: [
+                                _HeroStat(
+                                  label: 'رصيد متاح للسحب',
+                                  value: '${f.format(investor.availableBalance)} ر.س',
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  color: const Color(0xFF4ADE80),
+                                ),
+                                Container(width: 1, height: 35, color: Colors.white12),
+                                _HeroStat(
+                                  label: 'رأس مال مشغّل',
+                                  value: '${f.format(investor.deployedCapital)} ر.س',
+                                  icon: Icons.rocket_launch_rounded,
+                                  color: const Color(0xFF60A5FA),
+                                ),
+                                Container(width: 1, height: 35, color: Colors.white12),
+                                _HeroStat(
+                                  label: 'إجمالي الأرباح',
+                                  value: '${f.format(investor.totalProfitEarned)} ر.س',
+                                  icon: Icons.trending_up_rounded,
+                                  color: _gold,
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(height: 60),
                         ],
                       ),
                     ),
@@ -232,7 +225,10 @@ class _InvestorSliverAppBar extends StatelessWidget {
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(52),
         child: Container(
-          color: _navy,
+          decoration: const BoxDecoration(
+            color: _navy,
+            border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
@@ -249,7 +245,7 @@ class _InvestorSliverAppBar extends StatelessWidget {
                   Tab(text: 'نظرة عامة', icon: Icon(Icons.dashboard_rounded, size: 18)),
                   Tab(text: 'محفظة العقود', icon: Icon(Icons.account_balance_rounded, size: 18)),
                   Tab(text: 'كشف الحساب', icon: Icon(Icons.receipt_long_rounded, size: 18)),
-                  Tab(text: 'التوقعات', icon: Icon(Icons.trending_up_rounded, size: 18)),
+                  Tab(text: 'التوقعات', icon: Icon(Icons.insights_rounded, size: 18)),
                   Tab(text: 'المستندات', icon: Icon(Icons.folder_copy_rounded, size: 18)),
                 ],
               ),
@@ -286,7 +282,7 @@ class _OverviewTab extends ConsumerWidget {
             constraints: const BoxConstraints(maxWidth: 1200),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final isWide = constraints.maxWidth >= 850;
+                final isWide = constraints.maxWidth >= 900;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -296,7 +292,7 @@ class _OverviewTab extends ConsumerWidget {
                         Expanded(
                           child: _QuickActionCard(
                             label: 'طلب سحب',
-                            icon: Icons.arrow_circle_up_rounded,
+                            icon: Icons.account_balance_wallet_rounded,
                             color: _red,
                             onTap: investor.availableBalance > 0
                                 ? () => _showWithdrawalDialog(context, ref, investor)
@@ -323,14 +319,12 @@ class _OverviewTab extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 32),
 
                     if (isWide) ...[
-                      // Desktop / Wide Screen: 2 Column Layout
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Left Column (Chart & CTA)
                           Expanded(
                             flex: 6,
                             child: Column(
@@ -341,7 +335,7 @@ class _OverviewTab extends ConsumerWidget {
                                   subtitle: 'تطور دخلك الاستثماري عبر الزمن',
                                   icon: Icons.auto_graph_rounded,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 16),
                                 _ProfitChartCard(txAsync: txAsync),
                                 const SizedBox(height: 24),
                                 if (investor.availableBalance > 0)
@@ -354,7 +348,6 @@ class _OverviewTab extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 24),
-                          // Right Column (Performance & Health)
                           Expanded(
                             flex: 5,
                             child: Column(
@@ -365,7 +358,7 @@ class _OverviewTab extends ConsumerWidget {
                                   subtitle: 'ملخص شامل لأداء محفظتك',
                                   icon: Icons.bar_chart_rounded,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 16),
                                 _PerformanceGrid(investor: investor, f: f),
                                 const SizedBox(height: 24),
                                 _SectionHeader(
@@ -373,7 +366,7 @@ class _OverviewTab extends ConsumerWidget {
                                   subtitle: 'توزيع رأس المال حسب الحالة',
                                   icon: Icons.pie_chart_rounded,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 16),
                                 _PortfolioHealthCard(investor: investor),
                               ],
                             ),
@@ -381,7 +374,6 @@ class _OverviewTab extends ConsumerWidget {
                         ],
                       ),
                     ] else ...[
-                      // Mobile Layout
                       _SectionHeader(
                         title: 'مسار الأرباح الموزعة',
                         subtitle: 'تطور دخلك الاستثماري عبر الزمن',
@@ -390,7 +382,6 @@ class _OverviewTab extends ConsumerWidget {
                       const SizedBox(height: 12),
                       _ProfitChartCard(txAsync: txAsync),
                       const SizedBox(height: 28),
-
                       _SectionHeader(
                         title: 'مؤشرات الأداء',
                         subtitle: 'ملخص شامل لأداء محفظتك',
@@ -399,16 +390,6 @@ class _OverviewTab extends ConsumerWidget {
                       const SizedBox(height: 12),
                       _PerformanceGrid(investor: investor, f: f),
                       const SizedBox(height: 28),
-
-                      _SectionHeader(
-                        title: 'صحة المحفظة',
-                        subtitle: 'توزيع رأس المال حسب الحالة',
-                        icon: Icons.pie_chart_rounded,
-                      ),
-                      const SizedBox(height: 12),
-                      _PortfolioHealthCard(investor: investor),
-                      const SizedBox(height: 28),
-
                       if (investor.availableBalance > 0)
                         _WithdrawalCTA(
                           availableBalance: investor.availableBalance,
@@ -654,7 +635,7 @@ class _PortfolioTab extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
+                            (ctx, i) {
                           final item = contracts[i];
                           final contract = item['financing_contracts'] as Map?;
                           if (contract == null) return const SizedBox();
@@ -789,7 +770,7 @@ class _TransactionsTab extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
+                            (ctx, i) {
                           final tx     = txs[i];
                           final isPlus = tx.type.name == 'deposit' || tx.type.name == 'contract_return' || tx.type.name == 'finance_profit_distribution';
                           final color  = isPlus ? _green : _red;
@@ -940,7 +921,7 @@ class _ProjectionsTab extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
+                            (ctx, i) {
                           final item = list[i];
                           final dueDate = item['due_date'] as String?;
                           final amount  = (item['total_expected'] as num?)?.toDouble() ?? 0;
@@ -1024,6 +1005,7 @@ class _Circle extends StatelessWidget {
       Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
 }
 
+
 class _HeroStat extends StatelessWidget {
   final String label;
   final String value;
@@ -1034,13 +1016,12 @@ class _HeroStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color, size: 16),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 10), overflow: TextOverflow.ellipsis),
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 6),
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 10), overflow: TextOverflow.ellipsis),
         const SizedBox(height: 2),
-        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11), overflow: TextOverflow.ellipsis),
+        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
       ],
     ),
   );
@@ -1079,15 +1060,15 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     children: [
       Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: _navy.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: _navy, size: 18),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: _navy.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+        child: Icon(icon, color: _navy, size: 20),
       ),
-      const SizedBox(width: 10),
+      const SizedBox(width: 12),
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 15)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 16)),
           Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 11)),
         ],
       ),
@@ -1105,29 +1086,27 @@ class _QuickActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
     color: Colors.white,
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(20),
+    elevation: 4,
+    shadowColor: Colors.black.withValues(alpha: 0.1),
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: Icon(icon, color: onTap == null ? Colors.grey : color, size: 20),
+              child: Icon(icon, color: onTap == null ? Colors.grey : color, size: 24),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: 13,
                 color: onTap == null ? Colors.grey : _navy,
               ),
               textAlign: TextAlign.center,
@@ -1145,25 +1124,31 @@ class _ProfitChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 250,
-    padding: const EdgeInsets.all(20),
+    height: 320,
+    padding: const EdgeInsets.all(24),
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
     ),
     child: txAsync.when(
       skipLoadingOnRefresh: true,
       data: (txs) {
         final profitTxs = txs.where((t) => t.type.name == 'finance_profit_distribution').toList();
         if (profitTxs.isEmpty) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.show_chart_rounded, size: 48, color: Colors.grey.shade300),
-              const SizedBox(height: 12),
-              const Text('سيظهر الرسم البياني عند تحصيل أول دفعة أرباح', style: TextStyle(color: Colors.grey, fontSize: 12), textAlign: TextAlign.center),
-            ],
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: 100, width: double.infinity,
+                  child: CustomPaint(painter: _ZigZagPainter()),
+                ),
+                const SizedBox(height: 20),
+                const Text('سيظهر الرسم البياني عند تحصيل أول دفعة أرباح',
+                  style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+              ],
+            ),
           );
         }
         return LineChart(
@@ -1181,7 +1166,7 @@ class _ProfitChartCard extends StatelessWidget {
                 isCurved: true,
                 curveSmoothness: 0.35,
                 color: _gold,
-                barWidth: 3,
+                barWidth: 4,
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(
@@ -1193,7 +1178,7 @@ class _ProfitChartCard extends StatelessWidget {
                 dotData: FlDotData(
                   show: true,
                   getDotPainter: (_, __, ___, ____) =>
-                      FlDotCirclePainter(radius: 4, color: Colors.white, strokeWidth: 2, strokeColor: _gold),
+                      FlDotCirclePainter(radius: 5, color: Colors.white, strokeWidth: 3, strokeColor: _gold),
                 ),
               ),
             ],
@@ -1206,6 +1191,29 @@ class _ProfitChartCard extends StatelessWidget {
   );
 }
 
+class _ZigZagPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey.withValues(alpha: 0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.7);
+    path.lineTo(size.width * 0.2, size.height * 0.6);
+    path.lineTo(size.width * 0.4, size.height * 0.8);
+    path.lineTo(size.width * 0.6, size.height * 0.4);
+    path.lineTo(size.width * 0.8, size.height * 0.6);
+    path.lineTo(size.width, size.height * 0.2);
+
+    canvas.drawPath(path, paint);
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _PerformanceGrid extends StatelessWidget {
   final Investor investor;
   final intl.NumberFormat f;
@@ -1216,49 +1224,39 @@ class _PerformanceGrid extends StatelessWidget {
     final total = investor.availableBalance + investor.deployedCapital;
     final utilizationRate = total > 0 ? (investor.deployedCapital / total * 100) : 0.0;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cols = constraints.maxWidth > 500 ? 2 : 2;
-        final tiles = [
-          _StatTile(
-            label: 'إجمالي الأرباح المحققة',
-            value: '${f.format(investor.totalProfitEarned)} ر.س',
-            icon: Icons.auto_graph_rounded,
-            color: Colors.orange,
-          ),
-          _StatTile(
-            label: 'نسبة الرأس المال المشغّل',
-            value: '${utilizationRate.toStringAsFixed(1)}%',
-            icon: Icons.donut_large_rounded,
-            color: Colors.blue,
-          ),
-          _StatTile(
-            label: 'حالة المحفظة',
-            value: investor.deployedCapital > 0 ? 'نشطة ومدرة' : 'بانتظار تمويل',
-            icon: Icons.shield_rounded,
-            color: investor.deployedCapital > 0 ? _green : Colors.grey,
-          ),
-          _StatTile(
-            label: 'رأس المال المتاح',
-            value: '${f.format(investor.availableBalance)} ر.س',
-            icon: Icons.savings_rounded,
-            color: _green,
-          ),
-        ];
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: tiles.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cols,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            mainAxisExtent: 105,
-          ),
-          itemBuilder: (context, index) => tiles[index],
-        );
-      },
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.5,
+      children: [
+        _StatTile(
+          label: 'إجمالي الأرباح المحققة',
+          value: '${f.format(investor.totalProfitEarned)} ر.س',
+          icon: Icons.auto_graph_rounded,
+          color: Colors.orange,
+        ),
+        _StatTile(
+          label: 'نسبة الرأس المال المشغّل',
+          value: '${utilizationRate.toStringAsFixed(1)}%',
+          icon: Icons.donut_large_rounded,
+          color: Colors.blue,
+        ),
+        _StatTile(
+          label: 'حالة المحفظة',
+          value: investor.deployedCapital > 0 ? 'نشطة ومدرة' : 'بانتظار تمويل',
+          icon: Icons.shield_rounded,
+          color: investor.deployedCapital > 0 ? _green : Colors.grey,
+        ),
+        _StatTile(
+          label: 'رأس المال المتاح',
+          value: '${f.format(investor.availableBalance)} ر.س',
+          icon: Icons.savings_rounded,
+          color: _green,
+        ),
+      ],
     );
   }
 }
@@ -1272,24 +1270,23 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
+    padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 14)),
-            Icon(icon, color: color, size: 20),
+            Icon(icon, color: color, size: 22),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 13)),
           ],
         ),
-        const SizedBox(height: 8),
         Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11), overflow: TextOverflow.ellipsis),
       ],
     ),
@@ -1307,25 +1304,25 @@ class _PortfolioHealthCard extends StatelessWidget {
     final available= total > 0 ? investor.availableBalance / total : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 80, height: 80,
+            width: 90, height: 90,
             child: CustomPaint(painter: _DonutPainter(deployed.clamp(0, 1))),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 24),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _LegendItem(color: const Color(0xFF60A5FA), label: 'رأس مال مشغّل', pct: (deployed * 100).toStringAsFixed(1)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _LegendItem(color: const Color(0xFF4ADE80), label: 'رصيد متاح', pct: (available * 100).toStringAsFixed(1)),
               ],
             ),
@@ -1344,10 +1341,10 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = min(size.width, size.height) / 2 - 4;
-    const strokeW = 14.0;
+    const strokeW = 16.0;
     final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = strokeW..strokeCap = StrokeCap.round;
 
-    paint.color = const Color(0xFFE5E7EB);
+    paint.color = const Color(0xFFF3F4F6);
     canvas.drawCircle(center, radius, paint);
 
     paint.color = const Color(0xFF60A5FA);
@@ -1371,7 +1368,7 @@ class _LegendItem extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     children: [
       Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
-      const SizedBox(width: 8),
+      const SizedBox(width: 10),
       Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))),
       Text('$pct%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _navy)),
     ],
@@ -1387,22 +1384,26 @@ class _WithdrawalCTA extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(24),
     decoration: BoxDecoration(
-      gradient: LinearGradient(colors: [_green.withValues(alpha: 0.9), Colors.green.shade700]),
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [BoxShadow(color: _green.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+      gradient: LinearGradient(colors: [_green, Colors.green.shade700]),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [BoxShadow(color: _green.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 6))],
     ),
     child: Row(
       children: [
-        const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 32),
-        const SizedBox(width: 14),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 28),
+        ),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('لديك رصيد متاح للسحب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-              Text('${f.format(availableBalance)} ر.س جاهزة للتحويل', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              const Text('لديك رصيد متاح للسحب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('${f.format(availableBalance)} ر.س جاهزة للتحويل', style: const TextStyle(color: Colors.white70, fontSize: 13)),
             ],
           ),
         ),
@@ -1411,12 +1412,12 @@ class _WithdrawalCTA extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: _green,
-            minimumSize: const Size(0, 38),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            minimumSize: const Size(0, 44),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
           ),
-          child: const Text('اسحب الآن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          child: const Text('اسحب الآن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
         ),
       ],
     ),
