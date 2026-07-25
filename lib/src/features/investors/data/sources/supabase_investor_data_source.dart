@@ -124,6 +124,15 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
     try {
+      final response = await _client.rpc('get_pending_investors');
+      if (response != null && response is List) {
+        return List<Map<String, dynamic>>.from(response);
+      }
+    } catch (_) {
+      // Fallback if RPC function is not yet applied in Supabase
+    }
+
+    try {
       final response = await _client
           .from('profiles')
           .select('*, roles(slug)');
@@ -160,11 +169,19 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
 
   @override
   Future<void> rejectInvestor(String profileId, String reason) async {
-    await _client.from('profiles').update({
-      'status': 'rejected',
-      'rejection_reason': reason,
-      'rejected_at': DateTime.now().toIso8601String(),
-    }).eq('id', profileId);
+    try {
+      await _client.rpc('reject_investor_profile', params: {
+        'p_profile_id': profileId,
+        'p_reason': reason,
+      });
+    } catch (_) {
+      // Fallback
+      await _client.from('profiles').update({
+        'status': 'rejected',
+        'rejection_reason': reason,
+        'rejected_at': DateTime.now().toIso8601String(),
+      }).eq('id', profileId);
+    }
   }
 
   @override
@@ -219,17 +236,33 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
 
   @override
   Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? investorId, String? status}) async {
-    var query = _client.from('withdrawal_requests').select('*, investors(full_name)');
-    
-    if (investorId != null) {
-      query = query.eq('investor_id', investorId);
-    }
-    if (status != null) {
-      query = query.eq('status', status);
-    }
+    try {
+      var query = _client.from('withdrawal_requests').select('*, investors(full_name)');
+      
+      if (investorId != null) {
+        query = query.eq('investor_id', investorId);
+      }
+      if (status != null) {
+        query = query.eq('status', status);
+      }
 
-    final response = await query.order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(response);
+      final response = await query.order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (_) {
+      try {
+        var query = _client.from('withdrawal_requests').select();
+        if (investorId != null) {
+          query = query.eq('investor_id', investorId);
+        }
+        if (status != null) {
+          query = query.eq('status', status);
+        }
+        final response = await query.order('created_at', ascending: false);
+        return List<Map<String, dynamic>>.from(response);
+      } catch (_) {
+        return [];
+      }
+    }
   }
 
   @override

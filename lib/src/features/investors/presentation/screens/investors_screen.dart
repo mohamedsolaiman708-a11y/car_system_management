@@ -247,72 +247,73 @@ class ActiveInvestorsList extends ConsumerWidget {
     final investorsAsync = ref.watch(investorListControllerProvider);
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
-    return RefreshIndicator(
-      onRefresh: () => ref.refresh(investorListControllerProvider.future),
-      child: investorsAsync.when(
-        data: (investors) {
-          if (investors.isEmpty) {
-            return _buildEmptyScrollable(context, 'لا يوجد مستثمرون حالياً', Icons.people_outline_rounded);
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(24),
-            itemCount: investors.length,
-            itemBuilder: (context, index) {
-              final inv = investors[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
-                ),
-                child: InkWell(
-                  onTap: () => context.push('/investors/${inv.id}'),
-                  borderRadius: BorderRadius.circular(24),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryNavy.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Center(
-                            child: Text(inv.fullName.isNotEmpty ? inv.fullName[0] : '?', 
-                              style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
-                              const SizedBox(height: 4),
-                              Text(inv.email, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                        _buildStatColumn('الرصيد المتاح', f.format(inv.availableBalance), AppColors.successGreen),
-                        const SizedBox(width: 32),
-                        _buildStatColumn('رأس المال الموظف', f.format(inv.deployedCapital), AppColors.primaryNavy),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.chevron_left_rounded, color: Colors.grey, size: 20),
-                      ],
+    return investorsAsync.when(
+      data: (investors) => RefreshIndicator(
+        onRefresh: () => ref.refresh(investorListControllerProvider.future),
+        child: investors.isEmpty
+            ? _buildEmptyScrollable(context, 'لا يوجد مستثمرون حالياً', Icons.people_outline_rounded)
+            : ListView.builder(
+                padding: const EdgeInsets.all(24),
+                itemCount: investors.length,
+                itemBuilder: (context, index) {
+                  final inv = investors[index];
+                  return Container(
+                    key: ValueKey(inv.id),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (e, _) => Center(
+                    child: InkWell(
+                      onTap: () => context.push('/investors/${inv.id}'),
+                      borderRadius: BorderRadius.circular(24),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryNavy.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Center(
+                                child: Text(inv.fullName.isNotEmpty ? inv.fullName[0] : '?', 
+                                  style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
+                                  const SizedBox(height: 4),
+                                  Text(inv.email, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            _buildStatColumn('الرصيد المتاح', f.format(inv.availableBalance), AppColors.successGreen),
+                            const SizedBox(width: 32),
+                            _buildStatColumn('رأس المال الموظف', f.format(inv.deployedCapital), AppColors.primaryNavy),
+                            const SizedBox(width: 12),
+                            const Icon(Icons.chevron_left_rounded, color: Colors.grey, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+      error: (e, _) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(24.0),
             child: Text(
               Failure.fromException(e).message,
               style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
@@ -343,21 +344,31 @@ class PendingInvestorsList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingAsync = ref.watch(pendingInvestorsControllerProvider);
 
-    return RefreshIndicator(
-      onRefresh: () => ref.refresh(pendingInvestorsControllerProvider.future),
-      child: pendingAsync.when(
-        data: (requests) => requests.isEmpty
+    return pendingAsync.when(
+      data: (requests) => RefreshIndicator(
+        onRefresh: () => ref.refresh(pendingInvestorsControllerProvider.future),
+        child: requests.isEmpty
             ? _buildEmptyScrollable(context, 'لا توجد طلبات انضمام حالياً', Icons.mark_email_read_outlined)
             : ListView.builder(
                 padding: const EdgeInsets.all(24),
                 itemCount: requests.length,
-                itemBuilder: (context, index) => _PendingInvestorCard(req: requests[index]),
+                itemBuilder: (context, index) => _PendingInvestorCard(
+                  key: ValueKey(requests[index]['id'] ?? index),
+                  req: requests[index],
+                ),
               ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text(
-            Failure.fromException(e).message,
-            style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+      ),
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+      error: (e, _) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              Failure.fromException(e).message,
+              style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),
@@ -372,28 +383,37 @@ class WithdrawalRequestsList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final requestsAsync = ref.watch(withdrawalRequestsControllerProvider());
 
-    return RefreshIndicator(
-      onRefresh: () => ref.refresh(withdrawalRequestsControllerProvider().future),
-      child: requestsAsync.when(
-        data: (allRequests) {
-          final requests = allRequests.where((r) => 
-            r['status'].toString().toLowerCase() == 'pending'
-          ).toList();
+    return requestsAsync.when(
+      data: (allRequests) {
+        final requests = allRequests.where((r) => 
+          r['status'].toString().toLowerCase() == 'pending'
+        ).toList();
 
-          if (requests.isEmpty) {
-            return _buildEmptyScrollable(context, 'لا توجد طلبات سحب معلقة', Icons.account_balance_wallet_outlined);
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(24),
-            itemCount: requests.length,
-            itemBuilder: (context, index) => _WithdrawalRequestCard(req: requests[index]),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text(
-            Failure.fromException(e).message,
-            style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+        return RefreshIndicator(
+          onRefresh: () => ref.refresh(withdrawalRequestsControllerProvider().future),
+          child: requests.isEmpty
+              ? _buildEmptyScrollable(context, 'لا توجد طلبات سحب معلقة', Icons.account_balance_wallet_outlined)
+              : ListView.builder(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) => _WithdrawalRequestCard(
+                    key: ValueKey(requests[index]['id'] ?? index),
+                    req: requests[index],
+                  ),
+                ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+      error: (e, _) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              Failure.fromException(e).message,
+              style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),
@@ -403,31 +423,48 @@ class WithdrawalRequestsList extends ConsumerWidget {
 
 Widget _buildEmptyScrollable(BuildContext context, String msg, IconData icon) {
   return LayoutBuilder(
-    builder: (context, constraints) => SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Container(
-        height: constraints.maxHeight,
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: Icon(icon, size: 64, color: Colors.grey.shade300),
-            ),
-            const SizedBox(height: 24),
-            Text(msg, style: TextStyle(color: Colors.grey.shade500, fontSize: 16, fontWeight: FontWeight.w500)),
-          ],
+    builder: (context, constraints) {
+      final minH = constraints.maxHeight.isFinite ? constraints.maxHeight : 300.0;
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          constraints: BoxConstraints(minHeight: minH),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Icon(icon, size: 56, color: Colors.grey.shade300),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                msg,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }
 
 class _PendingInvestorCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> req;
-  const _PendingInvestorCard({required this.req});
+  const _PendingInvestorCard({super.key, required this.req});
 
   @override
   ConsumerState<_PendingInvestorCard> createState() => _PendingInvestorCardState();
@@ -439,19 +476,42 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
   @override
   Widget build(BuildContext context) {
     final req = widget.req;
+    final fullName = (req['full_name'] ?? req['name'] ?? 'بدون اسم').toString();
+    final email = (req['email'] ?? '').toString();
+    final phone = (req['phone'] ?? '').toString();
+    final nationalId = (req['national_id'] ?? '').toString();
+    final createdAtRaw = req['created_at'];
+
+    String formattedDate = '';
+    if (createdAtRaw != null) {
+      final dt = DateTime.tryParse(createdAtRaw.toString());
+      if (dt != null) {
+        formattedDate = intl.DateFormat('yyyy/MM/dd').format(dt);
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.accentGold.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: AppColors.accentGold.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: const Icon(Icons.person_add_rounded, color: AppColors.accentGold, size: 24),
           ),
           const SizedBox(width: 20),
@@ -459,21 +519,71 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(req['full_name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
-                const SizedBox(height: 2),
-                Text(req['email'] ?? '', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                Text(
+                  fullName,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 6,
+                  children: [
+                    if (email.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.email_outlined, size: 14, color: Colors.grey.shade600),
+                          const SizedBox(width: 4),
+                          Text(email, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        ],
+                      ),
+                    if (phone.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.phone_outlined, size: 14, color: Colors.grey.shade600),
+                          const SizedBox(width: 4),
+                          Text(phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        ],
+                      ),
+                    if (nationalId.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.badge_outlined, size: 14, color: Colors.grey.shade600),
+                          const SizedBox(width: 4),
+                          Text('هوية: $nationalId', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        ],
+                      ),
+                    if (formattedDate.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                          const SizedBox(width: 4),
+                          Text(formattedDate, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                        ],
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 16),
           if (_isLoading)
-            const CircularProgressIndicator(strokeWidth: 2)
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryNavy),
+            )
           else
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 TextButton(
                   onPressed: _reject,
                   style: TextButton.styleFrom(foregroundColor: AppColors.errorRed),
-                  child: const Text('رفض الطلب'),
+                  child: const Text('رفض الطلب', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
@@ -481,10 +591,12 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.successGreen,
                     foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 44),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                  child: const Text('اعتماد القبول'),
+                  child: const Text('اعتماد القبول', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -520,7 +632,11 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.errorRed, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.errorRed,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 44),
+              ),
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text('رفض'),
             ),
@@ -544,7 +660,7 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
 
 class _WithdrawalRequestCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> req;
-  const _WithdrawalRequestCard({required this.req});
+  const _WithdrawalRequestCard({super.key, required this.req});
 
   @override
   ConsumerState<_WithdrawalRequestCard> createState() => _WithdrawalRequestCardState();
@@ -594,6 +710,7 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryNavy, 
                 foregroundColor: Colors.white,
+                minimumSize: const Size(0, 44),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('صرف المبلغ'),
