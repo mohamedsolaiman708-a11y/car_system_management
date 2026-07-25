@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/supabase_notification_repository.dart';
 import '../domain/app_notification.dart';
@@ -21,7 +22,7 @@ class NotificationController extends _$NotificationController {
 }
 
 @riverpod
-int unreadNotificationsCount(UnreadNotificationsCountRef ref) {
+int unreadNotificationsCount(Ref ref) {
   final notifications = ref.watch(notificationControllerProvider).value ?? [];
   return notifications.where((n) => !n.isRead).length;
 }

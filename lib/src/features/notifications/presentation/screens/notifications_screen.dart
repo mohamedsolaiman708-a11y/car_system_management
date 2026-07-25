@@ -26,15 +26,36 @@ class NotificationsScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Row(
                     children: [
-                      const Text('مركز التنبيهات الذكي', 
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('ابقَ على اطلاع بكافة المستجدات الإدارية والمالية', 
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                      IconButton(
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.all(12),
+                        ),
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/');
+                          }
+                        },
+                        tooltip: 'رجوع',
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('مركز التنبيهات الذكي', 
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                          const SizedBox(height: 4),
+                          Text('ابقَ على اطلاع بكافة المستجدات الإدارية والمالية', 
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                        ],
+                      ),
                     ],
                   ),
                   TextButton.icon(
@@ -54,23 +75,64 @@ class NotificationsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: notificationsAsync.when(
-        data: (notifications) => notifications.isEmpty
-            ? _buildEmptyState()
-            : ListView.builder(
-                padding: const EdgeInsets.all(24),
-                itemCount: notifications.length,
-                itemBuilder: (context, index) => _PremiumNotificationTile(notification: notifications[index]),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(notificationControllerProvider);
+        },
+        child: notificationsAsync.when(
+          data: (notifications) => notifications.isEmpty
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      child: _buildEmptyState(),
+                    ),
+                  ],
+                )
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24),
+                  itemCount: notifications.length,
+                  itemBuilder: (context, index) => _PremiumNotificationTile(notification: notifications[index]),
+                ),
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+          error: (err, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline_rounded, size: 60, color: Colors.red.shade300),
+                        const SizedBox(height: 16),
+                        Text(
+                          Failure.fromException(err).message,
+                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => ref.invalidate(notificationControllerProvider),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('إعادة المحاولة'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryNavy,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Text(
-              Failure.fromException(err).message,
-              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
-              textAlign: TextAlign.center,
-            ),
+            ],
           ),
         ),
       ),

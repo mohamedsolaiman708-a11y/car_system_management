@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/app_notification.dart';
@@ -15,9 +16,12 @@ class SupabaseNotificationRepository {
   Future<List<AppNotification>> getNotifications() async {
     const key = 'notifications_list';
     try {
-      final response = await _client
-          .from('notifications')
-          .select()
+      final userId = _client.auth.currentUser?.id;
+      var query = _client.from('notifications').select();
+      if (userId != null) {
+        query = query.eq('profile_id', userId);
+      }
+      final response = await query
           .order('created_at', ascending: false)
           .limit(50);
       
@@ -53,18 +57,48 @@ class SupabaseNotificationRepository {
     }
   }
 
-  Stream<List<AppNotification>> watchNotifications() {
-    final userId = _client.auth.currentUser?.id;
-    return _client
-        .from('notifications')
-        .stream(primaryKey: ['id'])
-        .eq('profile_id', userId ?? '')
-        .order('created_at', ascending: false)
-        .map((data) => data.map((json) => AppNotification.fromJson(json)).toList());
+  Stream<List<AppNotification>> watchNotifications() async* {
+    List<AppNotification> currentData = [];
+
+    // 1. جلب البيانات أولاً عبر REST API وتمريرها مباشرة
+    try {
+      currentData = await getNotifications();
+      yield currentData;
+    } catch (_) {
+      // إكمال المحاولة بدون التعطل
+    }
+
+    // 2. محاولة فتح Realtime Stream، وعند حدوث أي خطأ في Realtime نعتمد البيانات المجلوية أو نلجأ إلى REST API
+    try {
+      final userId = _client.auth.currentUser?.id;
+      final stream = _client
+          .from('notifications')
+          .stream(primaryKey: ['id'])
+          .eq('profile_id', userId ?? '')
+          .order('created_at', ascending: false)
+          .map((data) => data.map((json) => AppNotification.fromJson(json)).toList());
+
+      await for (final list in stream) {
+        currentData = list;
+        yield list;
+      }
+    } catch (e) {
+      // في حالة فشل Realtime (مثل RealtimeSubscribeException)، نقوم بإعادة الجلب من API بدلاً من إظهار الخطأ
+      try {
+        final fallbackList = await getNotifications();
+        yield fallbackList;
+      } catch (_) {
+        if (currentData.isNotEmpty) {
+          yield currentData;
+        } else {
+          throw Failure.fromException(e);
+        }
+      }
+    }
   }
 }
 
 @Riverpod(keepAlive: true)
-SupabaseNotificationRepository notificationRepository(NotificationRepositoryRef ref) {
+SupabaseNotificationRepository notificationRepository(Ref ref) {
   return SupabaseNotificationRepository(ref.watch(supabaseClientProvider));
 }
