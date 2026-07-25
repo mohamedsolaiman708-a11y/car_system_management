@@ -122,106 +122,106 @@ class _InvestorSliverAppBar extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // Decorative circles
               Positioned(top: -40, left: -40, child: _Circle(120, Colors.white.withValues(alpha: 0.03))),
               Positioned(bottom: 60, right: -30, child: _Circle(100, _gold.withValues(alpha: 0.07))),
               Positioned(top: 80, right: 40, child: _Circle(50, Colors.white.withValues(alpha: 0.04))),
-              // Content
               SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header row
-                      Row(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                            radius: 22,
-                            backgroundColor: _gold.withValues(alpha: 0.2),
-                            child: Text(
-                              investor.fullName.isNotEmpty ? investor.fullName[0] : 'م',
-                              style: const TextStyle(color: _gold, fontWeight: FontWeight.bold, fontSize: 18),
-                            ),
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 22,
+                                backgroundColor: _gold.withValues(alpha: 0.2),
+                                child: Text(
+                                  investor.fullName.isNotEmpty ? investor.fullName[0] : 'م',
+                                  style: const TextStyle(color: _gold, fontWeight: FontWeight.bold, fontSize: 18),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('مرحباً،', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                    Text(
+                                      investor.fullName,
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _green.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: _green.withValues(alpha: 0.4)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.circle, color: _green, size: 8),
+                                    SizedBox(width: 6),
+                                    Text('نشط', style: TextStyle(color: _green, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
+                          const SizedBox(height: 20),
+                          Center(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('مرحباً،', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                const Text('إجمالي قيمة المحفظة', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                                const SizedBox(height: 6),
                                 Text(
-                                  investor.fullName,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                  overflow: TextOverflow.ellipsis,
+                                  '${f.format(total)} ر.س',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.0,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _green.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _green.withValues(alpha: 0.4)),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.circle, color: _green, size: 8),
-                                SizedBox(width: 6),
-                                Text('نشط', style: TextStyle(color: _green, fontSize: 11, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Total value
-                      Center(
-                        child: Column(
-                          children: [
-                            const Text('إجمالي قيمة المحفظة', style: TextStyle(color: Colors.white54, fontSize: 13)),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${f.format(total)} ر.س',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.0,
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              _HeroStat(
+                                label: 'رصيد متاح للسحب',
+                                value: '${f.format(investor.availableBalance)} ر.س',
+                                icon: Icons.account_balance_wallet_rounded,
+                                color: const Color(0xFF4ADE80),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Stats row
-                      Row(
-                        children: [
-                          _HeroStat(
-                            label: 'رصيد متاح للسحب',
-                            value: '${f.format(investor.availableBalance)} ر.س',
-                            icon: Icons.account_balance_wallet_rounded,
-                            color: const Color(0xFF4ADE80),
-                          ),
-                          Container(width: 1, height: 40, color: Colors.white12, margin: const EdgeInsets.symmetric(horizontal: 16)),
-                          _HeroStat(
-                            label: 'رأس مال مشغّل',
-                            value: '${f.format(investor.deployedCapital)} ر.س',
-                            icon: Icons.rocket_launch_rounded,
-                            color: const Color(0xFF60A5FA),
-                          ),
-                          Container(width: 1, height: 40, color: Colors.white12, margin: const EdgeInsets.symmetric(horizontal: 16)),
-                          _HeroStat(
-                            label: 'إجمالي الأرباح',
-                            value: '${f.format(investor.totalProfitEarned)} ر.س',
-                            icon: Icons.trending_up_rounded,
-                            color: _gold,
+                              Container(width: 1, height: 40, color: Colors.white12, margin: const EdgeInsets.symmetric(horizontal: 16)),
+                              _HeroStat(
+                                label: 'رأس مال مشغّل',
+                                value: '${f.format(investor.deployedCapital)} ر.س',
+                                icon: Icons.rocket_launch_rounded,
+                                color: const Color(0xFF60A5FA),
+                              ),
+                              Container(width: 1, height: 40, color: Colors.white12, margin: const EdgeInsets.symmetric(horizontal: 16)),
+                              _HeroStat(
+                                label: 'إجمالي الأرباح',
+                                value: '${f.format(investor.totalProfitEarned)} ر.س',
+                                icon: Icons.trending_up_rounded,
+                                color: _gold,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -233,22 +233,27 @@ class _InvestorSliverAppBar extends StatelessWidget {
         preferredSize: const Size.fromHeight(52),
         child: Container(
           color: _navy,
-          child: const TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            indicatorColor: _gold,
-            indicatorWeight: 3,
-            labelColor: _gold,
-            unselectedLabelColor: Colors.white54,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'Cairo'),
-            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, fontFamily: 'Cairo'),
-            tabs: [
-              Tab(text: 'نظرة عامة', icon: Icon(Icons.dashboard_rounded, size: 18)),
-              Tab(text: 'محفظة العقود', icon: Icon(Icons.account_balance_rounded, size: 18)),
-              Tab(text: 'كشف الحساب', icon: Icon(Icons.receipt_long_rounded, size: 18)),
-              Tab(text: 'التوقعات', icon: Icon(Icons.trending_up_rounded, size: 18)),
-              Tab(text: 'المستندات', icon: Icon(Icons.folder_copy_rounded, size: 18)),
-            ],
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: const TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorColor: _gold,
+                indicatorWeight: 3,
+                labelColor: _gold,
+                unselectedLabelColor: Colors.white54,
+                labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'Cairo'),
+                unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, fontFamily: 'Cairo'),
+                tabs: [
+                  Tab(text: 'نظرة عامة', icon: Icon(Icons.dashboard_rounded, size: 18)),
+                  Tab(text: 'محفظة العقود', icon: Icon(Icons.account_balance_rounded, size: 18)),
+                  Tab(text: 'كشف الحساب', icon: Icon(Icons.receipt_long_rounded, size: 18)),
+                  Tab(text: 'التوقعات', icon: Icon(Icons.trending_up_rounded, size: 18)),
+                  Tab(text: 'المستندات', icon: Icon(Icons.folder_copy_rounded, size: 18)),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -276,82 +281,146 @@ class _OverviewTab extends ConsumerWidget {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Quick Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickActionCard(
-                    label: 'طلب سحب',
-                    icon: Icons.arrow_circle_up_rounded,
-                    color: _red,
-                    onTap: investor.availableBalance > 0
-                        ? () => _showWithdrawalDialog(context, ref, investor)
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _QuickActionCard(
-                    label: 'كشف الحساب',
-                    icon: Icons.receipt_long_rounded,
-                    color: _navy,
-                    onTap: () => DefaultTabController.of(context).animateTo(2),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _QuickActionCard(
-                    label: 'التوقعات',
-                    icon: Icons.insights_rounded,
-                    color: _green,
-                    onTap: () => DefaultTabController.of(context).animateTo(3),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 850;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Quick Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _QuickActionCard(
+                            label: 'طلب سحب',
+                            icon: Icons.arrow_circle_up_rounded,
+                            color: _red,
+                            onTap: investor.availableBalance > 0
+                                ? () => _showWithdrawalDialog(context, ref, investor)
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _QuickActionCard(
+                            label: 'كشف الحساب',
+                            icon: Icons.receipt_long_rounded,
+                            color: _navy,
+                            onTap: () => DefaultTabController.of(context).animateTo(2),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _QuickActionCard(
+                            label: 'التوقعات',
+                            icon: Icons.insights_rounded,
+                            color: _green,
+                            onTap: () => DefaultTabController.of(context).animateTo(3),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
 
-            // Profit Chart Section
-            _SectionHeader(
-              title: 'مسار الأرباح الموزعة',
-              subtitle: 'تطور دخلك الاستثماري عبر الزمن',
-              icon: Icons.auto_graph_rounded,
-            ),
-            const SizedBox(height: 12),
-            _ProfitChartCard(txAsync: txAsync),
-            const SizedBox(height: 28),
+                    if (isWide) ...[
+                      // Desktop / Wide Screen: 2 Column Layout
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left Column (Chart & CTA)
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _SectionHeader(
+                                  title: 'مسار الأرباح الموزعة',
+                                  subtitle: 'تطور دخلك الاستثماري عبر الزمن',
+                                  icon: Icons.auto_graph_rounded,
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfitChartCard(txAsync: txAsync),
+                                const SizedBox(height: 24),
+                                if (investor.availableBalance > 0)
+                                  _WithdrawalCTA(
+                                    availableBalance: investor.availableBalance,
+                                    f: f,
+                                    onTap: () => _showWithdrawalDialog(context, ref, investor),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          // Right Column (Performance & Health)
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _SectionHeader(
+                                  title: 'مؤشرات الأداء',
+                                  subtitle: 'ملخص شامل لأداء محفظتك',
+                                  icon: Icons.bar_chart_rounded,
+                                ),
+                                const SizedBox(height: 12),
+                                _PerformanceGrid(investor: investor, f: f),
+                                const SizedBox(height: 24),
+                                _SectionHeader(
+                                  title: 'صحة المحفظة',
+                                  subtitle: 'توزيع رأس المال حسب الحالة',
+                                  icon: Icons.pie_chart_rounded,
+                                ),
+                                const SizedBox(height: 12),
+                                _PortfolioHealthCard(investor: investor),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      // Mobile Layout
+                      _SectionHeader(
+                        title: 'مسار الأرباح الموزعة',
+                        subtitle: 'تطور دخلك الاستثماري عبر الزمن',
+                        icon: Icons.auto_graph_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _ProfitChartCard(txAsync: txAsync),
+                      const SizedBox(height: 28),
 
-            // Performance Stats
-            _SectionHeader(
-              title: 'مؤشرات الأداء',
-              subtitle: 'ملخص شامل لأداء محفظتك',
-              icon: Icons.bar_chart_rounded,
-            ),
-            const SizedBox(height: 12),
-            _PerformanceGrid(investor: investor, f: f),
-            const SizedBox(height: 28),
+                      _SectionHeader(
+                        title: 'مؤشرات الأداء',
+                        subtitle: 'ملخص شامل لأداء محفظتك',
+                        icon: Icons.bar_chart_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _PerformanceGrid(investor: investor, f: f),
+                      const SizedBox(height: 28),
 
-            // Portfolio Health
-            _SectionHeader(
-              title: 'صحة المحفظة',
-              subtitle: 'توزيع رأس المال حسب الحالة',
-              icon: Icons.pie_chart_rounded,
-            ),
-            const SizedBox(height: 12),
-            _PortfolioHealthCard(investor: investor),
-            const SizedBox(height: 28),
+                      _SectionHeader(
+                        title: 'صحة المحفظة',
+                        subtitle: 'توزيع رأس المال حسب الحالة',
+                        icon: Icons.pie_chart_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _PortfolioHealthCard(investor: investor),
+                      const SizedBox(height: 28),
 
-            // Withdrawal CTA
-            if (investor.availableBalance > 0)
-              _WithdrawalCTA(
-                availableBalance: investor.availableBalance,
-                f: f,
-                onTap: () => _showWithdrawalDialog(context, ref, investor),
-              ),
-          ],
+                      if (investor.availableBalance > 0)
+                        _WithdrawalCTA(
+                          availableBalance: investor.availableBalance,
+                          f: f,
+                          onTap: () => _showWithdrawalDialog(context, ref, investor),
+                        ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -371,134 +440,132 @@ class _OverviewTab extends ConsumerWidget {
             textDirection: TextDirection.rtl,
             child: Dialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: _red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.account_balance_wallet_rounded, color: _red, size: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('طلب سحب رصيد', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _navy)),
-                              Text('سيتم مراجعة طلبك خلال 24 ساعة', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          icon: const Icon(Icons.close_rounded, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    // Available Balance display
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _green.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _green.withValues(alpha: 0.2)),
-                      ),
-                      child: Row(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          const Icon(Icons.check_circle_outline, color: _green, size: 18),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('الرصيد المتاح للسحب', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                              Text('${f.format(investor.availableBalance)} ر.س',
-                                  style: const TextStyle(color: _green, fontWeight: FontWeight.bold, fontSize: 16)),
-                            ],
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: _red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                            child: const Icon(Icons.account_balance_wallet_rounded, color: _red, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('طلب سحب رصيد', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _navy)),
+                                Text('سيتم مراجعة طلبك خلال 24 ساعة', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            icon: const Icon(Icons.close_rounded, color: Colors.grey),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Amount field
-                    TextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'المبلغ المراد سحبه',
-                        hintText: 'أدخل المبلغ بالريال',
-                        suffixText: 'ر.س',
-                        errorText: errorText,
-                        prefixIcon: const Icon(Icons.monetization_on_outlined),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // IBAN field
-                    TextField(
-                      controller: bankController,
-                      decoration: InputDecoration(
-                        labelText: 'رقم الآيبان (IBAN)',
-                        hintText: 'SA...',
-                        prefixIcon: const Icon(Icons.account_balance_rounded),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Actions
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('إلغاء'),
-                          ),
+                      const Divider(height: 24),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: _green.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _green.withValues(alpha: 0.2)),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _navy,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(0, 50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_outline, color: _green, size: 18),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('الرصيد المتاح للسحب', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                Text('${f.format(investor.availableBalance)} ر.س',
+                                    style: const TextStyle(color: _green, fontWeight: FontWeight.bold, fontSize: 16)),
+                              ],
                             ),
-                            onPressed: () async {
-                              final amount = double.tryParse(amountController.text);
-                              if (amount == null || amount <= 0 || amount > investor.availableBalance) {
-                                setDialogState(() => errorText = 'المبلغ غير صالح أو يتجاوز الرصيد المتاح');
-                                return;
-                              }
-                              final success = await ref
-                                  .read(withdrawalRequestsControllerProvider().notifier)
-                                  .requestWithdrawal(amount, bankController.text);
-                              if (context.mounted) {
-                                Navigator.pop(ctx);
-                                if (success) {
-                                  SnackBarHelper.showSuccess(context, 'تم إرسال طلب السحب بنجاح ✓');
-                                } else {
-                                  SnackBarHelper.showError(context, 'فشل إرسال الطلب');
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: amountController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          labelText: 'المبلغ المراد سحبه',
+                          hintText: 'أدخل المبلغ بالريال',
+                          suffixText: 'ر.س',
+                          errorText: errorText,
+                          prefixIcon: const Icon(Icons.monetization_on_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: bankController,
+                        decoration: InputDecoration(
+                          labelText: 'رقم الآيبان (IBAN)',
+                          hintText: 'SA...',
+                          prefixIcon: const Icon(Icons.account_balance_rounded),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('إلغاء'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _navy,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(0, 50),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed: () async {
+                                final amount = double.tryParse(amountController.text);
+                                if (amount == null || amount <= 0 || amount > investor.availableBalance) {
+                                  setDialogState(() => errorText = 'المبلغ غير صالح أو يتجاوز الرصيد المتاح');
+                                  return;
                                 }
-                              }
-                            },
-                            child: const Text('إرسال الطلب', style: TextStyle(fontWeight: FontWeight.bold)),
+                                final success = await ref
+                                    .read(withdrawalRequestsControllerProvider().notifier)
+                                    .requestWithdrawal(amount, bankController.text);
+                                if (context.mounted) {
+                                  Navigator.pop(ctx);
+                                  if (success) {
+                                    SnackBarHelper.showSuccess(context, 'تم إرسال طلب السحب بنجاح ✓');
+                                  } else {
+                                    SnackBarHelper.showError(context, 'فشل إرسال الطلب');
+                                  }
+                                }
+                              },
+                              child: const Text('إرسال الطلب', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -523,141 +590,144 @@ class _PortfolioTab extends ConsumerWidget {
       skipLoadingOnRefresh: true,
       data: (contracts) {
         if (contracts.isEmpty) {
-          return _EmptyState(
+          return const _EmptyState(
             icon: Icons.account_balance_rounded,
             title: 'لا توجد عقود ممولة',
             subtitle: 'ستظهر عقودك الممولة هنا بمجرد تخصيص رأس المال',
           );
         }
 
-        // Summary stats
         double totalAllocated = contracts.fold(0.0, (s, c) => s + ((c['amount_allocated'] as num?)?.toDouble() ?? 0));
         int activeCount = contracts.where((c) => (c['financing_contracts'] as Map?)?['status'] == 'active').length;
 
         return RefreshIndicator(
           color: _navy,
           onRefresh: () => ref.refresh(investorFundedContractsControllerProvider(investorId).future),
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Column(
-                    children: [
-                      // Portfolio summary card
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [_navy, _navyLight]),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'إجمالي مبالغ العقود',
-                                value: '${f.format(totalAllocated)} ر.س',
-                                color: _gold,
-                              ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: [_navy, _navyLight]),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            Container(width: 1, height: 40, color: Colors.white12),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'عقود نشطة',
-                                value: '$activeCount من ${contracts.length}',
-                                color: const Color(0xFF4ADE80),
-                              ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _MiniStat(
+                                    label: 'إجمالي مبالغ العقود',
+                                    value: '${f.format(totalAllocated)} ر.س',
+                                    color: _gold,
+                                  ),
+                                ),
+                                Container(width: 1, height: 40, color: Colors.white12),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _MiniStat(
+                                    label: 'عقود نشطة',
+                                    value: '$activeCount من ${contracts.length}',
+                                    color: const Color(0xFF4ADE80),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text('تفاصيل عقود المحفظة', style: TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 15)),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      const Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text('تفاصيل عقود المحفظة', style: TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 15)),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) {
-                      final item = contracts[i];
-                      final contract = item['financing_contracts'] as Map?;
-                      if (contract == null) return const SizedBox();
-                      final status   = (contract['status'] ?? '') as String;
-                      final statusLabel = switch (status) {
-                        'active'          => 'نشط',
-                        'closed'          => 'مغلق',
-                        'draft'           => 'مسودة',
-                        'pending_funding' => 'في انتظار التمويل',
-                        'defaulted'       => 'متعثر',
-                        _                 => status,
-                      };
-                      final statusColor = switch (status) {
-                        'active'          => _green,
-                        'closed'          => Colors.grey,
-                        'defaulted'       => _red,
-                        _                 => Colors.orange,
-                      };
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) {
+                          final item = contracts[i];
+                          final contract = item['financing_contracts'] as Map?;
+                          if (contract == null) return const SizedBox();
+                          final status   = (contract['status'] ?? '') as String;
+                          final statusLabel = switch (status) {
+                            'active'          => 'نشط',
+                            'closed'          => 'مغلق',
+                            'draft'           => 'مسودة',
+                            'pending_funding' => 'في انتظار التمويل',
+                            'defaulted'       => 'متعثر',
+                            _                 => status,
+                          };
+                          final statusColor = switch (status) {
+                            'active'          => _green,
+                            'closed'          => Colors.grey,
+                            'defaulted'       => _red,
+                            _                 => Colors.orange,
+                          };
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(Icons.assignment_rounded, color: statusColor, size: 22),
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'عقد رقم: ${contract['contract_no'] ?? 'N/A'}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 14),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'مساهمتك: ${f.format(item['amount_allocated'] ?? 0)} ر.س',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                  child: Icon(Icons.assignment_rounded, color: statusColor, size: 22),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'عقد رقم: ${contract['contract_no'] ?? 'N/A'}',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 14),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'مساهمتك: ${f.format(item['amount_allocated'] ?? 0)} ر.س',
+                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    childCount: contracts.length,
+                          );
+                        },
+                        childCount: contracts.length,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -681,7 +751,7 @@ class _TransactionsTab extends ConsumerWidget {
       skipLoadingOnRefresh: true,
       data: (txs) {
         if (txs.isEmpty) {
-          return _EmptyState(
+          return const _EmptyState(
             icon: Icons.receipt_long_rounded,
             title: 'لا توجد معاملات بعد',
             subtitle: 'ستظهر جميع حركات حسابك هنا',
@@ -691,97 +761,101 @@ class _TransactionsTab extends ConsumerWidget {
         return RefreshIndicator(
           color: _navy,
           onRefresh: () => ref.refresh(investorTransactionsControllerProvider(investorId).future),
-          child: CustomScrollView(
-            slivers: [
-              // Filter header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                  child: Row(
-                    children: [
-                      const Text('جميع المعاملات', style: TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 15)),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _navy.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text('${txs.length} معاملة', style: const TextStyle(color: _navy, fontSize: 12, fontWeight: FontWeight.bold)),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                      child: Row(
+                        children: [
+                          const Text('جميع المعاملات', style: TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 15)),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _navy.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('${txs.length} معاملة', style: const TextStyle(color: _navy, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) {
-                      final tx     = txs[i];
-                      final isPlus = tx.type.name == 'deposit' || tx.type.name == 'contract_return' || tx.type.name == 'finance_profit_distribution';
-                      final color  = isPlus ? _green : _red;
-                      final icon   = switch (tx.type.name) {
-                        'deposit'                    => Icons.arrow_circle_down_rounded,
-                        'withdrawal'                 => Icons.arrow_circle_up_rounded,
-                        'contract_allocation'        => Icons.assignment_rounded,
-                        'contract_return'            => Icons.assignment_return_rounded,
-                        'finance_profit_distribution'=> Icons.auto_graph_rounded,
-                        _                            => Icons.swap_horiz_rounded,
-                      };
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) {
+                          final tx     = txs[i];
+                          final isPlus = tx.type.name == 'deposit' || tx.type.name == 'contract_return' || tx.type.name == 'finance_profit_distribution';
+                          final color  = isPlus ? _green : _red;
+                          final icon   = switch (tx.type.name) {
+                            'deposit'                    => Icons.arrow_circle_down_rounded,
+                            'withdrawal'                 => Icons.arrow_circle_up_rounded,
+                            'contract_allocation'        => Icons.assignment_rounded,
+                            'contract_return'            => Icons.assignment_return_rounded,
+                            'finance_profit_distribution'=> Icons.auto_graph_rounded,
+                            _                            => Icons.swap_horiz_rounded,
+                          };
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(icon, color: color, size: 20),
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    tx.type.label,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 13),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    intl.DateFormat('yyyy/MM/dd – hh:mm a').format(tx.createdAt),
-                                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                  child: Icon(icon, color: color, size: 20),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        tx.type.label,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        intl.DateFormat('yyyy/MM/dd – hh:mm a').format(tx.createdAt),
+                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                Text(
+                                  '${isPlus ? "+" : "-"}${f.format(tx.amount.abs())} ر.س',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: color,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '${isPlus ? "+" : "-"}${f.format(tx.amount.abs())} ر.س',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: color,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    childCount: txs.length,
+                          );
+                        },
+                        childCount: txs.length,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -805,7 +879,7 @@ class _ProjectionsTab extends ConsumerWidget {
       skipLoadingOnRefresh: true,
       data: (list) {
         if (list.isEmpty) {
-          return _EmptyState(
+          return const _EmptyState(
             icon: Icons.trending_up_rounded,
             title: 'لا توجد توقعات حالياً',
             subtitle: 'ستظهر هنا جداول الاستحقاق المتوقعة عند ارتباط عقودك',
@@ -817,115 +891,119 @@ class _ProjectionsTab extends ConsumerWidget {
         return RefreshIndicator(
           color: _navy,
           onRefresh: () => ref.refresh(investorProjectionsProvider(investorId).future),
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Column(
-                    children: [
-                      // Total expected card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.green.shade700, Colors.green.shade900],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.green.shade700, Colors.green.shade900],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: [BoxShadow(color: _green.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6))],
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.insights_rounded, color: Colors.white70, size: 28),
+                                const SizedBox(height: 12),
+                                const Text('إجمالي التدفقات النقدية المتوقعة', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                const SizedBox(height: 8),
+                                Text('${f.format(total)} ر.س',
+                                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                                const SizedBox(height: 4),
+                                Text('على ${list.length} دفعة قادمة', style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                              ],
+                            ),
                           ),
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [BoxShadow(color: _green.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6))],
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(Icons.insights_rounded, color: Colors.white70, size: 28),
-                            const SizedBox(height: 12),
-                            const Text('إجمالي التدفقات النقدية المتوقعة', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                            const SizedBox(height: 8),
-                            Text('${f.format(total)} ر.س',
-                                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-                            const SizedBox(height: 4),
-                            Text('على ${list.length} دفعة قادمة', style: const TextStyle(color: Colors.white60, fontSize: 12)),
-                          ],
-                        ),
+                          const SizedBox(height: 20),
+                          const Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text('جدول الاستحقاقات', style: TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 15)),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      const Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text('جدول الاستحقاقات', style: TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 15)),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) {
-                      final item = list[i];
-                      final dueDate = item['due_date'] as String?;
-                      final amount  = (item['total_expected'] as num?)?.toDouble() ?? 0;
-                      final isPast  = dueDate != null &&
-                          DateTime.tryParse(dueDate)?.isBefore(DateTime.now()) == true;
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) {
+                          final item = list[i];
+                          final dueDate = item['due_date'] as String?;
+                          final amount  = (item['total_expected'] as num?)?.toDouble() ?? 0;
+                          final isPast  = dueDate != null &&
+                              DateTime.tryParse(dueDate)?.isBefore(DateTime.now()) == true;
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: isPast
-                              ? Border.all(color: _red.withValues(alpha: 0.3))
-                              : null,
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: (isPast ? _red : Colors.blue).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                isPast ? Icons.event_busy_rounded : Icons.calendar_month_rounded,
-                                color: isPast ? _red : Colors.blue,
-                                size: 20,
-                              ),
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: isPast
+                                  ? Border.all(color: _red.withValues(alpha: 0.3))
+                                  : null,
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'استحقاق ${i + 1}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 13),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: (isPast ? _red : Colors.blue).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    dueDate ?? 'تاريخ غير محدد',
-                                    style: TextStyle(color: isPast ? _red : Colors.grey, fontSize: 11),
+                                  child: Icon(
+                                    isPast ? Icons.event_busy_rounded : Icons.calendar_month_rounded,
+                                    color: isPast ? _red : Colors.blue,
+                                    size: 20,
                                   ),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'استحقاق ${i + 1}',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        dueDate ?? 'تاريخ غير محدد',
+                                        style: TextStyle(color: isPast ? _red : Colors.grey, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  '${f.format(amount)} ر.س',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: _green, fontSize: 14),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '${f.format(amount)} ر.س',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: _green, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    childCount: list.length,
+                          );
+                        },
+                        childCount: list.length,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -1049,7 +1127,7 @@ class _QuickActionCard extends StatelessWidget {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 11,
+                fontSize: 12,
                 color: onTap == null ? Colors.grey : _navy,
               ),
               textAlign: TextAlign.center,
@@ -1067,7 +1145,7 @@ class _ProfitChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 220,
+    height: 250,
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
       color: Colors.white,
@@ -1138,39 +1216,49 @@ class _PerformanceGrid extends StatelessWidget {
     final total = investor.availableBalance + investor.deployedCapital;
     final utilizationRate = total > 0 ? (investor.deployedCapital / total * 100) : 0.0;
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
-      children: [
-        _StatTile(
-          label: 'إجمالي الأرباح المحققة',
-          value: '${f.format(investor.totalProfitEarned)} ر.س',
-          icon: Icons.auto_graph_rounded,
-          color: Colors.orange,
-        ),
-        _StatTile(
-          label: 'نسبة الرأس المال المشغّل',
-          value: '${utilizationRate.toStringAsFixed(1)}%',
-          icon: Icons.donut_large_rounded,
-          color: Colors.blue,
-        ),
-        _StatTile(
-          label: 'حالة المحفظة',
-          value: investor.deployedCapital > 0 ? 'نشطة ومدرة' : 'بانتظار تمويل',
-          icon: Icons.shield_rounded,
-          color: investor.deployedCapital > 0 ? _green : Colors.grey,
-        ),
-        _StatTile(
-          label: 'رأس المال المتاح',
-          value: '${f.format(investor.availableBalance)} ر.س',
-          icon: Icons.savings_rounded,
-          color: _green,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cols = constraints.maxWidth > 500 ? 2 : 2;
+        final tiles = [
+          _StatTile(
+            label: 'إجمالي الأرباح المحققة',
+            value: '${f.format(investor.totalProfitEarned)} ر.س',
+            icon: Icons.auto_graph_rounded,
+            color: Colors.orange,
+          ),
+          _StatTile(
+            label: 'نسبة الرأس المال المشغّل',
+            value: '${utilizationRate.toStringAsFixed(1)}%',
+            icon: Icons.donut_large_rounded,
+            color: Colors.blue,
+          ),
+          _StatTile(
+            label: 'حالة المحفظة',
+            value: investor.deployedCapital > 0 ? 'نشطة ومدرة' : 'بانتظار تمويل',
+            icon: Icons.shield_rounded,
+            color: investor.deployedCapital > 0 ? _green : Colors.grey,
+          ),
+          _StatTile(
+            label: 'رأس المال المتاح',
+            value: '${f.format(investor.availableBalance)} ر.س',
+            icon: Icons.savings_rounded,
+            color: _green,
+          ),
+        ];
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: tiles.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cols,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            mainAxisExtent: 105,
+          ),
+          itemBuilder: (context, index) => tiles[index],
+        );
+      },
     );
   }
 }
@@ -1184,7 +1272,7 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
@@ -1192,12 +1280,17 @@ class _StatTile extends StatelessWidget {
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: color, size: 22),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 13)),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: _navy, fontSize: 14)),
+            Icon(icon, color: color, size: 20),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11), overflow: TextOverflow.ellipsis),
       ],
     ),
   );
@@ -1224,9 +1317,7 @@ class _PortfolioHealthCard extends StatelessWidget {
         children: [
           SizedBox(
             width: 80, height: 80,
-            child: total > 0
-                ? CustomPaint(painter: _DonutPainter(deployed.clamp(0, 1)))
-                : CustomPaint(painter: _DonutPainter(0)),
+            child: CustomPaint(painter: _DonutPainter(deployed.clamp(0, 1))),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -1256,15 +1347,12 @@ class _DonutPainter extends CustomPainter {
     const strokeW = 14.0;
     final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = strokeW..strokeCap = StrokeCap.round;
 
-    // background
     paint.color = const Color(0xFFE5E7EB);
     canvas.drawCircle(center, radius, paint);
 
-    // deployed arc
     paint.color = const Color(0xFF60A5FA);
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -pi / 2, 2 * pi * deployedRatio, false, paint);
 
-    // available arc
     paint.color = const Color(0xFF4ADE80);
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -pi / 2 + 2 * pi * deployedRatio, 2 * pi * (1 - deployedRatio), false, paint);
   }
