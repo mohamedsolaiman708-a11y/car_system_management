@@ -422,15 +422,17 @@ class WithdrawalRequestsList extends ConsumerWidget {
 
     return requestsAsync.when(
       data: (allRequests) {
-        final requests = allRequests.where((r) => 
-          r['status'].toString().toLowerCase() == 'pending'
-        ).toList();
+        // عرض الطلبات المعلقة أولاً، ثم الباقية
+        final pending  = allRequests.where((r) => r['status']?.toString().toLowerCase() == 'pending').toList();
+        final others   = allRequests.where((r) => r['status']?.toString().toLowerCase() != 'pending').toList();
+        final requests = [...pending, ...others];
 
         return RefreshIndicator(
           onRefresh: () => ref.refresh(withdrawalRequestsControllerProvider().future),
           child: requests.isEmpty
-              ? _buildEmptyScrollable(context, 'لا توجد طلبات سحب معلقة', Icons.account_balance_wallet_outlined)
+              ? _buildEmptyScrollable(context, 'لا توجد طلبات سحب حالياً', Icons.account_balance_wallet_outlined)
               : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(24),
                   itemCount: requests.length,
                   itemBuilder: (context, index) => _WithdrawalRequestCard(
@@ -441,18 +443,68 @@ class WithdrawalRequestsList extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-      error: (e, _) => SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Text(
-              Failure.fromException(e).message,
-              style: const TextStyle(color: AppColors.errorRed, fontFamily: 'Cairo', fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
+      error: (e, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.errorRed.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.lock_outline_rounded, size: 48, color: AppColors.errorRed.withValues(alpha: 0.7)),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'تعذّر تحميل طلبات السحب',
+                        style: TextStyle(
+                          color: AppColors.primaryNavy,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Cairo',
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        Failure.fromException(e).message,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontFamily: 'Cairo'),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'تلميح: إذا كانت المشكلة تتعلق بالصلاحيات، شغّل ملف fix_withdrawal_requests_rls.sql في Supabase SQL Editor',
+                        style: TextStyle(color: Colors.orange.shade700, fontSize: 12, fontFamily: 'Cairo'),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => ref.invalidate(withdrawalRequestsControllerProvider()),
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('إعادة المحاولة'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryNavy,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -713,6 +765,7 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
     final String rawInvName  = req['investors']?['full_name'] ?? '';
     final String rawProfName = req['profiles']?['full_name'] ?? '';
     final String rawFallback = req['full_name'] ?? '';
+    final String reqStatus   = req['status']?.toString().toLowerCase() ?? 'pending';
 
     final String investorName = (rawInvName.isNotEmpty && rawInvName != 'مستثمر') 
         ? rawInvName 
@@ -723,6 +776,29 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
         : 'تاريخ غير محدد';
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
+    // تحديد لون ونص بادج الحالة
+    Color statusColor;
+    String statusLabel;
+    switch (reqStatus) {
+      case 'approved':
+        statusColor = AppColors.successGreen;
+        statusLabel = '✓ تم الاعتماد';
+        break;
+      case 'rejected':
+        statusColor = AppColors.errorRed;
+        statusLabel = '✗ مرفوض';
+        break;
+      case 'cancelled':
+        statusColor = Colors.grey;
+        statusLabel = 'ملغى';
+        break;
+      default:
+        statusColor = Colors.orange;
+        statusLabel = '⏳ معلق';
+    }
+
+    final bool isPending = reqStatus == 'pending';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -730,7 +806,7 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+        border: Border.all(color: isPending ? Colors.amber.withValues(alpha: 0.4) : Colors.grey.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -739,8 +815,8 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
-                child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.orange, size: 24),
+                decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                child: Icon(Icons.account_balance_wallet_rounded, color: statusColor, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -753,9 +829,23 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
                   ],
                 ),
               ),
-              Text(
-                '${f.format(amount)} ر.س',
-                style: const TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.w900, fontSize: 18),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${f.format(amount)} ر.س',
+                    style: TextStyle(color: isPending ? AppColors.errorRed : Colors.grey.shade600, fontWeight: FontWeight.w900, fontSize: 18),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
             ],
           ),
@@ -786,7 +876,7 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
           const SizedBox(height: 16),
           if (_isLoading)
             const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryNavy))
-          else
+          else if (isPending)
             Row(
               children: [
                 Expanded(
@@ -817,7 +907,14 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
                   ),
                 ),
               ],
-            ),
+            )
+          else
+            // طلب تمت معالجته - عرض وقت المعالجة فقط
+            if (req['processed_at'] != null)
+              Text(
+                'تمت المعالجة: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(req['processed_at']))}',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+              ),
         ],
       ),
     );

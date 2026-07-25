@@ -240,11 +240,21 @@ class WithdrawalRequestsController extends _$WithdrawalRequestsController {
     );
   }
 
-  Future<bool> requestWithdrawal(double amount, String bankDetails) async {
+  Future<void> refresh() async {
     state = const AsyncLoading();
+    state = await AsyncValue.guard(() => ref.read(investorRepositoryProvider).getWithdrawalRequests(
+      investorId: investorId,
+      status: status,
+    ));
+  }
+
+  Future<bool> requestWithdrawal(double amount, String bankDetails) async {
     final result = await AsyncValue.guard(() =>
         ref.read(investorRepositoryProvider).requestWithdrawal(amount, bankDetails)
     );
+    if (!result.hasError) {
+      ref.invalidateSelf();
+    }
     return !result.hasError;
   }
 
