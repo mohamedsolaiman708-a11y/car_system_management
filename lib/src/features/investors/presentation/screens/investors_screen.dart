@@ -762,14 +762,16 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
   Widget build(BuildContext context) {
     final req = widget.req;
     final amount = (req['amount'] as num?)?.toDouble() ?? 0;
-    final String rawInvName  = req['investors']?['full_name'] ?? '';
-    final String rawProfName = req['profiles']?['full_name'] ?? '';
-    final String rawFallback = req['full_name'] ?? '';
     final String reqStatus   = req['status']?.toString().toLowerCase() ?? 'pending';
 
-    final String investorName = (rawInvName.isNotEmpty && rawInvName != 'مستثمر') 
-        ? rawInvName 
-        : (rawProfName.isNotEmpty ? rawProfName : (rawFallback.isNotEmpty ? rawFallback : 'مستثمر'));
+    final String investorName = (
+        req['profiles']?['full_name'] ??
+            req['profiles']?['name'] ??
+            req['investors']?['full_name'] ??
+            req['full_name'] ??
+            req['name'] ??
+            'مستثمر'
+    ).toString();
     final bankDetails = (req['bank_account_details'] ?? req['bank_details'] ?? '') as String;
     final createdAtStr = req['created_at'] != null 
         ? intl.DateFormat('yyyy/MM/dd • hh:mm a').format(DateTime.parse(req['created_at']))

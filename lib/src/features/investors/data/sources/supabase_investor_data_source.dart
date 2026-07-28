@@ -286,8 +286,8 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       var query = _client
           .from('withdrawal_requests')
           .select(
-            '*, investors(full_name, email), profiles:investor_id(full_name, email)',
-          );
+        '*, profiles:investor_id(full_name, email)',
+      );
 
       if (investorId != null) {
         query = query.eq('investor_id', investorId);
