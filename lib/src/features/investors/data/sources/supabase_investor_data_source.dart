@@ -25,7 +25,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   Future<Map<String, dynamic>?> getInvestorById(String id) async {
     final user = _client.auth.currentUser;
 
-    // البحث بالـ ID المباشر أو البريد الإلكتروني مع استخدام الأسماء الأصلية للأعمدة
     var response = await _client
         .from('investors')
         .select()
@@ -56,7 +55,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
           .single();
       return response;
     } catch (e) {
-      // If insertion failed because 'phone' column does not exist in 'investors' table, retry without 'phone'
       if (payload.containsKey('phone')) {
         payload.remove('phone');
         final response = await _client
@@ -155,13 +153,10 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       if (response is List) {
         return List<Map<String, dynamic>>.from(response);
       }
-    } catch (_) {
-      // Fallback if RPC function is not yet applied in Supabase
-    }
+    } catch (_) {}
 
     try {
       final response = await _client.from('profiles').select('*, roles(slug)');
-
       if (response == null) return [];
       final List<dynamic> data = response as List;
 
@@ -170,16 +165,12 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
             final Map<String, dynamic> p = Map<String, dynamic>.from(item);
             final status = (p['status'] ?? '').toString().toLowerCase().trim();
             final roleData = p['roles'];
-
             String? roleSlug;
             if (roleData is Map) {
               roleSlug = roleData['slug'];
             }
-
             final isInvestorType = roleSlug == null || roleSlug == 'investor';
-            final isPendingStatus =
-                status == 'pending' || status == 'waiting' || status == '';
-
+            final isPendingStatus = status == 'pending' || status == 'waiting' || status == '';
             return (isInvestorType && isPendingStatus) ? p : null;
           })
           .whereType<Map<String, dynamic>>()
@@ -205,7 +196,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
         params: {'p_profile_id': profileId, 'p_reason': reason},
       );
     } catch (_) {
-      // Fallback
       await _client
           .from('profiles')
           .update({
@@ -281,13 +271,11 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     String? investorId,
     String? status,
   }) async {
-    // محاولة أولى: مع جلب بيانات المستثمر عبر الجداول المرتبطة
     try {
+      // جلب البيانات مع اسم المستثمر من جدول investors
       var query = _client
           .from('withdrawal_requests')
-          .select(
-        '*, profiles:investor_id(full_name, email)',
-      );
+          .select('*, investors!investor_id(full_name, email)');
 
       if (investorId != null) {
         query = query.eq('investor_id', investorId);
@@ -299,11 +287,8 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       final response = await query.order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      // محاولة ثانية: بدون الجداول المرتبطة (في حال مشكلة في العلاقات)
       try {
-        var query = _client
-            .from('withdrawal_requests')
-            .select('*, profiles:investor_id(full_name, email)');
+        var query = _client.from('withdrawal_requests').select();
         if (investorId != null) {
           query = query.eq('investor_id', investorId);
         }
@@ -313,22 +298,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
         final response = await query.order('created_at', ascending: false);
         return List<Map<String, dynamic>>.from(response);
       } catch (e2) {
-        // محاولة ثالثة: استعلام بسيط بدون joins
-        try {
-          var query = _client.from('withdrawal_requests').select();
-          if (investorId != null) {
-            query = query.eq('investor_id', investorId);
-          }
-          if (status != null) {
-            query = query.eq('status', status);
-          }
-          final response = await query.order('created_at', ascending: false);
-          return List<Map<String, dynamic>>.from(response);
-        } catch (e3) {
-          // إعادة رمي الخطأ النهائي بدلاً من إخفائه بقائمة فارغة
-          // حتى تظهر رسالة الخطأ للأدمن (مثلاً مشكلة RLS)
-          throw Failure.fromException(e3);
-        }
+        throw Failure.fromException(e2);
       }
     }
   }
