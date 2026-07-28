@@ -221,12 +221,26 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     String investorId,
   ) async {
     try {
+      // إصلاح سينيور: بما أن جدول contract_documents مربوط بـ contract_id فقط
+      // نأتي أولاً بالعقود التي يمولها المستثمر
+      final funding = await _client
+          .from('contract_funding')
+          .select('contract_id')
+          .eq('investor_id', investorId);
+      
+      final contractIds = (funding as List).map((f) => f['contract_id']).toList();
+      
+      if (contractIds.isEmpty) return [];
+
+      // جلب المستندات المرتبطة بتلك العقود
       final response = await _client
           .from('contract_documents')
           .select()
-          .eq('investor_id', investorId);
+          .inFilter('contract_id', contractIds);
+      
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
+      print('Error fetching documents: $e');
       return [];
     }
   }
@@ -272,29 +286,21 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     String? status,
   }) async {
     try {
-      // جلب البيانات مع اسم المستثمر من جدول investors
+      // تأكدنا من عمل join صحيح مع جدول investors
       var query = _client
           .from('withdrawal_requests')
-          .select('*, investors!investor_id(full_name, email)');
+          .select('*, investors(full_name, email)');
 
-      if (investorId != null) {
-        query = query.eq('investor_id', investorId);
-      }
-      if (status != null) {
-        query = query.eq('status', status);
-      }
+      if (investorId != null) query = query.eq('investor_id', investorId);
+      if (status != null) query = query.eq('status', status);
 
       final response = await query.order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
+      print('Withdrawal Error: $e');
       try {
         var query = _client.from('withdrawal_requests').select();
-        if (investorId != null) {
-          query = query.eq('investor_id', investorId);
-        }
-        if (status != null) {
-          query = query.eq('status', status);
-        }
+        if (investorId != null) query = query.eq('investor_id', investorId);
         final response = await query.order('created_at', ascending: false);
         return List<Map<String, dynamic>>.from(response);
       } catch (e2) {

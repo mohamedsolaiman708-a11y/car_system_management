@@ -764,14 +764,15 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
     final amount = (req['amount'] as num?)?.toDouble() ?? 0;
     final String reqStatus   = req['status']?.toString().toLowerCase() ?? 'pending';
 
+    // Senior Edit: تأكدنا من الوصول لبيانات المستثمر من الـ Map المنضمة (investors)
     final String investorName = (
-        req['profiles']?['full_name'] ??
-            req['profiles']?['name'] ??
             req['investors']?['full_name'] ??
+            req['investors']?['name'] ??
+            req['profiles']?['full_name'] ??
             req['full_name'] ??
-            req['name'] ??
             'مستثمر'
     ).toString();
+    
     final bankDetails = (req['bank_account_details'] ?? req['bank_details'] ?? '') as String;
     final createdAtStr = req['created_at'] != null 
         ? intl.DateFormat('yyyy/MM/dd • hh:mm a').format(DateTime.parse(req['created_at']))
