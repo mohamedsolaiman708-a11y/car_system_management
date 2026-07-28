@@ -289,7 +289,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       // تأكدنا من عمل join صحيح مع جدول investors
       var query = _client
           .from('withdrawal_requests')
-          .select('*, investors(full_name, email)');
+          .select('*, investors:investor_id(full_name), profiles:investor_id(full_name)');
 
       if (investorId != null) query = query.eq('investor_id', investorId);
       if (status != null) query = query.eq('status', status);
