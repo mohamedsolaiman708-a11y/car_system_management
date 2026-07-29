@@ -283,11 +283,11 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     String? status,
   }) async {
     try {
-      // Senior Audit: جلب الاسم من جدول المستثمرين باستخدام العلاقة المباشرة
-      // وتأمين جلب الاسم من جدول البروفايلات كاحتياط
+      // Senior Fix: بما أن الربط مع investors مكسور بسبب بيانات يتيمة، 
+      // نربط مع profiles!investor_id لجلب الاسم بشكل مضمون.
       var query = _client
           .from('withdrawal_requests')
-          .select('*, investors!investor_id(full_name), profiles!investor_id(full_name)');
+          .select('*, profiles!investor_id(full_name, email)');
 
       if (investorId != null) query = query.eq('investor_id', investorId);
       if (status != null) query = query.eq('status', status);
@@ -295,11 +295,9 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       final response = await query.order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Withdrawal Join Error: $e');
+      print('Withdrawal Error: $e');
       // Fallback
-      var query = _client.from('withdrawal_requests').select();
-      if (investorId != null) query = query.eq('investor_id', investorId);
-      final response = await query.order('created_at', ascending: false);
+      final response = await _client.from('withdrawal_requests').select().order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     }
   }

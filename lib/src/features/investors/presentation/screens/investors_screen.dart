@@ -764,13 +764,12 @@ class _WithdrawalRequestCardState extends ConsumerState<_WithdrawalRequestCard> 
     final amount = (req['amount'] as num?)?.toDouble() ?? 0;
     final String reqStatus   = req['status']?.toString().toLowerCase() ?? 'pending';
 
-    // Senior Edit: تأكدنا من الوصول لبيانات المستثمر من الـ Map المنضمة (investors)
+    // Senior Edit: تأكدنا من الوصول لبيانات المستثمر من الـ Map المنضمة (profiles أولاً)
     final String investorName = (
-            req['investors']?['full_name'] ??
-            req['investors']?['name'] ??
-            req['profiles']?['full_name'] ??
-            req['full_name'] ??
-            'مستثمر'
+        req['profiles']?['full_name'] ??
+        req['investors']?['full_name'] ??
+        req['full_name'] ??
+        'مستثمر'
     ).toString();
     
     final bankDetails = (req['bank_account_details'] ?? req['bank_details'] ?? '') as String;
