@@ -277,26 +277,46 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     );
   }
 
-  @override
   Future<List<Map<String, dynamic>>> getWithdrawalRequests({
     String? investorId,
     String? status,
   }) async {
     try {
-      // Senior Fix: بما أن الربط مع investors مكسور بسبب بيانات يتيمة، 
-      // نربط مع profiles!investor_id لجلب الاسم بشكل مضمون.
-      var query = _client
-          .from('withdrawal_requests')
-          .select('*, profiles!investor_id(full_name, email)');
+      // 1. جلب طلبات السحب الأساسية
+      var query = _client.from('withdrawal_requests').select();
 
       if (investorId != null) query = query.eq('investor_id', investorId);
       if (status != null) query = query.eq('status', status);
 
-      final response = await query.order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      final List<dynamic> requests = await query.order('created_at', ascending: false);
+
+      if (requests.isEmpty) return [];
+
+      // 2. تجميع كل الـ IDs الفريدة للمستثمرين من الطلبات
+      final userIds = requests.map((r) => r['investor_id'].toString()).toSet().toList();
+
+      // 3. جلب الأسماء من جدول profiles (لأنه المصدر المضمون)
+      final profilesResponse = await _client
+          .from('profiles')
+          .select('id, full_name')
+          .inFilter('id', userIds);
+
+      final Map<String, String> nameMap = {
+        for (var p in (profilesResponse as List)) p['id'].toString(): p['full_name'].toString()
+      };
+
+      // 4. دمج الأسماء مع الطلبات يدوياً
+      return requests.map((req) {
+        final Map<String, dynamic> mappedReq = Map<String, dynamic>.from(req);
+        final String uid = req['investor_id'].toString();
+        // بنضيف الاسم جوه Map اسمها profiles عشان الـ UI يفهمها
+        mappedReq['profiles'] = {'full_name': nameMap[uid] ?? 'مستثمر غير معروف'};
+        return mappedReq;
+      }).toList();
+
     } catch (e) {
-      print('Withdrawal Error: $e');
-      // Fallback
+      print('DEBUG: Withdrawal Final Error: $e');
+      // Fallback الأخير
       final response = await _client.from('withdrawal_requests').select().order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     }
