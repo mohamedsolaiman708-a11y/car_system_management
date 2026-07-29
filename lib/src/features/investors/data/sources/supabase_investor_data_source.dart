@@ -221,8 +221,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     String investorId,
   ) async {
     try {
-      // إصلاح سينيور: بما أن جدول contract_documents مربوط بـ contract_id فقط
-      // نأتي أولاً بالعقود التي يمولها المستثمر
       final funding = await _client
           .from('contract_funding')
           .select('contract_id')
@@ -232,7 +230,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       
       if (contractIds.isEmpty) return [];
 
-      // جلب المستندات المرتبطة بتلك العقود
       final response = await _client
           .from('contract_documents')
           .select()
@@ -286,10 +283,11 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     String? status,
   }) async {
     try {
-      // تأكدنا من عمل join صحيح مع جدول investors
+      // Senior Audit: جلب الاسم من جدول المستثمرين باستخدام العلاقة المباشرة
+      // وتأمين جلب الاسم من جدول البروفايلات كاحتياط
       var query = _client
           .from('withdrawal_requests')
-          .select('*, investors:investor_id(full_name), profiles:investor_id(full_name)');
+          .select('*, investors!investor_id(full_name), profiles!investor_id(full_name)');
 
       if (investorId != null) query = query.eq('investor_id', investorId);
       if (status != null) query = query.eq('status', status);
@@ -297,15 +295,12 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
       final response = await query.order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Withdrawal Error: $e');
-      try {
-        var query = _client.from('withdrawal_requests').select();
-        if (investorId != null) query = query.eq('investor_id', investorId);
-        final response = await query.order('created_at', ascending: false);
-        return List<Map<String, dynamic>>.from(response);
-      } catch (e2) {
-        throw Failure.fromException(e2);
-      }
+      print('Withdrawal Join Error: $e');
+      // Fallback
+      var query = _client.from('withdrawal_requests').select();
+      if (investorId != null) query = query.eq('investor_id', investorId);
+      final response = await query.order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
     }
   }
 
