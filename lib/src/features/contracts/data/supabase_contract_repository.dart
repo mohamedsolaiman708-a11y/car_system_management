@@ -27,21 +27,22 @@ class SupabaseContractRepository implements ContractRepository {
     int limit = 20,
     int offset = 0,
   }) async {
-    final cacheKey = 'getContracts_${searchQuery ?? ''}_${status ?? ''}_${limit}_$offset';
+    final cacheKey =
+        'getContracts_${searchQuery ?? ''}_${status ?? ''}_${limit}_$offset';
     try {
       var query = _client.from('financing_contracts').select(
             'id, contract_no, customer_id, inventory_item_id, principal_amount, finance_profit_rate, total_contract_value, duration_months, start_date, status, created_at, customers(full_name), inventory_items(make, model, license_plate)',
           );
-      
+
       if (searchQuery != null && searchQuery.isNotEmpty) {
         query = query.or('contract_no.ilike.%$searchQuery%');
       }
       if (status != null) query = query.eq('status', status);
-      
+
       final response = await query
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
-          
+
       final List<dynamic> list = response as List;
       final contracts = list.map((json) {
         final map = Map<String, dynamic>.from(json);
@@ -64,7 +65,7 @@ class SupabaseContractRepository implements ContractRepository {
   Future<Contract?> getContractById(String id) async {
     final cleanId = id.trim();
     if (cleanId == 'null' || cleanId.isEmpty) return null;
-    
+
     final cacheKey = 'getContractById_$cleanId';
     try {
       if (_memCache.containsKey(cacheKey)) {
@@ -74,7 +75,11 @@ class SupabaseContractRepository implements ContractRepository {
       Map<String, dynamic>? data;
 
       try {
-        data = await _client.from('financing_contracts').select().or('id.eq.$cleanId,contract_no.eq.$cleanId').maybeSingle();
+        data = await _client
+            .from('financing_contracts')
+            .select()
+            .or('id.eq.$cleanId,contract_no.eq.$cleanId')
+            .maybeSingle();
       } catch (e) {
         print('DB_LOG: Primary fetch failed: $e');
       }
@@ -86,11 +91,19 @@ class SupabaseContractRepository implements ContractRepository {
 
       try {
         if (data['customer_id'] != null) {
-          final customer = await _client.from('customers').select().eq('id', data['customer_id']).maybeSingle();
+          final customer = await _client
+              .from('customers')
+              .select()
+              .eq('id', data['customer_id'])
+              .maybeSingle();
           enrichedData['customers'] = customer;
         }
         if (data['inventory_item_id'] != null) {
-          final vehicle = await _client.from('inventory_items').select().eq('id', data['inventory_item_id']).maybeSingle();
+          final vehicle = await _client
+              .from('inventory_items')
+              .select()
+              .eq('id', data['inventory_item_id'])
+              .maybeSingle();
           enrichedData['inventory_items'] = vehicle;
         }
       } catch (e) {
@@ -111,9 +124,18 @@ class SupabaseContractRepository implements ContractRepository {
 
   void _sanitizeNumericFields(Map<String, dynamic> json) {
     final numericFields = [
-      'principal_amount', 'finance_profit_rate', 'total_contract_value', 'down_payment',
-      'moroor_fees', 'tamm_fees', 'insurance_fees', 'inspection_fees',
-      'plate_fees', 'traffic_violations_fees', 'other_fees', 'vat_amount'
+      'principal_amount',
+      'finance_profit_rate',
+      'total_contract_value',
+      'down_payment',
+      'moroor_fees',
+      'tamm_fees',
+      'insurance_fees',
+      'inspection_fees',
+      'plate_fees',
+      'traffic_violations_fees',
+      'other_fees',
+      'vat_amount',
     ];
     for (var field in numericFields) {
       if (json[field] != null) {
@@ -127,7 +149,11 @@ class SupabaseContractRepository implements ContractRepository {
   @override
   Future<Contract> createContract(Map<String, dynamic> data) async {
     try {
-      final response = await _client.from('financing_contracts').insert(data).select().single();
+      final response = await _client
+          .from('financing_contracts')
+          .insert(data)
+          .select()
+          .single();
       clearCache();
       return Contract.fromJson(response);
     } catch (e) {
@@ -139,7 +165,12 @@ class SupabaseContractRepository implements ContractRepository {
   @override
   Future<Contract> updateContract(String id, Map<String, dynamic> data) async {
     try {
-      final response = await _client.from('financing_contracts').update(data).eq('id', id).select().single();
+      final response = await _client
+          .from('financing_contracts')
+          .update(data)
+          .eq('id', id)
+          .select()
+          .single();
       clearCache();
       return Contract.fromJson(response);
     } catch (e) {
@@ -151,7 +182,10 @@ class SupabaseContractRepository implements ContractRepository {
   @override
   Future<void> activateContract(String id) async {
     try {
-      await _client.rpc('activate_financing_contract', params: {'p_contract_id': id});
+      await _client.rpc(
+        'activate_financing_contract',
+        params: {'p_contract_id': id},
+      );
       clearCache();
     } catch (e) {
       _ref.read(connectionNotifierProvider.notifier).setOffline();
@@ -169,14 +203,17 @@ class SupabaseContractRepository implements ContractRepository {
     String? notes,
   }) async {
     try {
-      await _client.rpc('process_installment_payment', params: {
-        'p_contract_id': contractId,
-        'p_amount_paid': amount,
-        'p_payment_method': method,
-        'p_reference_no': reference,
-        'p_notes': notes,
-        'p_idempotency_key': idempotencyKey,
-      });
+      await _client.rpc(
+        'process_installment_payment',
+        params: {
+          'p_contract_id': contractId,
+          'p_amount_paid': amount,
+          'p_payment_method': method,
+          'p_reference_no': reference,
+          'p_notes': notes,
+          'p_idempotency_key': idempotencyKey,
+        },
+      );
       clearCache();
     } catch (e) {
       _ref.read(connectionNotifierProvider.notifier).setOffline();
@@ -187,7 +224,10 @@ class SupabaseContractRepository implements ContractRepository {
   @override
   Future<void> reversePayment(String paymentId, String reason) async {
     try {
-      await _client.rpc('reverse_contract_payment', params: {'p_payment_id': paymentId, 'p_reason': reason});
+      await _client.rpc(
+        'reverse_contract_payment',
+        params: {'p_payment_id': paymentId, 'p_reason': reason},
+      );
       clearCache();
     } catch (e) {
       _ref.read(connectionNotifierProvider.notifier).setOffline();
@@ -199,11 +239,21 @@ class SupabaseContractRepository implements ContractRepository {
   Future<Map<String, dynamic>> getContractStats() async {
     const cacheKey = 'getContractStats';
     try {
-      final total = await _client.from('financing_contracts').select('id', const FetchOptions(count: CountOption.exact));
-      final active = await _client.from('financing_contracts').select('id', const FetchOptions(count: CountOption.exact)).eq('status', 'active');
+      // الإصلاح: استخدام .count(CountOption.exact) بدلاً من FetchOptions
+      final total = await _client
+          .from('financing_contracts')
+          .select('id')
+          .count(CountOption.exact);
+          
+      final active = await _client
+          .from('financing_contracts')
+          .select('id')
+          .eq('status', 'active')
+          .count(CountOption.exact);
+      
       final stats = {
-        'total': total.count,
-        'active': active.count,
+        'total': total.count ?? 0, 
+        'active': active.count ?? 0
       };
       _memCache[cacheKey] = stats;
       return stats;
@@ -214,28 +264,50 @@ class SupabaseContractRepository implements ContractRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getContractInstallments(String contractId) async {
+  Future<List<Map<String, dynamic>>> getContractInstallments(
+    String contractId,
+  ) async {
     final effectiveId = await _getEffectiveId(contractId);
-    final response = await _client.from('installments').select().eq('contract_id', effectiveId).order('due_date', ascending: true);
+    final response = await _client
+        .from('installments')
+        .select()
+        .eq('contract_id', effectiveId)
+        .order('due_date', ascending: true);
     return List<Map<String, dynamic>>.from(response as List);
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getContractPayments(String contractId) async {
+  Future<List<Map<String, dynamic>>> getContractPayments(
+    String contractId,
+  ) async {
     final effectiveId = await _getEffectiveId(contractId);
-    final response = await _client.from('payments').select().eq('contract_id', effectiveId).order('payment_date', ascending: false);
+    final response = await _client
+        .from('payments')
+        .select()
+        .eq('contract_id', effectiveId)
+        .order('payment_date', ascending: false);
     return List<Map<String, dynamic>>.from(response as List);
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getContractTimeline(String contractId) async {
+  Future<List<Map<String, dynamic>>> getContractTimeline(
+    String contractId,
+  ) async {
     final effectiveId = await _getEffectiveId(contractId);
-    final response = await _client.from('audit_logs').select().eq('record_id', effectiveId).order('created_at', ascending: false);
+    final response = await _client
+        .from('audit_logs')
+        .select()
+        .eq('record_id', effectiveId)
+        .order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(response as List);
   }
 
   @override
-  Future<void> addContractLog({required String contractId, required String eventType, Map<String, dynamic>? metadata}) async {
+  Future<void> addContractLog({
+    required String contractId,
+    required String eventType,
+    Map<String, dynamic>? metadata,
+  }) async {
     final effectiveId = await _getEffectiveId(contractId);
     await _client.from('audit_logs').insert({
       'record_id': effectiveId,
@@ -246,22 +318,29 @@ class SupabaseContractRepository implements ContractRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getContractFunding(String contractId) async {
+  Future<List<Map<String, dynamic>>> getContractFunding(
+    String contractId,
+  ) async {
     final effectiveId = await _getEffectiveId(contractId);
     final cacheKey = 'getContractFunding_$effectiveId';
-    
+
     try {
       final response = await _client
           .from('contract_funding')
           .select('amount_allocated, investor_id, investors(full_name)')
           .eq('contract_id', effectiveId);
-          
-      final list = (response as List).map((item) => {
-        'amount_allocated': double.tryParse(item['amount_allocated'].toString()) ?? 0.0,
-        'investor_id': item['investor_id'],
-        'investors': item['investors'],
-      }).toList();
-      
+
+      final list = (response as List)
+          .map(
+            (item) => {
+              'amount_allocated':
+                  double.tryParse(item['amount_allocated'].toString()) ?? 0.0,
+              'investor_id': item['investor_id'],
+              'investors': item['investors'],
+            },
+          )
+          .toList();
+
       _memCache[cacheKey] = list;
       return list;
     } catch (e) {
