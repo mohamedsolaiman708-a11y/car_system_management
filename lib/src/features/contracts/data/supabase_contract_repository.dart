@@ -239,26 +239,18 @@ class SupabaseContractRepository implements ContractRepository {
   Future<Map<String, dynamic>> getContractStats() async {
     const cacheKey = 'getContractStats';
     try {
-      // الإصلاح: استخدام .count(CountOption.exact) بدلاً من FetchOptions
-      final total = await _client
-          .from('financing_contracts')
-          .select('id')
-          .count(CountOption.exact);
-          
-      final active = await _client
-          .from('financing_contracts')
-          .select('id')
-          .eq('status', 'active')
-          .count(CountOption.exact);
+      // الحل الأكثر استقراراً للحصول على العدد في كل الإصدارات
+      final allResponse = await _client.from('financing_contracts').select('id');
+      final activeResponse = await _client.from('financing_contracts').select('id').eq('status', 'active');
       
       final stats = {
-        'total': total.count ?? 0, 
-        'active': active.count ?? 0
+        'total': (allResponse as List).length, 
+        'active': (activeResponse as List).length
       };
       _memCache[cacheKey] = stats;
       return stats;
     } catch (e) {
-      if (_memCache.containsKey(cacheKey)) return _memCache[cacheKey];
+      if (_memCache.containsKey(cacheKey)) return _memCache[cacheKey] as Map<String, dynamic>;
       throw Failure.fromException(e);
     }
   }
