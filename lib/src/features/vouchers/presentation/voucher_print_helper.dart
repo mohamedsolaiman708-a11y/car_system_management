@@ -209,19 +209,19 @@ class VoucherPrintHelper {
                       children: [
                         _infoRow(fromLabelEn, fromLabel, partyName),
                         pw.SizedBox(height: 16),
-                        _infoRow('The Sum Of', 'مبلغاً وقدره', '${f.format(amount)} ريال سعودي'),
-                        pw.SizedBox(height: 8),
+                        _infoRow('The Sum Of', 'مبلغاً وقدره', '${f.format(amount)} ريال سعودي '),
+                        pw.SizedBox(height: 10),
                         // المبلغ كتابةً
                         pw.Container(
-                          margin: const pw.EdgeInsets.only(right: 106),
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          margin: const pw.EdgeInsets.only(right: 116),
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: pw.BoxDecoration(
                             color: _cardBg,
                             border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
                             borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
                           ),
                           child: pw.Text('( $amountText )',
-                              style: pw.TextStyle(fontSize: 9, color: _navy, fontWeight: pw.FontWeight.bold)),
+                              style: pw.TextStyle(fontSize: 9.5, color: _navy, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.SizedBox(height: 16),
                         _infoRow('This Compares', 'وذلك مقابل', purpose),
@@ -315,22 +315,32 @@ class VoucherPrintHelper {
 
   static pw.Widget _checkBox(bool checked, String label) {
     return pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         pw.Container(
-          width: 12,
-          height: 12,
+          width: 13,
+          height: 13,
           decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: _navy, width: 1),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(2)),
+            border: pw.Border.all(color: _navy, width: 1.2),
+            color: checked ? _navy : PdfColors.white,
           ),
           child: checked
               ? pw.Center(
-              child: pw.Text('✓',
-                  style: pw.TextStyle(
-                      fontSize: 9, fontWeight: pw.FontWeight.bold, color: _navy)))
+                  child: pw.Container(
+                    width: 5,
+                    height: 5,
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.white,
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(1)),
+                    ),
+                  ),
+                )
               : null,
         ),
-        pw.SizedBox(width: 4),
-        pw.Text(label, style: const pw.TextStyle(fontSize: 9)),
+        pw.SizedBox(width: 5),
+        pw.Text(label, style: const pw.TextStyle(fontSize: 9, color: _navy)),
       ],
     );
   }
@@ -354,9 +364,11 @@ class VoucherPrintHelper {
         pw.Expanded(
           child: pw.Container(
             decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                    bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5))),
-            padding: const pw.EdgeInsets.only(bottom: 2),
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+              ),
+            ),
+            padding: const pw.EdgeInsets.only(bottom: 6),
             child: pw.Text(value, style: const pw.TextStyle(fontSize: 10)),
           ),
         ),
