@@ -131,46 +131,69 @@ class _UniversalDocumentManagerState extends ConsumerState<UniversalDocumentMana
   // هذا هو الكرت الذي يحتوي على زر "إرفاق مستند"
   Widget _buildPremiumUploadCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.primaryNavy, Color(0xFF1B2A4A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: AppColors.primaryNavy.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: AppColors.primaryNavy.withValues(alpha: 0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.cloud_upload_rounded, size: 36, color: AppColors.accentGold),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.cloud_upload_rounded, size: 28, color: AppColors.accentGold),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('مركز المرفقات الرقمي', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Colors.white)),
-                Text('ارفع الهوية، العقد، أو الصور', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w500)),
+                Text(
+                  'مركز المرفقات الرقمي',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'ارفع وأرشف الوثائق والمستندات المرتبطة بالعقود والعملاء',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white60,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ],
             ),
           ),
-          // الزر الذهبي للرفع
-          ElevatedButton(
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
             onPressed: () => _showUploadDialog(),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('إرفاق مستند'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accentGold,
               foregroundColor: AppColors.primaryNavy,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
+              textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
             ),
-            child: const Text('إرفاق مستند', style: TextStyle(fontWeight: FontWeight.w900)),
           ),
         ],
       ),
