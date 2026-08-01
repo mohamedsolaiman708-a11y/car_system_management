@@ -21,15 +21,29 @@ class SupabaseDocumentRepository implements DocumentRepository {
     try {
       var query = _client.from('contract_documents').select().isFilter('deleted_at', null);
 
-      // ── فلاتر ديناميكية: إذا لم يكن هناك فلتر يجلب كل المستندات ──
       final List<String> filters = [];
       if (contractId != null) filters.add('contract_id.eq.$contractId');
       if (customerId != null) filters.add('customer_id.eq.$customerId');
 
-      // investor_id قد لا يكون موجوداً في كل نسخ قاعدة البيانات
       if (investorId != null) {
+        // جلب مستندات المستثمر المباشرة
+        filters.add('investor_id.eq.$investorId');
+
+        // جلب العقود التي موّلها هذا المستثمر لإظهار وثائقها أيضاً
         try {
-          filters.add('investor_id.eq.$investorId');
+          final fundedRes = await _client
+              .from('contract_funding')
+              .select('contract_id')
+              .eq('investor_id', investorId);
+          
+          if (fundedRes.isNotEmpty) {
+            for (final row in fundedRes) {
+              final cId = row['contract_id'];
+              if (cId != null) {
+                filters.add('contract_id.eq.$cId');
+              }
+            }
+          }
         } catch (_) {}
       }
 
@@ -39,7 +53,7 @@ class SupabaseDocumentRepository implements DocumentRepository {
 
       final response = await query
           .order('created_at', ascending: false)
-          .limit(200); // حماية من جلب آلاف السجلات دفعة واحدة
+          .limit(200);
 
       return (response as List).map((json) {
         try {
@@ -49,9 +63,7 @@ class SupabaseDocumentRepository implements DocumentRepository {
         }
       }).whereType<AppDocument>().toList();
     } on PostgrestException catch (e) {
-      // في حالة خطأ RLS أو عدم وجود عمود investor_id
       if (e.code == '42703' || e.message.contains('investor_id')) {
-        // إعادة المحاولة بدون investor_id
         return _getDocumentsWithoutInvestor(
           customerId: customerId,
           contractId: contractId,
@@ -118,15 +130,30 @@ class SupabaseDocumentRepository implements DocumentRepository {
     onProgress?.call(0.8);
     final fileUrl = _client.storage.from('documents').getPublicUrl(storagePath);
 
-    await _client.from('contract_documents').insert({
-      // الأعمدة الأساسية الموجودة دائماً
+    final payload = <String, dynamic>{
       'contract_id': contractId,
       'name': fileName,
       'file_path': storagePath,
       'document_url': fileUrl,
       'document_type': type.name.toUpperCase(),
       'version': 1,
-    });
+    };
+    if (customerId != null) payload['customer_id'] = customerId;
+    if (investorId != null) payload['investor_id'] = investorId;
+
+    try {
+      await _client.from('contract_documents').insert(payload);
+    } catch (_) {
+      // في حالة عدم وجود أعمدة customer_id أو investor_id في جدول Supabase بعد
+      await _client.from('contract_documents').insert({
+        'contract_id': contractId,
+        'name': fileName,
+        'file_path': storagePath,
+        'document_url': fileUrl,
+        'document_type': type.name.toUpperCase(),
+        'version': 1,
+      });
+    }
 
     onProgress?.call(1.0);
   }

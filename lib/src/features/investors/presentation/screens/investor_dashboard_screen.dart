@@ -65,7 +65,10 @@ class InvestorDashboardScreen extends ConsumerWidget {
                           _PortfolioTab(investorId: investor.id),
                           _TransactionsTab(investorId: investor.id),
                           _ProjectionsTab(investorId: investor.id),
-                          UniversalDocumentManager(investorId: investor.id),
+                          Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: UniversalDocumentManager(investorId: investor.id),
+                          ),
                         ],
                       ),
                     ),
