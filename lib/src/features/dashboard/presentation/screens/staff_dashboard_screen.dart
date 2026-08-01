@@ -307,26 +307,174 @@ class _ModernGrowthChart extends StatelessWidget {
   final List<Map<String, dynamic>> data;
   const _ModernGrowthChart({required this.data});
 
+  static const _arabicMonths = [
+    '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+  ];
+
   @override
   Widget build(BuildContext context) {
-    if (data.isEmpty) return const Center(child: Text('لا توجد بيانات كافية للتحليل'));
-    final chartData = data.reversed.toList();
-    return LineChart(
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value['gross_profit'] as num?)?.toDouble() ?? 0.0)).toList(),
-            isCurved: true,
-            color: AppColors.primaryNavy,
-            barWidth: 6,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppColors.primaryNavy.withOpacity(0.2), AppColors.primaryNavy.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+    if (data.isEmpty) {
+      return const Center(
+        child: Text('لا توجد بيانات كافية للتحليل', style: TextStyle(color: Colors.grey, fontSize: 13)),
+      );
+    }
+
+    final f = intl.NumberFormat.compactCurrency(symbol: '', decimalDigits: 0);
+
+    // تجهيز النقاط وحساب الحد الأقصى للمحور الصادي
+    final spots = <FlSpot>[];
+    double maxY = 100;
+    bool hasNonZero = false;
+
+    for (int i = 0; i < data.length; i++) {
+      final val = (data[i]['gross_profit'] as num?)?.toDouble() ?? 0.0;
+      if (val > 0) hasNonZero = true;
+      if (val > maxY) maxY = val;
+      spots.add(FlSpot(i.toDouble(), val));
+    }
+
+    // إضافة هامش لقمة الشارت
+    maxY = maxY * 1.2;
+
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 10, right: 10, left: 10, bottom: 0),
+          child: LineChart(
+            LineChartData(
+              minY: 0,
+              maxY: maxY,
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: maxY / 4 > 0 ? maxY / 4 : 25,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: Colors.grey.withOpacity(0.12),
+                  strokeWidth: 1,
+                  dashArray: [5, 5],
+                ),
+              ),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 45,
+                    interval: maxY / 4 > 0 ? maxY / 4 : 25,
+                    getTitlesWidget: (val, meta) {
+                      if (val == 0) return const Text('0', style: TextStyle(fontSize: 10, color: Colors.grey));
+                      return Text(
+                        f.format(val),
+                        style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 28,
+                    interval: 1,
+                    getTitlesWidget: (val, meta) {
+                      final idx = val.toInt();
+                      if (idx < 0 || idx >= data.length) return const SizedBox();
+                      final mInt = data[idx]['month'] as int? ?? 1;
+                      final mName = (mInt >= 1 && mInt <= 12) ? _arabicMonths[mInt] : '$mInt';
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          mName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: idx == data.length - 1 ? AppColors.primaryNavy : Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(show: false),
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  tooltipBgColor: AppColors.primaryNavy,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final idx = spot.x.toInt();
+                      final mInt = (idx >= 0 && idx < data.length) ? (data[idx]['month'] as int? ?? 1) : 1;
+                      final mName = (mInt >= 1 && mInt <= 12) ? _arabicMonths[mInt] : '';
+                      return LineTooltipItem(
+                        '$mName\n${intl.NumberFormat.currency(symbol: 'ر.س', decimalDigits: 0).format(spot.y)}',
+                        const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  curveSmoothness: 0.35,
+                  color: AppColors.primaryNavy,
+                  barWidth: 3.5,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                      radius: 4,
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                      strokeColor: AppColors.primaryNavy,
+                    ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryNavy.withOpacity(0.18),
+                        AppColors.primaryNavy.withOpacity(0.0),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+        if (!hasNonZero)
+          Positioned.fill(
+            child: Container(
+              alignment: Alignment.center,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.92),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.info_outline_rounded, size: 16, color: AppColors.accentGold),
+                    SizedBox(width: 8),
+                    Text(
+                      'لا توجد تحصيلات أو أرباح مسجلة لآخر 6 أشهر بعد',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryNavy),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

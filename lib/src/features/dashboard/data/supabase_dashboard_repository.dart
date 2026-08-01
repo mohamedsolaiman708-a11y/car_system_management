@@ -34,18 +34,77 @@ class SupabaseDashboardRepository {
   /// جلب بيانات الرسوم البيانية (نمو الأرباح والمبيعات)
   Future<List<Map<String, dynamic>>> getMonthlyGrowthData() async {
     try {
-      // نستخدم دالة التقرير المالي المتاحة في قاعدة البيانات لجلب بيانات آخر 6 أشهر
       final now = DateTime.now();
+      final List<Map<String, dynamic>> last6Months = [];
+      
+      // إنشاء قائمة الـ 6 أشهر الماضية بالترتيب الزمني
+      for (int i = 5; i >= 0; i--) {
+        final d = DateTime(now.year, now.month - i, 1);
+        final mStr = '${d.year}-${d.month.toString().padLeft(2, '0')}';
+        last6Months.add({
+          'period_text': mStr,
+          'year': d.year,
+          'month': d.month,
+          'gross_profit': 0.0,
+          'company_net_profit': 0.0,
+        });
+      }
+
       final startDate = DateTime(now.year, now.month - 5, 1);
-      
-      final response = await _client.rpc('get_profit_report', params: {
-        'p_start_date': startDate.toIso8601String().split('T')[0],
-        'p_end_date': now.toIso8601String().split('T')[0],
-        'p_investor_id': null,
-        'p_customer_id': null,
-      });
-      
-      return List<Map<String, dynamic>>.from(response);
+      final endDate = DateTime(now.year, now.month + 1, 0);
+
+      List<dynamic> response = [];
+      try {
+        response = await _client.rpc('get_profit_report', params: {
+          'p_start_date': startDate.toIso8601String().split('T')[0],
+          'p_end_date': endDate.toIso8601String().split('T')[0],
+          'p_investor_id': null,
+          'p_customer_id': null,
+        });
+      } catch (_) {
+        // في حالة عدم وجود دالة RPC، نحاول جلب المدفوعات كبديل
+        final payments = await _client
+            .from('payments')
+            .select('payment_date, amount_total')
+            .gte('payment_date', startDate.toIso8601String());
+        
+        if (payments is List) {
+          final Map<String, double> sums = {};
+          for (final p in payments) {
+            final dateStr = p['payment_date'] as String?;
+            if (dateStr != null) {
+              final dt = DateTime.parse(dateStr).toLocal();
+              final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+              sums[key] = (sums[key] ?? 0.0) + ((p['amount_total'] as num?)?.toDouble() ?? 0.0);
+            }
+          }
+          response = sums.entries.map((e) => {
+            'period_text': e.key,
+            'gross_profit': e.value,
+          }).toList();
+        }
+      }
+
+      // دمج البيانات المسترجعة مع أشهر الجدول الزمني
+      if (response is List && response.isNotEmpty) {
+        final dataMap = <String, Map<String, dynamic>>{};
+        for (final row in response) {
+          if (row is Map && row['period_text'] != null) {
+            dataMap[row['period_text'].toString()] = Map<String, dynamic>.from(row);
+          }
+        }
+        for (final item in last6Months) {
+          final key = item['period_text'] as String;
+          if (dataMap.containsKey(key)) {
+            final match = dataMap[key]!;
+            item['gross_profit'] = (match['gross_profit'] as num?)?.toDouble() ?? 
+                (match['amount'] as num?)?.toDouble() ?? 0.0;
+            item['company_net_profit'] = (match['company_net_profit'] as num?)?.toDouble() ?? 0.0;
+          }
+        }
+      }
+
+      return last6Months;
     } catch (e) {
       developer.log('Growth Data Error', error: e);
       return [];
