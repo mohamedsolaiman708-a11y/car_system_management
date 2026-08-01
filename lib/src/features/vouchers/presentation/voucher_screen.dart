@@ -103,7 +103,7 @@ class _VoucherScreenState extends ConsumerState<VoucherScreen> {
     final decimal = ((amount - intPart) * 100).round();
     final words = _numberToArabic(intPart);
     if (decimal > 0) return '$words ريال و$decimal هللة';
-    return '$words ريال سعودي فقط لا غير';
+    return '$words ر.س فقط لا غير';
   }
 
   String _numberToArabic(int n) {

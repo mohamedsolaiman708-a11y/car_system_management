@@ -209,7 +209,7 @@ class VoucherPrintHelper {
                       children: [
                         _infoRow(fromLabelEn, fromLabel, partyName),
                         pw.SizedBox(height: 16),
-                        _infoRow('The Sum Of', 'مبلغاً وقدره', '${f.format(amount)} ريال سعودي '),
+                        _infoRow('The Sum Of', 'مبلغاً وقدره', '${f.format(amount)} ر.س '),
                         pw.SizedBox(height: 10),
                         // المبلغ كتابةً
                         pw.Container(
