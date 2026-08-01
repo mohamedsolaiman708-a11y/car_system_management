@@ -503,31 +503,245 @@ class _ProfitChartCard extends StatelessWidget {
   final double totalProfit;
   final intl.NumberFormat f;
   const _ProfitChartCard({required this.txAsync, required this.totalProfit, required this.f});
+
   @override
-  Widget build(BuildContext context) => Container(
-    height: 320,
-    padding: const EdgeInsets.fromLTRB(10, 24, 28, 12),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: _cardShadow),
-    child: txAsync.when(
-      data: (txs) {
-        final profits = txs.where((t) => t.type == InvestorTransactionType.financeProfitDistribution).toList();
-        if (profits.isEmpty) return const Center(child: Text('سيظهر الرسم البياني عند تحقيق أول أرباح', style: TextStyle(color: Colors.grey, fontSize: 11)));
-        final sortedProfits = profits.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        List<FlSpot> spots = sortedProfits.length == 1 ? [const FlSpot(0, 0), FlSpot(1, (sortedProfits[0].amount as num).toDouble().abs())] : sortedProfits.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value.amount as num).toDouble().abs())).toList();
-        return LineChart(LineChartData(
-          lineTouchData: LineTouchData(touchTooltipData: LineTouchTooltipData(tooltipBgColor: _navy.withOpacity(0.9), getTooltipItems: (spots) => spots.map((s) => LineTooltipItem('${f.format(s.y)} ر.س', const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))).toList())),
-          gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: _calculateInterval(spots), getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.05), strokeWidth: 1)),
-          titlesData: FlTitlesData(show: true, rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 1, getTitlesWidget: (v, m) => const SizedBox())), leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: _calculateInterval(spots), reservedSize: 45, getTitlesWidget: (v, m) => Text(_formatCompact(v), style: TextStyle(color: Colors.grey.shade500, fontSize: 9, fontWeight: FontWeight.bold))))),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [LineChartBarData(spots: spots, isCurved: true, color: _gold, barWidth: 4, isStrokeCapRound: true, dotData: const FlDotData(show: true), belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [_gold.withOpacity(0.2), _gold.withOpacity(0.01)], begin: Alignment.topCenter, end: Alignment.bottomCenter)))],
-        ));
-      },
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      error: (_, __) => const SizedBox(),
-    ),
-  );
-  double _calculateInterval(List<FlSpot> spots) { if (spots.isEmpty) return 1000; double maxVal = spots.map((s) => s.y).reduce(max); return (maxVal / 4).clamp(1.0, double.infinity); }
-  String _formatCompact(double value) { if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M'; if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}k'; return value.toStringAsFixed(0); }
+  Widget build(BuildContext context) {
+    return Container(
+      height: 340,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: _cardShadow,
+      ),
+      child: txAsync.when(
+        data: (txs) {
+          final profits = txs.where((t) => t.type == InvestorTransactionType.financeProfitDistribution).toList();
+          if (profits.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.show_chart_rounded, color: Colors.grey, size: 40),
+                  SizedBox(height: 12),
+                  Text(
+                    'سيظهر منحنى نمو الأرباح هنا فور تحصيل أول قسط وتوزيع الأرباح',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final sortedProfits = profits.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+          // 1. حساب الأرباح التراكمية والتواريخ
+          final List<FlSpot> spots = [];
+          final List<DateTime> dates = [];
+          final List<double> singlePresents = [];
+
+          double cumulativeSum = 0;
+
+          // نقطة البداية (قبل أول عملية لبيان الانطلاق من الصفر)
+          final DateTime firstDate = sortedProfits.first.createdAt;
+          spots.add(const FlSpot(0, 0));
+          dates.add(firstDate.subtract(const Duration(days: 1)));
+          singlePresents.add(0);
+
+          for (int i = 0; i < sortedProfits.length; i++) {
+            final tx = sortedProfits[i];
+            final amt = (tx.amount as num).toDouble().abs();
+            cumulativeSum += amt;
+            spots.add(FlSpot((i + 1).toDouble(), cumulativeSum));
+            dates.add(tx.createdAt);
+            singlePresents.add(amt);
+          }
+
+          final double maxVal = cumulativeSum > 0 ? cumulativeSum : 100;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // الهيدر العلوي للشارت
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'إجمالي التراكم المالي',
+                        style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${f.format(totalProfit)} ر.س',
+                        style: const TextStyle(color: _navy, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.arrow_upward_rounded, color: _green, size: 14),
+                        SizedBox(width: 4),
+                        Text('تزايد مستمر', style: TextStyle(color: _green, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // الرسم البياني التفاعلي
+              Expanded(
+                child: LineChart(
+                  LineChartData(
+                    lineTouchData: LineTouchData(
+                      handleBuiltInTouches: true,
+                      touchTooltipData: LineTouchTooltipData(
+                        tooltipBgColor: _navy,
+                        tooltipRoundedRadius: 12,
+                        tooltipPadding: const EdgeInsets.all(12),
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
+                            final idx = spot.x.toInt();
+                            final dateStr = (idx >= 0 && idx < dates.length)
+                                ? intl.DateFormat('dd/MM/yyyy').format(dates[idx])
+                                : '';
+                            final added = (idx >= 0 && idx < singlePresents.length) ? singlePresents[idx] : 0.0;
+
+                            return LineTooltipItem(
+                              'الأرباح التراكمية: ${f.format(spot.y)} ر.س\n',
+                              const TextStyle(color: _gold, fontWeight: FontWeight.bold, fontSize: 12),
+                              children: [
+                                if (added > 0)
+                                  TextSpan(
+                                    text: 'دفعة ربح جديدة: +${f.format(added)} ر.س\n',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                                  ),
+                                TextSpan(
+                                  text: 'التاريخ: $dateStr',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                ),
+                              ],
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: (maxVal / 3).clamp(1.0, double.infinity),
+                      getDrawingHorizontalLine: (val) => FlLine(
+                        color: Colors.grey.withValues(alpha: 0.08),
+                        strokeWidth: 1,
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+
+                      // المحور الأفقي (التواريخ والأشهر)
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          interval: (spots.length / 4).clamp(1.0, double.infinity),
+                          getTitlesWidget: (value, meta) {
+                            final idx = value.toInt();
+                            if (idx >= 0 && idx < dates.length) {
+                              final dt = dates[idx];
+                              // طباعة التواريخ بتنسيق يوم/شهر واضح بالعربية
+                              final label = intl.DateFormat('dd/MM').format(dt);
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  label,
+                                  style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              );
+                            }
+                            return const SizedBox();
+                          },
+                        ),
+                      ),
+
+                      // المحور الرأسي (المبالغ المالية بالعربية)
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 55,
+                          interval: (maxVal / 3).clamp(1.0, double.infinity),
+                          getTitlesWidget: (value, meta) {
+                            if (value == 0) return const Text('0', style: TextStyle(color: Colors.grey, fontSize: 9));
+                            String text;
+                            if (value >= 1000000) {
+                              text = '${(value / 1000000).toStringAsFixed(1)} مليون';
+                            } else if (value >= 1000) {
+                              text = '${(value / 1000).toStringAsFixed(1)} ألف';
+                            } else {
+                              text = value.toStringAsFixed(0);
+                            }
+                            return Text(
+                              text,
+                              style: const TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: true,
+                        curveSmoothness: 0.25,
+                        color: _gold,
+                        barWidth: 3.5,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 4,
+                              color: _gold,
+                              strokeWidth: 2,
+                              strokeColor: Colors.white,
+                            );
+                          },
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              _gold.withValues(alpha: 0.25),
+                              _gold.withValues(alpha: 0.01),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator(color: _navy, strokeWidth: 2)),
+        error: (_, __) => const SizedBox(),
+      ),
+    );
+  }
 }
 
 class _PerformanceColumn extends StatelessWidget {
@@ -598,7 +812,7 @@ class _TransactionsTab extends ConsumerWidget {
     return txAsync.when(data: (txs) => txs.isEmpty ? const _EmptyState(icon: Icons.history, title: 'لا توجد عمليات', subtitle: 'سجل معاملاتك المالية سيظهر هنا') : ListView.separated(padding: const EdgeInsets.all(24), itemCount: txs.length, separatorBuilder: (_, __) => const SizedBox(height: 12), itemBuilder: (ctx, i) {
       final tx = txs[i];
       final isPlus = tx.type == InvestorTransactionType.deposit || tx.type == InvestorTransactionType.financeProfitDistribution || tx.type == InvestorTransactionType.contractReturn;
-      return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: _cardShadow), child: Row(children: [CircleAvatar(backgroundColor: (isPlus ? _green : _red).withValues(alpha: 0.1), child: Icon(isPlus ? Icons.arrow_downward : Icons.arrow_upward, color: isPlus ? _green : _red, size: 18)), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(tx.type.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), Text(intl.DateFormat('yyyy/MM/dd | hh:mm a').format(tx.createdAt), style: const TextStyle(color: Colors.grey, fontSize: 10))])), Text('${isPlus ? "+" : "-"}${f.format(tx.amount.abs())}', style: TextStyle(fontWeight: FontWeight.bold, color: isPlus ? _green : _red, fontSize: 14))]));
+      return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: _cardShadow), child: Row(children: [CircleAvatar(backgroundColor: (isPlus ? _green : _red).withValues(alpha: 0.1), child: Icon(isPlus ? Icons.arrow_downward : Icons.arrow_upward, color: isPlus ? _green : _red, size: 18)), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(tx.type.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), Text(intl.DateFormat('yyyy/MM/dd | hh:mm a').format(tx.createdAt.toLocal()), style: const TextStyle(color: Colors.grey, fontSize: 10))])), Text('${isPlus ? "+" : "-"}${f.format(tx.amount.abs())}', style: TextStyle(fontWeight: FontWeight.bold, color: isPlus ? _green : _red, fontSize: 14))]));
     }), loading: () => const _LoadingScreen(), error: (e, _) => _ErrorScreen(message: e.toString()));
   }
 }

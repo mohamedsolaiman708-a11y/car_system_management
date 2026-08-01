@@ -202,20 +202,36 @@ class SupabaseContractRepository implements ContractRepository {
     String? idempotencyKey,
     String? notes,
   }) async {
+    final effectiveRef = [reference, notes].where((s) => s != null && s.trim().isNotEmpty).join(' | ');
     try {
       await _client.rpc(
-        'process_installment_payment',
+        'process_contract_payment',
         params: {
           'p_contract_id': contractId,
-          'p_amount_paid': amount,
+          'p_amount': amount,
           'p_payment_method': method,
-          'p_reference_no': reference,
-          'p_notes': notes,
+          'p_reference_no': effectiveRef.isNotEmpty ? effectiveRef : 'سداد قسط',
           'p_idempotency_key': idempotencyKey,
         },
       );
       clearCache();
     } catch (e) {
+      try {
+        await _client.rpc(
+          'process_installment_payment',
+          params: {
+            'p_contract_id': contractId,
+            'p_amount_paid': amount,
+            'p_payment_method': method,
+            'p_reference_no': reference,
+            'p_notes': notes,
+            'p_idempotency_key': idempotencyKey,
+          },
+        );
+        clearCache();
+        return;
+      } catch (_) {}
+
       _ref.read(connectionNotifierProvider.notifier).setOffline();
       throw Failure.fromException(e);
     }

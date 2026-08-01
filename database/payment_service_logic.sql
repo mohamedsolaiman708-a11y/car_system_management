@@ -175,3 +175,36 @@ BEGIN
     RETURN jsonb_build_object('success', true, 'payment_id', v_payment_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.process_contract_payment(UUID, DECIMAL, TEXT, TEXT, TEXT) TO authenticated;
+
+-- 3. دالة توافقية مرنة (Alias/Wrapper) لاستقبال الطلبات باسم process_installment_payment
+CREATE OR REPLACE FUNCTION public.process_installment_payment(
+    p_contract_id UUID,
+    p_amount_paid DECIMAL(15,2) DEFAULT NULL,
+    p_payment_method TEXT DEFAULT 'cash',
+    p_reference_no TEXT DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_idempotency_key TEXT DEFAULT NULL,
+    p_amount DECIMAL(15,2) DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_eff_amount DECIMAL(15,2);
+    v_eff_ref TEXT;
+BEGIN
+    v_eff_amount := COALESCE(p_amount_paid, p_amount, 0);
+    v_eff_ref := COALESCE(NULLIF(p_reference_no, ''), NULLIF(p_notes, ''), 'دفعة سداد قسط');
+
+    RETURN public.process_contract_payment(
+        p_contract_id,
+        v_eff_amount,
+        COALESCE(p_payment_method, 'cash'),
+        v_eff_ref,
+        p_idempotency_key
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.process_installment_payment(UUID, DECIMAL, TEXT, TEXT, TEXT, TEXT, DECIMAL) TO authenticated;
+

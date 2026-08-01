@@ -25,7 +25,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- التحقق مما إذا كان المستخدم يملك صلاحية معينة
 CREATE OR REPLACE FUNCTION public.has_permission(p_permission_slug TEXT)
 RETURNS BOOLEAN AS $$
+DECLARE
+    v_role_slug TEXT;
 BEGIN
+    SELECT r.slug INTO v_role_slug
+    FROM public.profiles p
+    JOIN public.roles r ON p.role_id = r.id
+    WHERE p.id = auth.uid() AND p.is_active = true;
+
+    IF v_role_slug = 'admin' THEN
+        RETURN true;
+    END IF;
+
     RETURN EXISTS (
         SELECT 1 
         FROM public.profiles p

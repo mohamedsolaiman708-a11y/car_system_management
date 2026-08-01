@@ -18,22 +18,73 @@ class SupabaseDocumentRepository implements DocumentRepository {
     String? contractId,
     String? investorId,
   }) async {
+    try {
+      var query = _client.from('contract_documents').select().isFilter('deleted_at', null);
+
+      // ── فلاتر ديناميكية: إذا لم يكن هناك فلتر يجلب كل المستندات ──
+      final List<String> filters = [];
+      if (contractId != null) filters.add('contract_id.eq.$contractId');
+      if (customerId != null) filters.add('customer_id.eq.$customerId');
+
+      // investor_id قد لا يكون موجوداً في كل نسخ قاعدة البيانات
+      if (investorId != null) {
+        try {
+          filters.add('investor_id.eq.$investorId');
+        } catch (_) {}
+      }
+
+      if (filters.isNotEmpty) {
+        query = query.or(filters.join(','));
+      }
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .limit(200); // حماية من جلب آلاف السجلات دفعة واحدة
+
+      return (response as List).map((json) {
+        try {
+          return AppDocument.fromJson(Map<String, dynamic>.from(json as Map));
+        } catch (e) {
+          return null;
+        }
+      }).whereType<AppDocument>().toList();
+    } on PostgrestException catch (e) {
+      // في حالة خطأ RLS أو عدم وجود عمود investor_id
+      if (e.code == '42703' || e.message.contains('investor_id')) {
+        // إعادة المحاولة بدون investor_id
+        return _getDocumentsWithoutInvestor(
+          customerId: customerId,
+          contractId: contractId,
+        );
+      }
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// استعلام احتياطي بدون حقل investor_id
+  Future<List<AppDocument>> _getDocumentsWithoutInvestor({
+    String? customerId,
+    String? contractId,
+  }) async {
     var query = _client.from('contract_documents').select().isFilter('deleted_at', null);
 
-    List<String> filters = [];
+    final List<String> filters = [];
     if (contractId != null) filters.add('contract_id.eq.$contractId');
     if (customerId != null) filters.add('customer_id.eq.$customerId');
-    if (investorId != null) filters.add('investor_id.eq.$investorId');
 
     if (filters.isNotEmpty) {
       query = query.or(filters.join(','));
     }
 
-    final response = await query.order('created_at', ascending: false);
-
+    final response = await query.order('created_at', ascending: false).limit(200);
     return (response as List).map((json) {
       try {
-        return AppDocument.fromJson(json);
+        // إزالة investor_id من الـ JSON إذا كان غير موجود في الجدول
+        final map = Map<String, dynamic>.from(json as Map);
+        map.putIfAbsent('investor_id', () => null);
+        return AppDocument.fromJson(map);
       } catch (e) {
         return null;
       }
@@ -68,9 +119,8 @@ class SupabaseDocumentRepository implements DocumentRepository {
     final fileUrl = _client.storage.from('documents').getPublicUrl(storagePath);
 
     await _client.from('contract_documents').insert({
-      'customer_id': customerId,
+      // الأعمدة الأساسية الموجودة دائماً
       'contract_id': contractId,
-      'investor_id': investorId,
       'name': fileName,
       'file_path': storagePath,
       'document_url': fileUrl,
