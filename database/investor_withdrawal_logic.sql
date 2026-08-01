@@ -46,30 +46,51 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- وظيفة للإدارة للموافقة على السحب وتنفيذه محاسبياً
+-- وظيفة للإدارة للموافقة على السحب وتنفيذه محاسبياً وإصدار سند صرف
 CREATE OR REPLACE FUNCTION public.approve_withdrawal_request(p_request_id UUID)
 RETURNS JSONB AS $$
 DECLARE
     v_req RECORD;
+    v_investor_name TEXT;
+    v_voucher_res JSONB;
 BEGIN
     IF NOT public.has_permission('manage_investors') THEN RAISE EXCEPTION 'Unauthorized'; END IF;
 
     SELECT * INTO v_req FROM public.withdrawal_requests WHERE id = p_request_id FOR UPDATE;
+    IF v_req IS NULL THEN RAISE EXCEPTION 'طلب السحب غير موجود'; END IF;
     IF v_req.status != 'pending' THEN RAISE EXCEPTION 'Request already processed'; END IF;
 
-    -- تنفيذ السحب المالي (باستخدام الـ RPC الموحد الذي يدعم المحاسبة والـ Idempotency)
-    PERFORM public.process_investor_withdrawal(
-        v_req.investor_id, 
-        v_req.amount, 
-        'Withdrawal Request Approved: ' || p_request_id,
-        p_request_id::text
-    );
+    SELECT COALESCE(full_name, 'مستثمر') INTO v_investor_name FROM public.investors WHERE id = v_req.investor_id;
 
-    -- تحديث حالة الطلب
+    -- 1. إنشاء سند صرف معتمد تلقائياً
+    BEGIN
+        v_voucher_res := public.create_voucher_entry(
+            'payment',
+            'investor',
+            v_req.investor_id,
+            v_investor_name,
+            v_req.amount,
+            'cash',
+            NULL,
+            NULL,
+            'سند صرف بموجب اعتماد طلب سحب رقم: ' || p_request_id::text,
+            CURRENT_DATE
+        );
+    EXCEPTION WHEN OTHERS THEN
+        -- التراجع الفردي وتنفيذ السحب المباشر إن تعذر إنشاء السند
+        PERFORM public.process_investor_withdrawal(
+            v_req.investor_id, 
+            v_req.amount, 
+            'Withdrawal Request Approved: ' || p_request_id,
+            p_request_id::text
+        );
+    END;
+
+    -- 2. تحديث حالة الطلب
     UPDATE public.withdrawal_requests 
     SET status = 'approved', processed_at = NOW(), processed_by = auth.uid()
     WHERE id = p_request_id;
 
-    RETURN jsonb_build_object('success', true);
+    RETURN jsonb_build_object('success', true, 'request_id', p_request_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
