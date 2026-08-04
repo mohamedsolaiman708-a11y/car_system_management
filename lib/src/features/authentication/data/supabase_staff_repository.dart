@@ -31,19 +31,28 @@ class SupabaseStaffRepository {
 
       final allUsers = (profilesResponse as List).map((json) {
         final roleData = json['roles'];
+        
+        // جلب الإيميل من العمود المباشر أو البيانات الوصفية (Metadata)
+        String? userEmail = json['email']?.toString();
+        if (userEmail == null || userEmail.isEmpty) {
+          userEmail = json['raw_user_meta_data']?['email']?.toString();
+        }
+
         return AppUser.fromJson({
           ...json,
           'role': roleData['slug'],
-          'email': json['email'],
+          'email': userEmail,
         });
       }).toList();
 
       // الفلترة الذكية:
-      // يظهر هنا: أي شخص رتبته ليست "investor" (موظف معتمد)
+      // يظهر هنا: أي شخص رتبته ليست "investor"
       // أو: أي شخص بريده موجود في قائمة دعوات الموظفين (موظف سجل بنفسه وينتظر التفعيل)
       return allUsers.where((u) {
         final isStaffRole = u.role.name != 'investor';
-        final hasStaffInvite = invitedEmails.contains(u.email?.toLowerCase().trim());
+        final userEmail = u.email?.toLowerCase().trim();
+        final hasStaffInvite = userEmail != null && invitedEmails.contains(userEmail);
+        
         return isStaffRole || hasStaffInvite;
       }).toList();
     } catch (e) {
