@@ -37,6 +37,19 @@ class StaffListController extends _$StaffListController {
     });
   }
 
+  /// رفض طلب انضمام الموظف
+  Future<void> rejectStaff(String userId) async {
+    state = AsyncLoading<List<AppUser>>().copyWithPrevious(state);
+    state = await AsyncValue.guard(() async {
+      await ref.read(staffRepositoryProvider).updateStaffProfile(
+        userId, 
+        status: 'rejected', 
+        isActive: false
+      );
+      return ref.read(staffRepositoryProvider).getStaffMembers();
+    });
+  }
+
   Future<void> updateRole(String userId, String roleId) async {
     state = AsyncLoading<List<AppUser>>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
