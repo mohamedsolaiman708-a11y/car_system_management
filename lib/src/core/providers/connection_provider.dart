@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'connection_provider.g.dart';
@@ -18,14 +19,15 @@ class ConnectionNotifier extends _$ConnectionNotifier {
       _pingTimer?.cancel();
     });
 
-    // Default to online initially, then verify
+    // Initial check
     _checkConnection();
     return false;
   }
 
   void _startPeriodicCheck() {
     _pingTimer?.cancel();
-    _pingTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+    // تقليل وتيرة الفحص لتجنب الإزعاج في حال كانت الشبكة متذبذبة
+    _pingTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
       await _checkConnection();
     });
   }
@@ -35,13 +37,21 @@ class ConnectionNotifier extends _$ConnectionNotifier {
     _isChecking = true;
 
     bool isNowOffline = false;
-    try {
-      // Fast DNS lookup for Supabase host
-      final result = await InternetAddress.lookup('trflombswaszomydbnoo.supabase.co')
-          .timeout(const Duration(seconds: 5));
-      isNowOffline = result.isEmpty || result[0].rawAddress.isEmpty;
-    } catch (_) {
-      isNowOffline = true;
+    
+    if (kIsWeb) {
+      // على الويب، لا يمكن استخدام InternetAddress.lookup
+      // لذا نفترض وجود اتصال إلا إذا تم استدعاء setOffline يدوياً عند فشل طلب فعلي
+      isNowOffline = false;
+    } else {
+      try {
+        // فحص الاتصال عبر محاولة الوصول لخدمة موثوقة (Google) بدلاً من رابط Supabase الخاص
+        // لتجنب الخلط بين تعطل السيرفر وانقطاع الإنترنت العام
+        final result = await InternetAddress.lookup('google.com')
+            .timeout(const Duration(seconds: 5));
+        isNowOffline = result.isEmpty || result[0].rawAddress.isEmpty;
+      } catch (_) {
+        isNowOffline = true;
+      }
     }
 
     _isChecking = false;
@@ -49,12 +59,11 @@ class ConnectionNotifier extends _$ConnectionNotifier {
     if (state != isNowOffline) {
       state = isNowOffline;
       if (isNowOffline) {
-        // Check more frequently when offline to restore connection quickly
+        // إذا كان أوفلاين، نفحص بوتيرة أسرع لمحاولة استعادة الاتصال
         _pingTimer?.cancel();
-        _pingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-          final resolved = await _checkConnection();
-          if (!resolved) {
-            // Returned online, go back to normal cycle
+        _pingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+          final stillOffline = await _checkConnection();
+          if (!stillOffline) {
             _startPeriodicCheck();
           }
         });
@@ -63,20 +72,20 @@ class ConnectionNotifier extends _$ConnectionNotifier {
     return isNowOffline;
   }
 
-  /// Manually force a connection check (e.g. from user retry button)
+  /// فرض فحص الاتصال يدوياً (مثلاً عند ضغط زر "إعادة المحاولة")
   Future<void> forceCheck() async {
     final offline = await _checkConnection();
     state = offline;
   }
 
-  /// Mark the state as offline due to a failed request
+  /// تعيين الحالة كـ "أوفلاين" يدوياً عند فشل طلب API حقيقي
   void setOffline() {
     if (!state) {
       state = true;
       _pingTimer?.cancel();
-      _pingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-        final resolved = await _checkConnection();
-        if (!resolved) {
+      _pingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+        final stillOffline = await _checkConnection();
+        if (!stillOffline) {
           _startPeriodicCheck();
         }
       });
