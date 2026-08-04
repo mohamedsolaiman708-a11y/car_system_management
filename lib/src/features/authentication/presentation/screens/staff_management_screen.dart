@@ -17,15 +17,17 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   String searchQuery = '';
   String? selectedRole;
 
+  // الرتب المسموح للإدمن بدعوتها أو تصفيتها
   final List<String> _allowedRoles = ['admin', 'sales', 'accountant'];
 
   String _translateRole(String slugOrName) {
     final mapping = {
       'admin': 'مدير نظام',
       'accountant': 'محاسب مالي',
-      'sales': 'مسؤول مبيعات',
+      'sales': 'موظف مبيعات',
     };
-    return mapping[slugOrName.toLowerCase().trim()] ?? slugOrName;
+    final key = slugOrName.toLowerCase().trim();
+    return mapping[key] ?? slugOrName;
   }
 
   @override
@@ -35,11 +37,10 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
 
     ref.listen<AsyncValue<List<AppUser>>>(
       staffListControllerProvider,
-      (previous, next) {
+          (previous, next) {
         next.whenOrNull(
           error: (error, _) => SnackBarHelper.showError(context, error),
           data: (_) {
-            // الإصلاح: لا تظهر الرسالة إلا إذا كان هناك قيمة سابقة (أي كانت عملية تحديث وليس أول تحميل)
             if (previous != null && previous.isLoading && previous.hasValue) {
               SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح');
             }
@@ -204,7 +205,11 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       ),
       child: rolesAsync.maybeWhen(
         data: (roles) {
-          final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
+          final filteredRoles = roles.where((r) {
+            final slug = (r['slug'] as String? ?? '').toLowerCase().trim();
+            return _allowedRoles.contains(slug);
+          }).toList();
+          
           return DropdownButtonHideUnderline(
             child: DropdownButton<String?>(
               value: selectedRole,
@@ -331,20 +336,24 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
         }
       },
       itemBuilder: (context) {
-        final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
+        final filteredRoles = roles.where((r) {
+          final slug = (r['slug'] as String? ?? '').toLowerCase().trim();
+          return _allowedRoles.contains(slug);
+        }).toList();
+
         return [
           PopupMenuItem(value: 'edit_name', child: _buildPopupItem(Icons.edit_rounded, 'تعديل البيانات')),
           if (member.status == 'pending')
             PopupMenuItem(value: 'approve', child: _buildPopupItem(Icons.verified_rounded, 'اعتماد الموظف', color: Colors.green)),
           PopupMenuItem(value: 'toggle', child: _buildPopupItem(
-            member.isActive ? Icons.block_rounded : Icons.check_circle_rounded, 
+            member.isActive ? Icons.block_rounded : Icons.check_circle_rounded,
             member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب',
             color: member.isActive ? Colors.red : Colors.green,
           )),
           PopupMenuItem(value: 'reset_password', child: _buildPopupItem(Icons.vpn_key_rounded, 'إعادة تعيين المرور')),
           const PopupMenuDivider(),
-          ...filteredRoles.where((r) => r['slug'] != member.role.name).map((r) => 
-            PopupMenuItem(value: 'role_${r['id']}', child: Text('تغيير لـ ${_translateRole(r['slug'])}'))
+          ...filteredRoles.where((r) => r['slug'] != member.role.name).map((r) =>
+              PopupMenuItem(value: 'role_${r['id']}', child: Text('تغيير لـ ${_translateRole(r['slug'])}'))
           ),
         ];
       },
@@ -362,58 +371,87 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: const Text('دعوة موظف جديد للفريق', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('سيتم إرسال دعوة رسمية للبريد الإلكتروني الموضح أدناه لإكمال عملية التسجيل.', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  const SizedBox(height: 20),
-                  TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
-                  const SizedBox(height: 16),
-                  TextField(controller: emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني', prefixIcon: Icon(Icons.email_outlined))),
-                  const SizedBox(height: 16),
-                  ref.watch(availableRolesProvider).maybeWhen(
-                    data: (roles) {
-                      final filteredRoles = roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
-                      return DropdownButtonFormField<String>(
-                        value: roleId,
-                        decoration: const InputDecoration(labelText: 'الرتبة الوظيفية', prefixIcon: Icon(Icons.work_outline)),
-                        items: filteredRoles.map((r) => DropdownMenuItem(value: r['id'].toString(), child: Text(_translateRole(r['slug'])))).toList(),
-                        onChanged: (val) => setState(() => roleId = val),
-                      );
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final rolesAsync = ref.watch(availableRolesProvider);
+          
+          return StatefulBuilder(
+            builder: (context, setState) => Directionality(
+              textDirection: TextDirection.rtl,
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                title: const Text('دعوة موظف جديد للفريق', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('سيتم إرسال دعوة رسمية للبريد الإلكتروني الموضح أدناه لإكمال عملية التسجيل.', 
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 20),
+                      TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
+                      const SizedBox(height: 16),
+                      TextField(controller: emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني', prefixIcon: Icon(Icons.email_outlined))),
+                      const SizedBox(height: 16),
+                      rolesAsync.when(
+                        data: (roles) {
+                          final filteredRoles = roles.where((r) {
+                            final slug = (r['slug'] as String? ?? '').toLowerCase().trim();
+                            return _allowedRoles.contains(slug);
+                          }).toList();
+                          
+                          if (filteredRoles.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text('لا توجد رتب وظيفية متاحة (تأكد من وجود رتب sales و accountant في الداتابيز)', 
+                                  style: TextStyle(color: Colors.orange, fontSize: 12)),
+                            );
+                          }
+                          
+                          return DropdownButtonFormField<String>(
+                            value: roleId,
+                            decoration: const InputDecoration(labelText: 'الرتبة الوظيفية', prefixIcon: Icon(Icons.work_outline)),
+                            items: filteredRoles.map((r) => DropdownMenuItem(value: r['id'].toString(), child: Text(_translateRole(r['slug'])))).toList(),
+                            onChanged: (val) => setState(() => roleId = val),
+                          );
+                        },
+                        loading: () => const Center(child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        )),
+                        error: (err, _) => Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text('خطأ في جلب الرتب: ${Failure.fromException(err).message}', 
+                              style: const TextStyle(color: Colors.red, fontSize: 12)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (emailController.text.isNotEmpty && nameController.text.isNotEmpty && roleId != null) {
+                        final success = await ref.read(staffListControllerProvider.notifier).inviteStaff(
+                          email: emailController.text,
+                          fullName: nameController.text,
+                          roleId: roleId!,
+                        );
+                        if (success && context.mounted) {
+                          Navigator.pop(context);
+                          SnackBarHelper.showSuccess(context, 'تم إرسال الدعوة بنجاح');
+                        }
+                      } else {
+                        SnackBarHelper.showError(context, 'يرجى إكمال كافة الحقول واختيار الرتبة');
+                      }
                     },
-                    orElse: () => const Center(child: CircularProgressIndicator()),
+                    child: const Text('إرسال الدعوة الآن'),
                   ),
                 ],
               ),
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-              ElevatedButton(
-                onPressed: () async {
-                  if (emailController.text.isNotEmpty && nameController.text.isNotEmpty && roleId != null) {
-                    final success = await ref.read(staffListControllerProvider.notifier).inviteStaff(
-                      email: emailController.text,
-                      fullName: nameController.text,
-                      roleId: roleId!,
-                    );
-                    if (success && context.mounted) {
-                      Navigator.pop(context);
-                      SnackBarHelper.showSuccess(context, 'تم إرسال الدعوة بنجاح');
-                    }
-                  }
-                },
-                child: const Text('إرسال الدعوة الآن'),
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

@@ -486,9 +486,9 @@ class _OverviewTab extends ConsumerWidget {
                     final activeReqs = requests
                         .where(
                           (r) =>
-                              r['status'] == 'pending' ||
-                              r['status'] == 'rejected',
-                        )
+                      r['status'] == 'pending' ||
+                          r['status'] == 'rejected',
+                    )
                         .toList();
                     if (activeReqs.isEmpty) return const SizedBox();
                     return Padding(
@@ -512,14 +512,14 @@ class _OverviewTab extends ConsumerWidget {
                       child: projAsync.when(
                         data: (list) => list.isEmpty
                             ? _emptyActionPlaceholder(
-                                'لا توجد استحقاقات قادمة حالياً',
-                              )
+                          'لا توجد استحقاقات قادمة حالياً',
+                        )
                             : _NextPayoutCard(
-                                amount: (list.first['total_expected'] as num)
-                                    .toDouble(),
-                                date: list.first['due_date'] ?? '',
-                                f: f,
-                              ),
+                          amount: (list.first['total_expected'] as num)
+                              .toDouble(),
+                          date: list.first['due_date'] ?? '',
+                          f: f,
+                        ),
                         loading: () => const SizedBox(
                           height: 110,
                           child: Center(child: CircularProgressIndicator()),
@@ -874,10 +874,10 @@ class _WithdrawActionCard extends ConsumerWidget {
   }
 
   void _showWithdrawalDialog(
-    BuildContext context,
-    WidgetRef ref,
-    Investor investor,
-  ) {
+      BuildContext context,
+      WidgetRef ref,
+      Investor investor,
+      ) {
     final amountController = TextEditingController();
     final bankController = TextEditingController();
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
@@ -977,15 +977,15 @@ class _WithdrawActionCard extends ConsumerWidget {
                                 amount <= 0 ||
                                 amount > investor.availableBalance) {
                               setDialogState(
-                                () => errorText = 'المبلغ غير صالح',
+                                    () => errorText = 'المبلغ غير صالح',
                               );
                               return;
                             }
                             final success = await ref
                                 .read(
-                                  withdrawalRequestsControllerProvider()
-                                      .notifier,
-                                )
+                              withdrawalRequestsControllerProvider()
+                                  .notifier,
+                            )
                                 .requestWithdrawal(amount, bankController.text);
                             if (context.mounted) {
                               Navigator.pop(ctx);
@@ -1068,8 +1068,8 @@ class _ProfitChartCard extends StatelessWidget {
           final profits = txs
               .where(
                 (t) =>
-                    t.type == InvestorTransactionType.financeProfitDistribution,
-              )
+            t.type == InvestorTransactionType.financeProfitDistribution,
+          )
               .toList();
           if (profits.isEmpty) {
             return const Center(
@@ -1190,11 +1190,11 @@ class _ProfitChartCard extends StatelessWidget {
                             final idx = spot.x.toInt();
                             final dateStr = (idx >= 0 && idx < dates.length)
                                 ? intl.DateFormat(
-                                    'dd/MM/yyyy',
-                                  ).format(dates[idx])
+                              'dd/MM/yyyy',
+                            ).format(dates[idx])
                                 : '';
                             final added =
-                                (idx >= 0 && idx < singlePresents.length)
+                            (idx >= 0 && idx < singlePresents.length)
                                 ? singlePresents[idx]
                                 : 0.0;
 
@@ -1209,7 +1209,7 @@ class _ProfitChartCard extends StatelessWidget {
                                 if (added > 0)
                                   TextSpan(
                                     text:
-                                        'دفعة ربح جديدة: +${f.format(added)} ر.س\n',
+                                    'دفعة ربح جديدة: +${f.format(added)} ر.س\n',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
@@ -1300,7 +1300,7 @@ class _ProfitChartCard extends StatelessWidget {
                             String text;
                             if (value >= 1000000) {
                               text =
-                                  '${(value / 1000000).toStringAsFixed(1)} مليون';
+                              '${(value / 1000000).toStringAsFixed(1)} مليون';
                             } else if (value >= 1000) {
                               text = '${(value / 1000).toStringAsFixed(1)} ألف';
                             } else {
@@ -1448,89 +1448,89 @@ class _NextPayoutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: 110,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF2563EB), Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: _blue.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    height: 110,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF2563EB), Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
+      ),
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: _blue.withValues(alpha: 0.3),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(Icons.event_available_rounded, color: Colors.white, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(Icons.event_available_rounded, color: Colors.white, size: 22),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'الاستحقاق القادم',
-                        style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: _gold.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'أقرب دفعة ⭐',
-                          style: TextStyle(color: _gold, fontSize: 9, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'الاستحقاق القادم',
+                    style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 3),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '${f.format(amount)} ر.س',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 19,
-                        letterSpacing: -0.5,
-                      ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: _gold.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today_rounded, size: 10, color: Colors.white.withValues(alpha: 0.7)),
-                      const SizedBox(width: 4),
-                      Text(
-                        date,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w500),
-                      ),
-                    ],
+                    child: const Text(
+                      'أقرب دفعة ⭐',
+                      style: TextStyle(color: _gold, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '${f.format(amount)} ر.س',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 19,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today_rounded, size: 10, color: Colors.white.withValues(alpha: 0.7)),
+                  const SizedBox(width: 4),
+                  Text(
+                    date,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _OverviewRecentActivity extends StatelessWidget {
@@ -1642,66 +1642,66 @@ class _RecentActivityList extends StatelessWidget {
   Widget build(BuildContext context) => txAsync.when(
     data: (txs) => txs.isEmpty
         ? const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Text(
-                'لا توجد عمليات مسجلة بعد.',
-                style: TextStyle(color: Colors.grey, fontSize: 11),
+      child: Padding(
+        padding: EdgeInsets.all(24.0),
+        child: Text(
+          'لا توجد عمليات مسجلة بعد.',
+          style: TextStyle(color: Colors.grey, fontSize: 11),
+        ),
+      ),
+    )
+        : Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: _cardShadow,
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: min(txs.length, 5),
+        separatorBuilder: (_, __) => const Divider(height: 1, indent: 60),
+        itemBuilder: (ctx, i) {
+          final tx = txs[i];
+          final isPlus =
+              tx.type == InvestorTransactionType.deposit ||
+                  tx.type ==
+                      InvestorTransactionType.financeProfitDistribution ||
+                  tx.type == InvestorTransactionType.contractReturn;
+          return ListTile(
+            dense: true,
+            leading: CircleAvatar(
+              radius: 14,
+              backgroundColor: (isPlus ? _green : _red).withOpacity(0.1),
+              child: Icon(
+                isPlus ? Icons.arrow_downward : Icons.arrow_upward,
+                color: isPlus ? _green : _red,
+                size: 14,
               ),
             ),
-          )
-        : Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: _cardShadow,
+            title: Text(
+              tx.type.label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: min(txs.length, 5),
-              separatorBuilder: (_, __) => const Divider(height: 1, indent: 60),
-              itemBuilder: (ctx, i) {
-                final tx = txs[i];
-                final isPlus =
-                    tx.type == InvestorTransactionType.deposit ||
-                    tx.type ==
-                        InvestorTransactionType.financeProfitDistribution ||
-                    tx.type == InvestorTransactionType.contractReturn;
-                return ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: (isPlus ? _green : _red).withOpacity(0.1),
-                    child: Icon(
-                      isPlus ? Icons.arrow_downward : Icons.arrow_upward,
-                      color: isPlus ? _green : _red,
-                      size: 14,
-                    ),
-                  ),
-                  title: Text(
-                    tx.type.label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  subtitle: Text(
-                    intl.DateFormat('yyyy/MM/dd HH:mm').format(tx.createdAt),
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                  ),
-                  trailing: Text(
-                    '${isPlus ? "+" : "-"}${f.format(tx.amount.abs())}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isPlus ? _green : _red,
-                      fontSize: 13,
-                    ),
-                  ),
-                );
-              },
+            subtitle: Text(
+              intl.DateFormat('yyyy/MM/dd HH:mm').format(tx.createdAt),
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
-          ),
+            trailing: Text(
+              '${isPlus ? "+" : "-"}${f.format(tx.amount.abs())}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isPlus ? _green : _red,
+                fontSize: 13,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
     loading: () => const SizedBox(),
     error: (_, __) => const SizedBox(),
   );
@@ -1954,12 +1954,12 @@ class _PortfolioTabState extends ConsumerState<_PortfolioTab> {
                                 prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade400, size: 20),
                                 suffixIcon: _searchQuery.isNotEmpty
                                     ? IconButton(
-                                        icon: const Icon(Icons.close_rounded, size: 18),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          setState(() => _searchQuery = '');
-                                        },
-                                      )
+                                  icon: const Icon(Icons.close_rounded, size: 18),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
                                     : null,
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -1996,188 +1996,188 @@ class _PortfolioTabState extends ConsumerState<_PortfolioTab> {
             // 3. قائمة العقود الممولة
             filteredContracts.isEmpty
                 ? SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            Text(
-                              'لا توجد عقود تطابق البحث أو الفلتر المحدد',
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+                      const SizedBox(height: 12),
+                      Text(
+                        'لا توجد عقود تطابق البحث أو الفلتر المحدد',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  )
+                    ],
+                  ),
+                ),
+              ),
+            )
                 : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
-                          final item = filteredContracts[i];
-                          final contract = item['financing_contracts'] as Map?;
-                          if (contract == null) return const SizedBox();
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                      (ctx, i) {
+                    final item = filteredContracts[i];
+                    final contract = item['financing_contracts'] as Map?;
+                    if (contract == null) return const SizedBox();
 
-                          final allocated = (item['amount_allocated'] as num?)?.toDouble() ?? 0.0;
-                          final principal = (contract['principal_amount'] as num?)?.toDouble() ?? 0.0;
-                          final profitRate = (contract['profit_rate'] as num?)?.toDouble() ??
-                              (contract['profit_margin'] as num?)?.toDouble() ??
-                              0.0;
-                          final customer = contract['customers'] as Map?;
-                          final customerName = customer?['full_name'] as String? ?? 'غير محدد';
-                          final status = (contract['status'] as String?) ?? '';
-                          final durationMonths = (contract['duration_months'] as num?)?.toInt() ?? 12;
+                    final allocated = (item['amount_allocated'] as num?)?.toDouble() ?? 0.0;
+                    final principal = (contract['principal_amount'] as num?)?.toDouble() ?? 0.0;
+                    final profitRate = (contract['profit_rate'] as num?)?.toDouble() ??
+                        (contract['profit_margin'] as num?)?.toDouble() ??
+                        0.0;
+                    final customer = contract['customers'] as Map?;
+                    final customerName = customer?['full_name'] as String? ?? 'غير محدد';
+                    final status = (contract['status'] as String?) ?? '';
+                    final durationMonths = (contract['duration_months'] as num?)?.toInt() ?? 12;
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 14),
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: _cardShadow,
-                              border: Border.all(color: Colors.grey.shade100),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // الصف العلوي: أيقونة + رقم العقد + العميل + حالة العقد
-                                Row(
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: _cardShadow,
+                        border: Border.all(color: Colors.grey.shade100),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // الصف العلوي: أيقونة + رقم العقد + العميل + حالة العقد
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: _navy.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(Icons.description_outlined, color: _navy, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: _navy.withValues(alpha: 0.06),
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: const Icon(Icons.description_outlined, color: _navy, size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'عقد رقم #${contract['contract_no']}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 15,
-                                              color: _navy,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.person_outline_rounded, size: 12, color: Colors.grey.shade600),
-                                              const SizedBox(width: 4),
-                                              Expanded(
-                                                child: Text(
-                                                  'العميل: $customerName',
-                                                  style: TextStyle(
-                                                    color: Colors.grey.shade600,
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                    Text(
+                                      'عقد رقم #${contract['contract_no']}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 15,
+                                        color: _navy,
                                       ),
                                     ),
-                                    _StatusBadge(status: status),
-                                  ],
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                  child: Divider(height: 1),
-                                ),
-
-                                // شبكة الأرقام المالية
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildContractMetric(
-                                        label: 'مساهمتك بالمحفظة',
-                                        value: '${f.format(allocated)} ر.س',
-                                        valueColor: _navy,
-                                        isPrimary: true,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: _buildContractMetric(
-                                        label: 'قيمة العقد الكلية',
-                                        value: principal > 0 ? '${f.format(principal)} ر.س' : 'غير محدد',
-                                        valueColor: Colors.grey.shade800,
-                                      ),
-                                    ),
-                                    if (profitRate > 0)
-                                      Expanded(
-                                        child: _buildContractMetric(
-                                          label: 'معدل الربح',
-                                          value: '${profitRate.toStringAsFixed(1)}%',
-                                          valueColor: _green,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // شريط التفاصيل التوضيحي
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: _bg,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(Icons.calendar_month_outlined, size: 14, color: Colors.grey.shade600),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'مدة العقد: $durationMonths شهر',
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.person_outline_rounded, size: 12, color: Colors.grey.shade600),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            'العميل: $customerName',
                                             style: TextStyle(
-                                              color: Colors.grey.shade700,
+                                              color: Colors.grey.shade600,
                                               fontSize: 11,
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: FontWeight.w500,
                                             ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.shield_outlined, size: 14, color: _gold),
-                                          const SizedBox(width: 4),
-                                          const Text(
-                                            'مضمون وموثق',
-                                            style: TextStyle(
-                                              color: _navy,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              _StatusBadge(status: status),
+                            ],
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Divider(height: 1),
+                          ),
+
+                          // شبكة الأرقام المالية
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildContractMetric(
+                                  label: 'مساهمتك بالمحفظة',
+                                  value: '${f.format(allocated)} ر.س',
+                                  valueColor: _navy,
+                                  isPrimary: true,
+                                ),
+                              ),
+                              Expanded(
+                                child: _buildContractMetric(
+                                  label: 'قيمة العقد الكلية',
+                                  value: principal > 0 ? '${f.format(principal)} ر.س' : 'غير محدد',
+                                  valueColor: Colors.grey.shade800,
+                                ),
+                              ),
+                              if (profitRate > 0)
+                                Expanded(
+                                  child: _buildContractMetric(
+                                    label: 'معدل الربح',
+                                    value: '${profitRate.toStringAsFixed(1)}%',
+                                    valueColor: _green,
                                   ),
+                                ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // شريط التفاصيل التوضيحي
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _bg,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.calendar_month_outlined, size: 14, color: Colors.grey.shade600),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'مدة العقد: $durationMonths شهر',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade700,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(Icons.shield_outlined, size: 14, color: _gold),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'مضمون وموثق',
+                                      style: TextStyle(
+                                        color: _navy,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          );
-                        },
-                        childCount: filteredContracts.length,
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
+                    );
+                  },
+                  childCount: filteredContracts.length,
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -2233,12 +2233,12 @@ class _PortfolioTabState extends ConsumerState<_PortfolioTab> {
           ),
           boxShadow: isSelected
               ? [
-                  BoxShadow(
-                    color: _navy.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
+            BoxShadow(
+              color: _navy.withValues(alpha: 0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ]
               : null,
         ),
         child: Row(
@@ -2506,12 +2506,12 @@ class _TransactionsTabState extends ConsumerState<_TransactionsTab> {
                           prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade400, size: 20),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.close_rounded, size: 18),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
                               : null,
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -2543,162 +2543,162 @@ class _TransactionsTabState extends ConsumerState<_TransactionsTab> {
             // 3. قائمة المعاملات المالية
             filteredTxs.isEmpty
                 ? SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            Text(
-                              'لا توجد عمليات تطابق فلتر البحث المحدد',
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+                      const SizedBox(height: 12),
+                      Text(
+                        'لا توجد عمليات تطابق فلتر البحث المحدد',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  )
+                    ],
+                  ),
+                ),
+              ),
+            )
                 : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
-                          final tx = filteredTxs[i];
-                          final isPlus = tx.type == InvestorTransactionType.deposit ||
-                              tx.type == InvestorTransactionType.financeProfitDistribution ||
-                              tx.type == InvestorTransactionType.contractReturn;
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                      (ctx, i) {
+                    final tx = filteredTxs[i];
+                    final isPlus = tx.type == InvestorTransactionType.deposit ||
+                        tx.type == InvestorTransactionType.financeProfitDistribution ||
+                        tx.type == InvestorTransactionType.contractReturn;
 
-                          final colorConfig = _getTxTypeVisuals(tx.type);
+                    final colorConfig = _getTxTypeVisuals(tx.type);
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: _cardShadow,
+                        border: Border.all(color: Colors.grey.shade100),
+                      ),
+                      child: Row(
+                        children: [
+                          // الأيقونة الملونة على اليسار
+                          Container(
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: _cardShadow,
-                              border: Border.all(color: Colors.grey.shade100),
+                              gradient: LinearGradient(
+                                colors: colorConfig.gradientColors,
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorConfig.accentColor.withValues(alpha: 0.25),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                            child: Row(
+                            child: Center(
+                              child: Icon(
+                                colorConfig.icon,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+
+                          // العنوان + التوضيح / التاريخ
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // الأيقونة الملونة على اليسار
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: colorConfig.gradientColors,
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: colorConfig.accentColor.withValues(alpha: 0.25),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      colorConfig.icon,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
+                                Text(
+                                  tx.type.label,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                    color: _navy,
                                   ),
                                 ),
-                                const SizedBox(width: 14),
-
-                                // العنوان + التوضيح / التاريخ
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        tx.type.label,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 14,
-                                          color: _navy,
-                                        ),
-                                      ),
-                                      if (tx.description != null && tx.description!.trim().isNotEmpty) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          tx.description!,
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.access_time_rounded, size: 11, color: Colors.grey.shade400),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            intl.DateFormat('yyyy/MM/dd | hh:mm a').format(tx.createdAt.toLocal()),
-                                            style: TextStyle(
-                                              color: Colors.grey.shade500,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                if (tx.description != null && tx.description!.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    tx.description!,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                // المبلغ المالي والمؤشر
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                ],
+                                const SizedBox(height: 4),
+                                Row(
                                   children: [
+                                    Icon(Icons.access_time_rounded, size: 11, color: Colors.grey.shade400),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      '${isPlus ? "+" : "-"}${f.format(tx.amount.abs())}',
+                                      intl.DateFormat('yyyy/MM/dd | hh:mm a').format(tx.createdAt.toLocal()),
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        color: colorConfig.accentColor,
-                                        fontSize: 15,
-                                        letterSpacing: -0.2,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: colorConfig.accentColor.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        'ر.س',
-                                        style: TextStyle(
-                                          color: colorConfig.accentColor,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                        color: Colors.grey.shade500,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                          );
-                        },
-                        childCount: filteredTxs.length,
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          // المبلغ المالي والمؤشر
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${isPlus ? "+" : "-"}${f.format(tx.amount.abs())}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: colorConfig.accentColor,
+                                  fontSize: 15,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: colorConfig.accentColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'ر.س',
+                                  style: TextStyle(
+                                    color: colorConfig.accentColor,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
+                    );
+                  },
+                  childCount: filteredTxs.length,
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -2789,12 +2789,12 @@ class _TransactionsTabState extends ConsumerState<_TransactionsTab> {
           ),
           boxShadow: isSelected
               ? [
-                  BoxShadow(
-                    color: _navy.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
+            BoxShadow(
+              color: _navy.withValues(alpha: 0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ]
               : null,
         ),
         child: Row(
@@ -3031,12 +3031,12 @@ class _ProjectionsTabState extends ConsumerState<_ProjectionsTab> {
                                 prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade400, size: 20),
                                 suffixIcon: _searchQuery.isNotEmpty
                                     ? IconButton(
-                                        icon: const Icon(Icons.close_rounded, size: 18),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          setState(() => _searchQuery = '');
-                                        },
-                                      )
+                                  icon: const Icon(Icons.close_rounded, size: 18),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
                                     : null,
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -3069,186 +3069,186 @@ class _ProjectionsTabState extends ConsumerState<_ProjectionsTab> {
             // 3. قائمة الدفعات المتوقعة
             filteredList.isEmpty
                 ? SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            Text(
-                              'لا توجد دفعات متوقعة تطابق فلتر البحث المحدد',
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.bold),
-                            ),
-                          ],
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+                      const SizedBox(height: 12),
+                      Text(
+                        'لا توجد دفعات متوقعة تطابق فلتر البحث المحدد',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+                : SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                      (ctx, i) {
+                    final item = filteredList[i];
+                    final amount = (item['total_expected'] as num?)?.toDouble() ?? 0.0;
+                    final dateStr = (item['due_date'] as String?) ?? 'غير محدد';
+                    final isFirstPayout = item == list.first;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: isFirstPayout
+                            ? [
+                          BoxShadow(
+                            color: _gold.withValues(alpha: 0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                            : _cardShadow,
+                        border: Border.all(
+                          color: isFirstPayout ? _gold.withValues(alpha: 0.6) : Colors.grey.shade100,
+                          width: isFirstPayout ? 1.5 : 1.0,
                         ),
                       ),
-                    ),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
-                          final item = filteredList[i];
-                          final amount = (item['total_expected'] as num?)?.toDouble() ?? 0.0;
-                          final dateStr = (item['due_date'] as String?) ?? 'غير محدد';
-                          final isFirstPayout = item == list.first;
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          // رقم الدفعة
+                          Container(
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: isFirstPayout
-                                  ? [
-                                      BoxShadow(
-                                        color: _gold.withValues(alpha: 0.25),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ]
-                                  : _cardShadow,
-                              border: Border.all(
-                                color: isFirstPayout ? _gold.withValues(alpha: 0.6) : Colors.grey.shade100,
-                                width: isFirstPayout ? 1.5 : 1.0,
+                              gradient: LinearGradient(
+                                colors: isFirstPayout
+                                    ? [_gold, const Color(0xFFD97706)]
+                                    : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (isFirstPayout ? _gold : _blue).withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${i + 1}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
-                            child: Row(
+                          ),
+                          const SizedBox(width: 14),
+
+                          // العنوان وتاريخ الاستحقاق
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // رقم الدفعة
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: isFirstPayout
-                                          ? [_gold, const Color(0xFFD97706)]
-                                          : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: (isFirstPayout ? _gold : _blue).withValues(alpha: 0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '${i + 1}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-
-                                // العنوان وتاريخ الاستحقاق
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Text(
-                                            'دفعة استحقاق أرباح',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 14,
-                                              color: _navy,
-                                            ),
-                                          ),
-                                          if (isFirstPayout) ...[
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: _gold.withValues(alpha: 0.15),
-                                                borderRadius: BorderRadius.circular(6),
-                                                border: Border.all(color: _gold.withValues(alpha: 0.4)),
-                                              ),
-                                              child: const Text(
-                                                'الاستحقاق الأقرب',
-                                                style: TextStyle(
-                                                  color: Color(0xFFB45309),
-                                                  fontSize: 9,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade500),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'تاريخ الاستحقاق: $dateStr',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                // المبلغ المتوقع
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                Row(
                                   children: [
-                                    Text(
-                                      '${f.format(amount)} ر.س',
-                                      style: const TextStyle(
+                                    const Text(
+                                      'دفعة استحقاق أرباح',
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w900,
-                                        color: _green,
-                                        fontSize: 15,
-                                        letterSpacing: -0.2,
+                                        fontSize: 14,
+                                        color: _navy,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: _green.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Text(
-                                        'مرفق بالعقد',
-                                        style: TextStyle(
-                                          color: _green,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
+                                    if (isFirstPayout) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: _gold.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: _gold.withValues(alpha: 0.4)),
                                         ),
+                                        child: const Text(
+                                          'الاستحقاق الأقرب',
+                                          style: TextStyle(
+                                            color: Color(0xFFB45309),
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade500),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'تاريخ الاستحقاق: $dateStr',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                          );
-                        },
-                        childCount: filteredList.length,
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          // المبلغ المتوقع
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${f.format(amount)} ر.س',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: _green,
+                                  fontSize: 15,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _green.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'مرفق بالعقد',
+                                  style: TextStyle(
+                                    color: _green,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
+                    );
+                  },
+                  childCount: filteredList.length,
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -3304,12 +3304,12 @@ class _ProjectionsTabState extends ConsumerState<_ProjectionsTab> {
           ),
           boxShadow: isSelected
               ? [
-                  BoxShadow(
-                    color: _navy.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
+            BoxShadow(
+              color: _navy.withValues(alpha: 0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ]
               : null,
         ),
         child: Row(
