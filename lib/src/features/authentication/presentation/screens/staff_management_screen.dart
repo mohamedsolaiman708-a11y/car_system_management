@@ -51,7 +51,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> w
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.bgGrey,
+        backgroundColor: const Color(0xFFF8F9FD),
         appBar: AppBar(
           backgroundColor: AppColors.primaryNavy,
           elevation: 0,
@@ -189,7 +189,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> w
                       ),
                     ),
                     const SizedBox(width: 24),
-                    // أزرار القبول والرفض
+                    // Buttons Area
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -356,12 +356,14 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> w
         if (val.startsWith('role_')) ref.read(staffListControllerProvider.notifier).updateRole(member.id, val.substring(5));
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(value: 'edit_name', child: Text('تعديل البيانات')),
+        const PopupMenuItem(value: 'edit_name', child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('تعديل البيانات'), dense: true)),
         PopupMenuItem(
           value: 'toggle', 
-          child: Text(
-            member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب', 
-            style: TextStyle(color: member.isActive ? Colors.red : Colors.green)
+          child: ListTile(
+            leading: Icon(member.isActive ? Icons.block_outlined : Icons.check_circle_outline),
+            title: Text(member.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'),
+            textColor: member.isActive ? Colors.red : Colors.green,
+            dense: true,
           )
         ),
       ],
@@ -383,9 +385,9 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> w
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', border: OutlineInputBorder())),
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))))),
                 const SizedBox(height: 16),
-                TextField(controller: emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني', border: OutlineInputBorder())),
+                TextField(controller: emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))))),
               ],
             ),
             actions: [
@@ -497,7 +499,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> w
         child: AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('تعديل البيانات الشخصية'),
-          content: TextField(controller: controller, decoration: const InputDecoration(labelText: 'الاسم الكامل الجديد', border: OutlineInputBorder())),
+          content: TextField(controller: controller, decoration: const InputDecoration(labelText: 'الاسم الكامل الجديد', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))))),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             ElevatedButton(onPressed: () async {
