@@ -32,6 +32,18 @@ class SupabaseStaffRepository {
     }
   }
 
+  /// طلب إعادة تعيين كلمة المرور
+  Future<void> resetStaffPassword(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'https://al-sami-auto.vercel.app/reset-password',
+      );
+    } catch (e) {
+      throw Failure.fromException(e);
+    }
+  }
+
   Future<void> updateStaffProfile(String userId, {
     bool? isActive, 
     String? roleId,
