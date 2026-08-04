@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/investor.dart';
 import '../domain/investor_repository.dart';
 import '../domain/investor_transaction.dart';
@@ -6,44 +7,68 @@ import '../../documents/domain/document.dart';
 import 'sources/investor_data_source.dart';
 import 'sources/supabase_investor_data_source.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../core/providers/supabase_provider.dart';
 
 part 'supabase_investor_repository.g.dart';
 
 class SupabaseInvestorRepository implements InvestorRepository {
   final InvestorDataSource _dataSource;
+  final SupabaseClient _client; // أضفنا العميل للتحقق من الدعوات
   final Map<String, dynamic> _memCache = {};
 
-  SupabaseInvestorRepository(this._dataSource);
+  SupabaseInvestorRepository(this._dataSource, this._client);
+
+  /// جلب الموظفين المدعوين لاستبعادهم من قوائم المستثمرين
+  Future<Set<String>> _getInvitedEmails() async {
+    try {
+      final response = await _client.from('user_invitations').select('email');
+      return (response as List)
+          .map((i) => i['email'].toString().toLowerCase().trim())
+          .toSet();
+    } catch (_) {
+      return {};
+    }
+  }
 
   @override
   Future<List<Investor>> getInvestors() async {
-    const key = 'investors_list';
     try {
+      final invitedEmails = await _getInvitedEmails();
       final data = await _dataSource.getInvestors();
-      final list = data.map((json) => Investor.fromJson(json)).toList();
-      _memCache[key] = list;
-      return list;
+      
+      // استبعاد أي مستثمر بريده موجود في قائمة دعوات الموظفين
+      return data
+          .map((json) => Investor.fromJson(json))
+          .where((inv) => !invitedEmails.contains(inv.email.toLowerCase().trim()))
+          .toList();
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<Investor>;
-      }
+      throw Failure.fromException(e);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
+    try {
+      final invitedEmails = await _getInvitedEmails();
+      final list = await _dataSource.getPendingInvestorRequests();
+      
+      // استبعاد طلبات الانضمام التي تخص موظفين مدعوين
+      return list.where((p) {
+        final email = (p['email'] ?? '').toString().toLowerCase().trim();
+        return !invitedEmails.contains(email);
+      }).toList();
+    } catch (e) {
       throw Failure.fromException(e);
     }
   }
 
   @override
   Future<Investor?> getInvestorById(String id) async {
-    final key = 'investor_$id';
     try {
       final data = await _dataSource.getInvestorById(id);
       if (data == null) return null;
-      final investor = Investor.fromJson(data);
-      _memCache[key] = investor;
-      return investor;
+      return Investor.fromJson(data);
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as Investor?;
-      }
       throw Failure.fromException(e);
     }
   }
@@ -56,7 +81,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
         'email': email,
         'phone': phone,
       });
-      _memCache.clear();
       return Investor.fromJson(data);
     } catch (e) {
       throw Failure.fromException(e);
@@ -65,31 +89,19 @@ class SupabaseInvestorRepository implements InvestorRepository {
 
   @override
   Future<List<InvestorTransaction>> getInvestorTransactions(String investorId) async {
-    final key = 'investor_transactions_$investorId';
     try {
       final data = await _dataSource.getInvestorTransactions(investorId);
-      final list = data.map((json) => InvestorTransaction.fromJson(json)).toList();
-      _memCache[key] = list;
-      return list;
+      return data.map((json) => InvestorTransaction.fromJson(json)).toList();
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<InvestorTransaction>;
-      }
       throw Failure.fromException(e);
     }
   }
 
   @override
   Future<List<Map<String, dynamic>>> getInvestorFundedContracts(String investorId) async {
-    final key = 'investor_contracts_$investorId';
     try {
-      final list = await _dataSource.getInvestorFundedContracts(investorId);
-      _memCache[key] = list;
-      return list;
+      return await _dataSource.getInvestorFundedContracts(investorId);
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<Map<String, dynamic>>;
-      }
       throw Failure.fromException(e);
     }
   }
@@ -104,7 +116,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
         'reference_id': transaction.referenceId,
         'description': transaction.description,
       });
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -114,7 +125,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> processDeposit(String investorId, double amount, String description) async {
     try {
       await _dataSource.processDeposit(investorId, amount, description);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -124,7 +134,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> processWithdrawal(String investorId, double amount, String description) async {
     try {
       await _dataSource.processWithdrawal(investorId, amount, description);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -134,23 +143,7 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> allocateFunding(String contractId, String investorId, double amount) async {
     try {
       await _dataSource.allocateFunding(contractId, investorId, amount);
-      _memCache.clear();
     } catch (e) {
-      throw Failure.fromException(e);
-    }
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
-    const key = 'pending_investor_requests';
-    try {
-      final list = await _dataSource.getPendingInvestorRequests();
-      _memCache[key] = list;
-      return list;
-    } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<Map<String, dynamic>>;
-      }
       throw Failure.fromException(e);
     }
   }
@@ -159,7 +152,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> approveInvestor(String profileId) async {
     try {
       await _dataSource.approveInvestor(profileId);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -169,7 +161,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> rejectInvestor(String profileId, String reason) async {
     try {
       await _dataSource.rejectInvestor(profileId, reason);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -185,16 +176,10 @@ class SupabaseInvestorRepository implements InvestorRepository {
 
   @override
   Future<List<AppDocument>> getInvestorDocuments(String investorId) async {
-    final key = 'investor_docs_$investorId';
     try {
       final data = await _dataSource.getInvestorDocuments(investorId);
-      final list = data.map((json) => AppDocument.fromJson(json)).toList();
-      _memCache[key] = list;
-      return list;
+      return data.map((json) => AppDocument.fromJson(json)).toList();
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<AppDocument>;
-      }
       return [];
     }
   }
@@ -208,7 +193,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
         'document_url': url,
         'created_at': DateTime.now().toIso8601String(),
       });
-      _memCache.remove('investor_docs_$investorId');
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -218,7 +202,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> deleteDocument(String documentId) async {
     try {
       await _dataSource.deleteDocument(documentId);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -228,7 +211,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> distributeProfit(String investorId, double amount, String description) async {
     try {
       await _dataSource.distributeProfit(investorId, amount, description);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -245,15 +227,9 @@ class SupabaseInvestorRepository implements InvestorRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? investorId, String? status}) async {
-    final key = 'withdrawal_requests_${investorId}_$status';
     try {
-      final list = await _dataSource.getWithdrawalRequests(investorId: investorId, status: status);
-      _memCache[key] = list;
-      return list;
+      return await _dataSource.getWithdrawalRequests(investorId: investorId, status: status);
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<Map<String, dynamic>>;
-      }
       throw Failure.fromException(e);
     }
   }
@@ -262,7 +238,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> approveWithdrawalRequest(String requestId) async {
     try {
       await _dataSource.approveWithdrawalRequest(requestId);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -272,7 +247,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
   Future<void> rejectWithdrawalRequest(String requestId, String reason) async {
     try {
       await _dataSource.rejectWithdrawalRequest(requestId, reason);
-      _memCache.clear();
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -280,15 +254,9 @@ class SupabaseInvestorRepository implements InvestorRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getInvestorProjections(String investorId) async {
-    final key = 'investor_projections_$investorId';
     try {
-      final list = await _dataSource.getInvestorProjections(investorId);
-      _memCache[key] = list;
-      return list;
+      return await _dataSource.getInvestorProjections(investorId);
     } catch (e) {
-      if (_memCache.containsKey(key)) {
-        return _memCache[key] as List<Map<String, dynamic>>;
-      }
       throw Failure.fromException(e);
     }
   }
@@ -297,5 +265,6 @@ class SupabaseInvestorRepository implements InvestorRepository {
 @Riverpod(keepAlive: true)
 InvestorRepository investorRepository(InvestorRepositoryRef ref) {
   final dataSource = ref.watch(investorDataSourceProvider);
-  return SupabaseInvestorRepository(dataSource);
+  final client = ref.watch(supabaseClientProvider);
+  return SupabaseInvestorRepository(dataSource, client);
 }
