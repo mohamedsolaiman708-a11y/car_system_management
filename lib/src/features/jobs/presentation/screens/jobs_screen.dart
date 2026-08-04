@@ -5,7 +5,6 @@ import '../jobs_controller.dart';
 import '../../domain/background_job.dart';
 import '../../../../core/utils/arabic_translator.dart';
 import '../../../../core/utils/error_handler.dart';
-import '../../../../core/utils/snack_bar_helper.dart';
 import '../../../../core/utils/app_theme.dart';
 
 class BackgroundJobsScreen extends ConsumerWidget {
@@ -103,7 +102,7 @@ class BackgroundJobsScreen extends ConsumerWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border(bottom: BorderSide(color: color, width: 3)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
         ),
         child: Column(
           children: [
@@ -134,7 +133,7 @@ class BackgroundJobsScreen extends ConsumerWidget {
               label: Text(_getStatusLabel(status)),
               selected: currentFilter == status,
               onSelected: (_) => ref.read(jobFilterProvider.notifier).setFilter(status),
-              selectedColor: _getStatusColor(status).withOpacity(0.2),
+              selectedColor: _getStatusColor(status).withValues(alpha: 0.2),
               checkmarkColor: _getStatusColor(status),
             ),
           )),
@@ -149,7 +148,7 @@ class BackgroundJobsScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.task_alt_rounded, size: 64, color: Colors.grey.withOpacity(0.3)),
+            Icon(Icons.task_alt_rounded, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             const Text('لا توجد مهام في هذا التصنيف حالياً', style: TextStyle(color: Colors.grey)),
           ],
@@ -202,13 +201,13 @@ class _JobCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
       ),
       child: ExpansionTile(
         shape: const RoundedRectangleBorder(side: BorderSide.none),
         leading: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
           child: Icon(_getJobIcon(job.jobType), color: color, size: 20),
         ),
         title: Text(ArabicTranslator.jobType(job.jobType), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),

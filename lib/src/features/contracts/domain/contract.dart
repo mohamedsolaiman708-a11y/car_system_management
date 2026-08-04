@@ -47,6 +47,9 @@ class Contract with _$Contract {
     @JsonKey(name: 'notes') String? notes,
     @JsonKey(name: 'vehicles_list') List<Map<String, dynamic>>? vehiclesList,
 
+    @JsonKey(name: 'investor_id') String? investorId,
+    @JsonKey(name: 'investors') Map<String, dynamic>? investor,
+
     @JsonKey(name: 'customers') Map<String, dynamic>? customer,
     @JsonKey(name: 'inventory_items') Map<String, dynamic>? vehicle,
   }) = _Contract;

@@ -91,6 +91,10 @@ mixin _$Contract {
   @JsonKey(name: 'vehicles_list')
   List<Map<String, dynamic>>? get vehiclesList =>
       throw _privateConstructorUsedError;
+  @JsonKey(name: 'investor_id')
+  String? get investorId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'investors')
+  Map<String, dynamic>? get investor => throw _privateConstructorUsedError;
   @JsonKey(name: 'customers')
   Map<String, dynamic>? get customer => throw _privateConstructorUsedError;
   @JsonKey(name: 'inventory_items')
@@ -147,6 +151,8 @@ abstract class $ContractCopyWith<$Res> {
     @JsonKey(name: 'vat_amount') double vatAmount,
     @JsonKey(name: 'notes') String? notes,
     @JsonKey(name: 'vehicles_list') List<Map<String, dynamic>>? vehiclesList,
+    @JsonKey(name: 'investor_id') String? investorId,
+    @JsonKey(name: 'investors') Map<String, dynamic>? investor,
     @JsonKey(name: 'customers') Map<String, dynamic>? customer,
     @JsonKey(name: 'inventory_items') Map<String, dynamic>? vehicle,
   });
@@ -202,6 +208,8 @@ class _$ContractCopyWithImpl<$Res, $Val extends Contract>
     Object? vatAmount = null,
     Object? notes = freezed,
     Object? vehiclesList = freezed,
+    Object? investorId = freezed,
+    Object? investor = freezed,
     Object? customer = freezed,
     Object? vehicle = freezed,
   }) {
@@ -347,6 +355,14 @@ class _$ContractCopyWithImpl<$Res, $Val extends Contract>
                 ? _value.vehiclesList
                 : vehiclesList // ignore: cast_nullable_to_non_nullable
                       as List<Map<String, dynamic>>?,
+            investorId: freezed == investorId
+                ? _value.investorId
+                : investorId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            investor: freezed == investor
+                ? _value.investor
+                : investor // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
             customer: freezed == customer
                 ? _value.customer
                 : customer // ignore: cast_nullable_to_non_nullable
@@ -406,6 +422,8 @@ abstract class _$$ContractImplCopyWith<$Res>
     @JsonKey(name: 'vat_amount') double vatAmount,
     @JsonKey(name: 'notes') String? notes,
     @JsonKey(name: 'vehicles_list') List<Map<String, dynamic>>? vehiclesList,
+    @JsonKey(name: 'investor_id') String? investorId,
+    @JsonKey(name: 'investors') Map<String, dynamic>? investor,
     @JsonKey(name: 'customers') Map<String, dynamic>? customer,
     @JsonKey(name: 'inventory_items') Map<String, dynamic>? vehicle,
   });
@@ -460,6 +478,8 @@ class __$$ContractImplCopyWithImpl<$Res>
     Object? vatAmount = null,
     Object? notes = freezed,
     Object? vehiclesList = freezed,
+    Object? investorId = freezed,
+    Object? investor = freezed,
     Object? customer = freezed,
     Object? vehicle = freezed,
   }) {
@@ -605,6 +625,14 @@ class __$$ContractImplCopyWithImpl<$Res>
             ? _value._vehiclesList
             : vehiclesList // ignore: cast_nullable_to_non_nullable
                   as List<Map<String, dynamic>>?,
+        investorId: freezed == investorId
+            ? _value.investorId
+            : investorId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        investor: freezed == investor
+            ? _value._investor
+            : investor // ignore: cast_nullable_to_non_nullable
+                  as Map<String, dynamic>?,
         customer: freezed == customer
             ? _value._customer
             : customer // ignore: cast_nullable_to_non_nullable
@@ -658,9 +686,12 @@ class _$ContractImpl implements _Contract {
     @JsonKey(name: 'notes') this.notes,
     @JsonKey(name: 'vehicles_list')
     final List<Map<String, dynamic>>? vehiclesList,
+    @JsonKey(name: 'investor_id') this.investorId,
+    @JsonKey(name: 'investors') final Map<String, dynamic>? investor,
     @JsonKey(name: 'customers') final Map<String, dynamic>? customer,
     @JsonKey(name: 'inventory_items') final Map<String, dynamic>? vehicle,
   }) : _vehiclesList = vehiclesList,
+       _investor = investor,
        _customer = customer,
        _vehicle = vehicle;
 
@@ -780,6 +811,20 @@ class _$ContractImpl implements _Contract {
     return EqualUnmodifiableListView(value);
   }
 
+  @override
+  @JsonKey(name: 'investor_id')
+  final String? investorId;
+  final Map<String, dynamic>? _investor;
+  @override
+  @JsonKey(name: 'investors')
+  Map<String, dynamic>? get investor {
+    final value = _investor;
+    if (value == null) return null;
+    if (_investor is EqualUnmodifiableMapView) return _investor;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
+
   final Map<String, dynamic>? _customer;
   @override
   @JsonKey(name: 'customers')
@@ -804,7 +849,7 @@ class _$ContractImpl implements _Contract {
 
   @override
   String toString() {
-    return 'Contract(id: $id, contractNo: $contractNo, customerId: $customerId, inventoryItemId: $inventoryItemId, principalAmount: $principalAmount, financeProfitRate: $financeProfitRate, totalContractValue: $totalContractValue, durationMonths: $durationMonths, startDate: $startDate, status: $status, createdAt: $createdAt, type: $type, guarantor1Name: $guarantor1Name, guarantor1Id: $guarantor1Id, guarantor1Phone: $guarantor1Phone, guarantor1Work: $guarantor1Work, guarantor1Address: $guarantor1Address, guarantor2Name: $guarantor2Name, guarantor2Id: $guarantor2Id, guarantor2Phone: $guarantor2Phone, guarantor2Work: $guarantor2Work, guarantor2Address: $guarantor2Address, witness1: $witness1, witness2: $witness2, downPayment: $downPayment, moroorFees: $moroorFees, tammFees: $tammFees, insuranceFees: $insuranceFees, inspectionFees: $inspectionFees, plateFees: $plateFees, trafficViolationsFees: $trafficViolationsFees, otherFees: $otherFees, vatAmount: $vatAmount, notes: $notes, vehiclesList: $vehiclesList, customer: $customer, vehicle: $vehicle)';
+    return 'Contract(id: $id, contractNo: $contractNo, customerId: $customerId, inventoryItemId: $inventoryItemId, principalAmount: $principalAmount, financeProfitRate: $financeProfitRate, totalContractValue: $totalContractValue, durationMonths: $durationMonths, startDate: $startDate, status: $status, createdAt: $createdAt, type: $type, guarantor1Name: $guarantor1Name, guarantor1Id: $guarantor1Id, guarantor1Phone: $guarantor1Phone, guarantor1Work: $guarantor1Work, guarantor1Address: $guarantor1Address, guarantor2Name: $guarantor2Name, guarantor2Id: $guarantor2Id, guarantor2Phone: $guarantor2Phone, guarantor2Work: $guarantor2Work, guarantor2Address: $guarantor2Address, witness1: $witness1, witness2: $witness2, downPayment: $downPayment, moroorFees: $moroorFees, tammFees: $tammFees, insuranceFees: $insuranceFees, inspectionFees: $inspectionFees, plateFees: $plateFees, trafficViolationsFees: $trafficViolationsFees, otherFees: $otherFees, vatAmount: $vatAmount, notes: $notes, vehiclesList: $vehiclesList, investorId: $investorId, investor: $investor, customer: $customer, vehicle: $vehicle)';
   }
 
   @override
@@ -880,6 +925,9 @@ class _$ContractImpl implements _Contract {
               other._vehiclesList,
               _vehiclesList,
             ) &&
+            (identical(other.investorId, investorId) ||
+                other.investorId == investorId) &&
+            const DeepCollectionEquality().equals(other._investor, _investor) &&
             const DeepCollectionEquality().equals(other._customer, _customer) &&
             const DeepCollectionEquality().equals(other._vehicle, _vehicle));
   }
@@ -923,6 +971,8 @@ class _$ContractImpl implements _Contract {
     vatAmount,
     notes,
     const DeepCollectionEquality().hash(_vehiclesList),
+    investorId,
+    const DeepCollectionEquality().hash(_investor),
     const DeepCollectionEquality().hash(_customer),
     const DeepCollectionEquality().hash(_vehicle),
   ]);
@@ -980,6 +1030,8 @@ abstract class _Contract implements Contract {
     @JsonKey(name: 'notes') final String? notes,
     @JsonKey(name: 'vehicles_list')
     final List<Map<String, dynamic>>? vehiclesList,
+    @JsonKey(name: 'investor_id') final String? investorId,
+    @JsonKey(name: 'investors') final Map<String, dynamic>? investor,
     @JsonKey(name: 'customers') final Map<String, dynamic>? customer,
     @JsonKey(name: 'inventory_items') final Map<String, dynamic>? vehicle,
   }) = _$ContractImpl;
@@ -1091,6 +1143,12 @@ abstract class _Contract implements Contract {
   @override
   @JsonKey(name: 'vehicles_list')
   List<Map<String, dynamic>>? get vehiclesList;
+  @override
+  @JsonKey(name: 'investor_id')
+  String? get investorId;
+  @override
+  @JsonKey(name: 'investors')
+  Map<String, dynamic>? get investor;
   @override
   @JsonKey(name: 'customers')
   Map<String, dynamic>? get customer;

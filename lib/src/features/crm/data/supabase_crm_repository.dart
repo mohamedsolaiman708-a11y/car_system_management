@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,7 +46,7 @@ class SupabaseCrmRepository implements CrmRepository {
           return Customer.fromJson(json);
         } catch (e) {
           // لو فيه سجل واحد فيه مشكلة ميبوظش القائمة كلها
-          print('Error mapping customer: $e');
+          debugPrint('Error mapping customer: $e');
           return null;
         }
       }).whereType<Customer>().toList();

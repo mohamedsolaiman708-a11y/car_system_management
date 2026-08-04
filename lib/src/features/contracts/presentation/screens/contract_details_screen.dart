@@ -131,9 +131,9 @@ class ContractDetailsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: const Icon(Icons.assignment_rounded, size: 40, color: AppColors.accentGold),
           ),
@@ -230,22 +230,29 @@ class _OverviewTab extends ConsumerWidget {
               Expanded(
                 flex: 2,
                 child: _SectionCard(
-                  title: 'التفاصيل المالية والربحية',
+                  title: 'التفاصيل المالية وأطراف العقد',
                   icon: Icons.account_balance_wallet_rounded,
                   children: [
+                    _InfoRow('نوع العقد', contract.type == 'cash' ? 'بيع نقدي مباشر' : 'بيع بالأجل (أقساط)', isBold: true),
+                    _InfoRow('الطرف الأول (المستثمر البائع)', contract.investor?['full_name'] ?? '-'),
+                    _InfoRow('الطرف الثاني (المشتري)', contract.customer?['full_name'] ?? '-'),
+                    const Divider(height: 24),
                     _InfoRow('قيمة السيارة (الأصل)', '${f.format(contract.principalAmount)} ر.س'),
-                    _InfoRow('نسبة الربح السنوية', '${contract.financeProfitRate}%'),
-                    _InfoRow('مدة التمويل', '${contract.durationMonths} شهر'),
-                    const Divider(height: 32),
-                    _InfoRow('إجمالي مديونية العقد', '${f.format(contract.totalContractValue)} ر.س', isBold: true),
-                    installmentsAsync.when(
-                      data: (list) {
-                        final paid = list.where((i) => i['status'] == 'paid').fold(0.0, (sum, i) => sum + (i['expected_amount'] as num).toDouble());
-                        return _InfoRow('المبلغ المتبقي للسداد', '${f.format(contract.totalContractValue - paid)} ر.س', isBold: true, color: AppColors.errorRed);
-                      },
-                      loading: () => _InfoRow('المبلغ المتبقي', 'جاري الحساب...', isBold: true),
-                      error: (_, __) => _InfoRow('المبلغ المتبقي', '-', isBold: true),
-                    ),
+                    if (contract.type != 'cash') ...[
+                      _InfoRow('نسبة الربح السنوية', '${contract.financeProfitRate}%'),
+                      _InfoRow('مدة التمويل', '${contract.durationMonths} شهر'),
+                    ],
+                    const Divider(height: 24),
+                    _InfoRow('إجمالي قيمة العقد', '${f.format(contract.totalContractValue)} ر.س', isBold: true),
+                    if (contract.type != 'cash')
+                      installmentsAsync.when(
+                        data: (list) {
+                          final paid = list.where((i) => i['status'] == 'paid').fold(0.0, (sum, i) => sum + (i['expected_amount'] as num).toDouble());
+                          return _InfoRow('المبلغ المتبقي للسداد', '${f.format(contract.totalContractValue - paid)} ر.س', isBold: true, color: AppColors.errorRed);
+                        },
+                        loading: () => _InfoRow('المبلغ المتبقي', 'جاري الحساب...', isBold: true),
+                        error: (_, __) => _InfoRow('المبلغ المتبقي', '-', isBold: true),
+                      ),
                   ],
                 ),
               ),
@@ -297,7 +304,7 @@ class _SectionCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 8)),
         ],
       ),
       child: Column(
@@ -354,16 +361,20 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color = Colors.grey;
     String label = ArabicTranslator.status(status);
-    if (status == 'active') color = AppColors.successGreen;
-    else if (status == 'draft') color = Colors.orange;
-    else if (status == 'pending_funding') color = Colors.blue;
+    if (status == 'active') {
+      color = AppColors.successGreen;
+    } else if (status == 'draft') {
+      color = Colors.orange;
+    } else if (status == 'pending_funding') {
+      color = Colors.blue;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         label,
@@ -396,13 +407,13 @@ class _InstallmentsTab extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isPaid ? AppColors.successGreen.withOpacity(0.2) : Colors.transparent),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                    border: Border.all(color: isPaid ? AppColors.successGreen.withValues(alpha: 0.2) : Colors.transparent),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     leading: CircleAvatar(
-                      backgroundColor: isPaid ? AppColors.successGreen.withOpacity(0.1) : AppColors.bgGrey,
+                      backgroundColor: isPaid ? AppColors.successGreen.withValues(alpha: 0.1) : AppColors.bgGrey,
                       child: Text('${index + 1}', style: TextStyle(color: isPaid ? AppColors.successGreen : AppColors.primaryNavy, fontWeight: FontWeight.bold)),
                     ),
                     title: Text(
@@ -461,7 +472,7 @@ class _PaymentsTab extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: Colors.white, 
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
                         ),
                         child: ListTile(
                           leading: const Icon(Icons.verified_rounded, color: AppColors.successGreen, size: 32),
@@ -532,7 +543,7 @@ class _FundingSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))]),
       child: Column(
         children: [
           const Text('مؤشر اكتمال تغطية العقد', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textGrey)),
@@ -590,9 +601,9 @@ class _InvestorTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5)]),
       child: ListTile(
-        leading: CircleAvatar(backgroundColor: AppColors.primaryNavy.withOpacity(0.05), child: const Icon(Icons.person_rounded, color: AppColors.primaryNavy)),
+        leading: CircleAvatar(backgroundColor: AppColors.primaryNavy.withValues(alpha: 0.05), child: const Icon(Icons.person_rounded, color: AppColors.primaryNavy)),
         title: Text(item['investors']?['full_name'] ?? 'مستثمر', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryNavy)),
         trailing: Text('${f.format(item['amount_allocated'])} ر.س', style: const TextStyle(color: AppColors.successGreen, fontWeight: FontWeight.w900)),
       ),
@@ -683,7 +694,7 @@ class _JournalEntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5)]),
       child: ExpansionTile(
         title: Text(ArabicTranslator.description(entry.description), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.primaryNavy)),
         childrenPadding: const EdgeInsets.all(16),

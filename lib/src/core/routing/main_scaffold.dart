@@ -183,7 +183,14 @@ class _Sidebar extends ConsumerWidget {
                   _SidebarLink(Icons.directions_car_filled_rounded, 'السيارات', '/inventory', isCollapsed),
                 ],
 
-                _SidebarLink(Icons.history_edu_rounded, 'العقود', '/contracts', isCollapsed),
+                if (!isCollapsed)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 16, top: 12, bottom: 4),
+                    child: Text('قسم العقود',
+                        style: TextStyle(color: Colors.white30, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  ),
+                _SidebarLink(Icons.history_edu_rounded, 'بيع بالأجل (أقساط)', '/contracts/installments', isCollapsed),
+                _SidebarLink(Icons.payments_rounded, 'بيع نقدي مباشر', '/contracts/cash', isCollapsed),
                 
                 // أرشفة المستندات (Phase 17)
                 _SidebarLink(Icons.folder_copy_rounded, 'مركز المستندات', '/documents', isCollapsed),
@@ -406,11 +413,11 @@ class _TopBar extends ConsumerWidget {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
+          title: const Row(
             children: [
-              const Icon(Icons.edit_rounded, color: AppColors.accentGold),
-              const SizedBox(width: 12),
-              const Text('إعدادات الملف الشخصي'),
+              Icon(Icons.edit_rounded, color: AppColors.accentGold),
+              SizedBox(width: 12),
+              Text('إعدادات الملف الشخصي'),
             ],
           ),
           content: Column(

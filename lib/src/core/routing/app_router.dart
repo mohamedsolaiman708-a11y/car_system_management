@@ -31,7 +31,8 @@ import '../../features/inventory/presentation/screens/edit_vehicle_screen.dart';
 
 // Contracts Screens
 import '../../features/contracts/presentation/screens/contracts_screen.dart';
-import '../../features/contracts/presentation/screens/create_contract_screen.dart';
+import '../../features/contracts/presentation/screens/create_installment_contract_screen.dart';
+import '../../features/contracts/presentation/screens/create_cash_contract_screen.dart';
 import '../../features/contracts/presentation/screens/contract_details_screen.dart';
 import '../../features/contracts/presentation/screens/edit_contract_screen.dart';
 
@@ -283,7 +284,35 @@ GoRouter goRouter(GoRouterRef ref) {
                 path: '/contracts',
                 builder: (context, state) => const ContractsScreen(),
                 routes: [
-                  GoRoute(path: 'new', builder: (context, state) => const CreateContractScreen()),
+                  GoRoute(
+                    path: 'installments',
+                    builder: (context, state) => const ContractsScreen(initialType: 'installments'),
+                  ),
+                  GoRoute(
+                    path: 'cash',
+                    builder: (context, state) => const ContractsScreen(initialType: 'cash'),
+                  ),
+                  GoRoute(
+                    path: 'new',
+                    builder: (context, state) => CreateInstallmentContractScreen(
+                      initialVehicleId: state.uri.queryParameters['vehicleId'],
+                      initialCustomerId: state.uri.queryParameters['customerId'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'new-installment',
+                    builder: (context, state) => CreateInstallmentContractScreen(
+                      initialVehicleId: state.uri.queryParameters['vehicleId'],
+                      initialCustomerId: state.uri.queryParameters['customerId'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'new-cash',
+                    builder: (context, state) => CreateCashContractScreen(
+                      initialVehicleId: state.uri.queryParameters['vehicleId'],
+                      initialCustomerId: state.uri.queryParameters['customerId'],
+                    ),
+                  ),
                   GoRoute(
                     path: ':id',
                     builder: (context, state) => ContractDetailsScreen(id: state.pathParameters['id']!),

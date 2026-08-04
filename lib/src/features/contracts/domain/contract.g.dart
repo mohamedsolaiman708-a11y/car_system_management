@@ -51,6 +51,8 @@ _$ContractImpl _$$ContractImplFromJson(
   vehiclesList: (json['vehicles_list'] as List<dynamic>?)
       ?.map((e) => e as Map<String, dynamic>)
       .toList(),
+  investorId: json['investor_id'] as String?,
+  investor: json['investors'] as Map<String, dynamic>?,
   customer: json['customers'] as Map<String, dynamic>?,
   vehicle: json['inventory_items'] as Map<String, dynamic>?,
 );
@@ -92,6 +94,8 @@ Map<String, dynamic> _$$ContractImplToJson(_$ContractImpl instance) =>
       'vat_amount': instance.vatAmount,
       'notes': instance.notes,
       'vehicles_list': instance.vehiclesList,
+      'investor_id': instance.investorId,
+      'investors': instance.investor,
       'customers': instance.customer,
       'inventory_items': instance.vehicle,
     };

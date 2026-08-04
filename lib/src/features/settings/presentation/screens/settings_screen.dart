@@ -316,7 +316,7 @@ class SettingsScreen extends ConsumerWidget {
           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
         value: value,
-        activeColor: activeColor,
+        activeThumbColor: activeColor,
         activeTrackColor: activeColor.withValues(alpha: 0.2),
         onChanged: onChanged,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -440,7 +440,7 @@ class SettingsScreen extends ConsumerWidget {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Text('تعديل الإعدادات', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          title: const Text('تعديل الإعدادات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           content: SizedBox(
             width: 400,
             child: SingleChildScrollView(

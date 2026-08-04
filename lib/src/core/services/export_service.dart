@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:share_plus/share_plus.dart';
@@ -40,13 +39,13 @@ class ExportService {
     required List<String> columns,
     required List<List<dynamic>> rows,
   }) async {
-    String csvData = columns.map((h) => '"$h"').join(',') + '\n';
+    String csvData = '${columns.map((h) => '"$h"').join(',')}\n';
     
     for (var row in rows) {
-      csvData += row.map((e) {
+      csvData += '${row.map((e) {
         final value = e?.toString() ?? '';
         return '"${value.replaceAll('"', '""')}"';
-      }).join(',') + '\n';
+      }).join(',')}\n';
     }
 
     if (kIsWeb) {
@@ -55,7 +54,7 @@ class ExportService {
       final directory = await getTemporaryDirectory();
       final file = File('${directory.path}/$fileName.csv');
       await file.writeAsString(csvData);
-      await Share.shareXFiles([XFile(file.path)], subject: 'تصدير $fileName');
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], subject: 'تصدير $fileName'));
     }
   }
 
@@ -93,7 +92,7 @@ class ExportService {
       final directory = await getTemporaryDirectory();
       final file = File('${directory.path}/$fileName.xlsx');
       await file.writeAsBytes(bytes);
-      await Share.shareXFiles([XFile(file.path)], subject: 'تصدير $fileName');
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], subject: 'تصدير $fileName'));
     }
   }
 

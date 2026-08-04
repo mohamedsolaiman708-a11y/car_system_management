@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'investor.freezed.dart';
-part 'investor.g.dart';
 
 @freezed
 class Investor with _$Investor {
@@ -29,3 +28,6 @@ class Investor with _$Investor {
     );
   }
 }
+
+
+

@@ -156,7 +156,7 @@ class _InvestorProjectionsProviderElement
 }
 
 String _$investorListControllerHash() =>
-    r'59eca8aae1cd2461fd620ad3ea637862d5f206a8';
+    r'737cf172f75aa9e039d84370233c81ec72060730';
 
 /// See also [InvestorListController].
 @ProviderFor(InvestorListController)
@@ -790,7 +790,7 @@ class _InvestorDocumentsControllerProviderElement
 }
 
 String _$withdrawalRequestsControllerHash() =>
-    r'717baa369956b15bbbaf15d5eb3de792fe478ae1';
+    r'2c0726aa9d1640919ef68f7c55beb8c9da78eefa';
 
 abstract class _$WithdrawalRequestsController
     extends BuildlessAutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {

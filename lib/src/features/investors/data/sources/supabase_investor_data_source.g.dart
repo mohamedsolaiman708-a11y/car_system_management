@@ -7,7 +7,7 @@ part of 'supabase_investor_data_source.dart';
 // **************************************************************************
 
 String _$investorDataSourceHash() =>
-    r'5ce475dc7106db953fe54e3deef479bf6f4272d6';
+    r'228b5835cb3717637dd961ad7e054fafcdf1bf0a';
 
 /// See also [investorDataSource].
 @ProviderFor(investorDataSource)

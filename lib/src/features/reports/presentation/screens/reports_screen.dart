@@ -248,7 +248,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     _buildDataCell('${f.format(item['investor_share'] ?? 0)} ر.س', color: Colors.orange),
                     _buildDataCell('${f.format(item['company_net_profit'] ?? 0)} ر.س', color: Colors.green, isBold: true),
                   ],
-                )).toList(),
+                )),
               ],
             ),
         ],

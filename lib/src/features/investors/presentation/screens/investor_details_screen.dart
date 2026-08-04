@@ -620,7 +620,7 @@ class _HeaderStatTile extends StatelessWidget {
 
   Widget _statusBadge(String s) {
   final color = (s == 'active' || s == 'completed') ? _green : Colors.orange;
-  return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Text(s == 'active' ? 'نشط' : (s == 'completed' ? 'تم' : 'قيد الانتظار'), style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 10)));
+  return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Text(s == 'active' ? 'نشط' : (s == 'completed' ? 'تم' : 'قيد الانتظار'), style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 10)));
   }
 
   Widget _emptyState(String t) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.inbox_outlined, size: 48, color: Colors.grey), const SizedBox(height: 16), Text(t, style: const TextStyle(color: Colors.grey))]));
@@ -631,7 +631,7 @@ class _HeaderStatTile extends StatelessWidget {
   const _SectionHeader({required this.title, required this.subtitle, required this.icon});
   @override
   Widget build(BuildContext context) => Row(children: [
-  Icon(icon, color: _navy.withOpacity(0.7), size: 18),
+  Icon(icon, color: _navy.withValues(alpha: 0.7), size: 18),
   const SizedBox(width: 10),
   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
   Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _navy)),

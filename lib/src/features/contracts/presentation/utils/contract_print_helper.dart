@@ -322,7 +322,7 @@ class ContractPrintHelper {
                   _buildTableCell(v['chassis']?.toString() ?? '-'),
                 ],
               );
-            }).toList(),
+            }),
           ],
         ),
         pw.SizedBox(height: 8),

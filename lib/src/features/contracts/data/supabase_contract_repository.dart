@@ -31,7 +31,7 @@ class SupabaseContractRepository implements ContractRepository {
         'getContracts_${searchQuery ?? ''}_${status ?? ''}_${limit}_$offset';
     try {
       var query = _client.from('financing_contracts').select(
-            'id, contract_no, customer_id, inventory_item_id, principal_amount, finance_profit_rate, total_contract_value, duration_months, start_date, status, created_at, customers(full_name), inventory_items(make, model, license_plate)',
+            '*, customers(full_name), inventory_items(make, model, license_plate), investors(full_name)',
           );
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
@@ -105,6 +105,14 @@ class SupabaseContractRepository implements ContractRepository {
               .eq('id', data['inventory_item_id'])
               .maybeSingle();
           enrichedData['inventory_items'] = vehicle;
+        }
+        if (data['investor_id'] != null) {
+          final investor = await _client
+              .from('investors')
+              .select()
+              .eq('id', data['investor_id'])
+              .maybeSingle();
+          enrichedData['investors'] = investor;
         }
       } catch (e) {
         print('DB_LOG: Relation enrichment warning: $e');
