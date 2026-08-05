@@ -24,7 +24,8 @@ class Failure {
   factory Failure.fromException(dynamic exception) {
     if (exception is Failure) return exception;
 
-    String message = 'عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+    // إظهار رسالة الخطأ الأصلية في حالة "غير متوقع" للمساعدة في تتبع الحقول المسببة للخطأ
+    String message = 'عذراً، حدث خطأ غير متوقع: ${exception.toString()}';
     String? code;
 
     final errorStr = exception.toString();
@@ -62,27 +63,18 @@ class Failure {
     if (msg.contains('invalid login credentials') || msg.contains('invalid_credentials') || code.contains('invalid_credentials')) {
       return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
     }
-    if (msg.contains('password should be at least') || msg.contains('weak password') || msg.contains('password_too_short')) {
-      return 'كلمة المرور ضعيفة. يرجى استخدام كلمة مرور تحتوي على 6 أحرف/أرقام على الأقل.';
-    }
     if (msg.contains('rate limit') || msg.contains('over_email_send_limit')) {
       return 'تم تجاوز الحد المسموح من المحاولات. يرجى الانتظار قليلاً والمحاولة لاحقاً.';
-    }
-    if (msg.contains('invalid email') || msg.contains('email_address_invalid')) {
-      return 'صيغة البريد الإلكتروني غير صحيحة.';
     }
     return exception.message;
   }
 
   static String _handlePostgrestError(PostgrestException err) {
-    // إضافة معالجة للمزيد من أكواد الأخطاء الشائعة في بوسطجرس
     switch (err.code) {
-      case '42501': return 'عذراً، لا تملك الصلاحية الكافية للوصول لهذه البيانات (RLS Policy).';
-      case '23505': return 'هذه البيانات مسجلة بالفعل في النظام (Unique Violation).';
-      case '23503': return 'فشل الإجراء بسبب ارتباط البيانات بسجلات أخرى (Foreign Key Violation).';
-      case '23502': return 'يوجد حقل مطلوب لم يتم إدخاله بشكل صحيح (Not Null Violation).';
-      case 'P0001': return 'فشل الإجراء: ${err.message} (Database Trigger Error).';
-      default: return 'خطأ في قاعدة البيانات: ${err.message}';
+      case '42501': return 'عذراً، لا تملك الصلاحية الكافية للوصول لهذه البيانات.';
+      case '23505': return 'هذه البيانات مسجلة بالفعل في النظام.';
+      case 'P0001': return 'فشل في قاعدة البيانات: ${err.message}';
+      default: return 'خطأ تقني في قاعدة البيانات (${err.code}): ${err.message}';
     }
   }
 }

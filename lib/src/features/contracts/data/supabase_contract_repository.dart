@@ -53,7 +53,9 @@ class SupabaseContractRepository implements ContractRepository {
       _memCache[cacheKey] = contracts;
       return contracts;
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       if (_memCache.containsKey(cacheKey)) {
         return _memCache[cacheKey] as List<Contract>;
       }
@@ -122,7 +124,9 @@ class SupabaseContractRepository implements ContractRepository {
       _memCache[cacheKey] = contract;
       return contract;
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       if (_memCache.containsKey(cacheKey)) {
         return _memCache[cacheKey] as Contract?;
       }
@@ -162,10 +166,16 @@ class SupabaseContractRepository implements ContractRepository {
           .insert(data)
           .select()
           .single();
+      
+      final map = Map<String, dynamic>.from(response);
+      _sanitizeNumericFields(map); // تطهير البيانات الرقمية لمنع الخطأ الوهمي
+      
       clearCache();
-      return Contract.fromJson(response);
+      return Contract.fromJson(map);
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       throw Failure.fromException(e);
     }
   }
@@ -179,10 +189,16 @@ class SupabaseContractRepository implements ContractRepository {
           .eq('id', id)
           .select()
           .single();
+          
+      final map = Map<String, dynamic>.from(response);
+      _sanitizeNumericFields(map);
+      
       clearCache();
-      return Contract.fromJson(response);
+      return Contract.fromJson(map);
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       throw Failure.fromException(e);
     }
   }
@@ -196,7 +212,9 @@ class SupabaseContractRepository implements ContractRepository {
       );
       clearCache();
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       throw Failure.fromException(e);
     }
   }
@@ -240,7 +258,9 @@ class SupabaseContractRepository implements ContractRepository {
         return;
       } catch (_) {}
 
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       throw Failure.fromException(e);
     }
   }
@@ -254,7 +274,9 @@ class SupabaseContractRepository implements ContractRepository {
       );
       clearCache();
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       throw Failure.fromException(e);
     }
   }
@@ -263,7 +285,6 @@ class SupabaseContractRepository implements ContractRepository {
   Future<Map<String, dynamic>> getContractStats() async {
     const cacheKey = 'getContractStats';
     try {
-      // الحل الأكثر استقراراً للحصول على العدد في كل الإصدارات
       final allResponse = await _client.from('financing_contracts').select('id');
       final activeResponse = await _client.from('financing_contracts').select('id').eq('status', 'active');
       
