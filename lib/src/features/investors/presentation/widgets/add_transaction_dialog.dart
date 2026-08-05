@@ -38,7 +38,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     final isDeposit = widget.type == InvestorTransactionType.deposit;
     final themeColor = isDeposit ? AppColors.successGreen : AppColors.errorRed;
     final title = isDeposit ? 'إيداع رأس مال جديد' : 'سحب من الرصيد المتاح';
-    
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Dialog(
@@ -75,7 +75,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
-                        isDeposit ? Icons.account_balance_rounded : Icons.payments_rounded, 
+                        isDeposit ? Icons.account_balance_rounded : Icons.payments_rounded,
                         color: themeColor,
                         size: 28,
                       ),
@@ -85,9 +85,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(title, 
+                          Text(title,
                             style: const TextStyle(
-                              fontSize: 20, 
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryNavy,
                             ),
@@ -103,10 +103,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   ],
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Amount Field
-                const Text('المبلغ المطلوب', 
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
+                const Text('المبلغ المطلوب',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _amountController,
@@ -135,10 +135,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   },
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Description Field
-                const Text('وصف المعاملة', 
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
+                const Text('وصف المعاملة',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _descriptionController,
@@ -153,7 +153,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   validator: (val) => val == null || val.isEmpty ? 'الوصف مطلوب للتوثيق المالي' : null,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -177,9 +177,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: _isSubmitting 
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('تأكيد العملية'),
+                        child: _isSubmitting
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('تأكيد العملية'),
                       ),
                     ),
                   ],
