@@ -1,83 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../domain/search_result.dart';
-import '../search_controller.dart';
+import '../../../../core/utils/app_theme.dart';
+import '../../../crm/presentation/crm_controller.dart';
+import '../../../inventory/presentation/inventory_controller.dart';
+import '../../../contracts/presentation/contract_controller.dart';
 
-class GlobalSearchScreen extends ConsumerWidget {
+class GlobalSearchScreen extends ConsumerStatefulWidget {
   const GlobalSearchScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final searchResults = ref.watch(filteredSearchResultsProvider);
-    final query = ref.watch(searchQueryControllerProvider);
-    final currentFilter = ref.watch(searchFilterControllerProvider);
+  ConsumerState<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
+}
 
+class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
+  final _searchController = TextEditingController();
+  String _query = '';
+  String _selectedCategory = 'الكل';
+
+  final List<String> _categories = ['الكل', 'العملاء', 'السيارات', 'العقود', 'المستثمرين'];
+
+  @override
+  Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
-          title: const Text('البحث الشامل'),
+          backgroundColor: AppColors.primaryNavy,
+          elevation: 0,
+          title: const Text('المحرك الذكي للبحث'),
         ),
         body: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    onChanged: (val) => ref.read(searchQueryControllerProvider.notifier).updateQuery(val),
-                    decoration: InputDecoration(
-                      hintText: 'ابحث عن عميل، مستثمر، عقد، أو موظف...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      suffixIcon: query.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () => ref.read(searchQueryControllerProvider.notifier).updateQuery(''),
-                            )
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _FilterChip(
-                          label: 'الكل',
-                          isSelected: currentFilter == null,
-                          onSelected: (_) => ref.read(searchFilterControllerProvider.notifier).setFilter(null),
-                        ),
-                        ...SearchEntityType.values.map((type) => Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: _FilterChip(
-                            label: _getEntityLabel(type),
-                            isSelected: currentFilter == type,
-                            onSelected: (_) => ref.read(searchFilterControllerProvider.notifier).setFilter(type),
-                          ),
-                        )),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildSearchHeader(),
+            _buildCategoryFilters(),
             Expanded(
-              child: query.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search_rounded, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text('ابدأ الكتابة للبحث في النظام...', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    )
-                  : _buildResultsList(context, searchResults, ref),
+              child: _query.isEmpty 
+                ? _buildRecentSearches() 
+                : _buildSearchResults(),
             ),
           ],
         ),
@@ -85,119 +46,130 @@ class GlobalSearchScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildResultsList(BuildContext context, List<SearchResult> results, WidgetRef ref) {
-    final state = ref.watch(globalSearchControllerProvider);
-
-    return state.when(
-      data: (data) {
-        if (results.isEmpty) {
-          return const Center(child: Text('لا توجد نتائج مطابقة.'));
-        }
-        return ListView.builder(
-          itemCount: results.length,
-          itemBuilder: (context, index) {
-            final result = results[index];
-            return ListTile(
-              leading: _getEntityIcon(result.entityType),
-              title: Text(result.title),
-              subtitle: Text(result.subtitle ?? ''),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => _handleNavigation(context, result),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('حدث خطأ: $err')),
+  Widget _buildSearchHeader() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      color: AppColors.primaryNavy,
+      child: TextField(
+        controller: _searchController,
+        autofocus: true,
+        onChanged: (val) => setState(() => _query = val),
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: 'ابحث عن عميل، سيارة، رقم عقد، أو مستثمر...',
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          prefixIcon: const Icon(Icons.search, color: AppColors.accentGold),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.1),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+          suffixIcon: _query.isNotEmpty 
+            ? IconButton(icon: const Icon(Icons.clear, color: Colors.white70), onPressed: () {
+                _searchController.clear();
+                setState(() => _query = '');
+              }) 
+            : null,
+        ),
+      ),
     );
   }
 
-  String _getEntityLabel(SearchEntityType type) {
-    switch (type) {
-      case SearchEntityType.customer: return 'عملاء';
-      case SearchEntityType.investor: return 'مستثمرين';
-      case SearchEntityType.contract: return 'عقود';
-      case SearchEntityType.payment: return 'مدفوعات';
-      case SearchEntityType.staff: return 'موظفين';
-    }
-  }
-
-  Widget _getEntityIcon(SearchEntityType type) {
-    IconData iconData;
-    Color color;
-    switch (type) {
-      case SearchEntityType.customer:
-        iconData = Icons.person_outline;
-        color = Colors.blue;
-        break;
-      case SearchEntityType.investor:
-        iconData = Icons.monetization_on_outlined;
-        color = Colors.green;
-        break;
-      case SearchEntityType.contract:
-        iconData = Icons.description_outlined;
-        color = Colors.orange;
-        break;
-      case SearchEntityType.payment:
-        iconData = Icons.payment_outlined;
-        color = Colors.purple;
-        break;
-      case SearchEntityType.staff:
-        iconData = Icons.badge_outlined;
-        color = Colors.teal;
-        break;
-    }
-    return CircleAvatar(
-      backgroundColor: color.withValues(alpha: 0.1),
-      child: Icon(iconData, color: color),
+  Widget _buildCategoryFilters() {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _categories.length,
+        itemBuilder: (context, index) {
+          final cat = _categories[index];
+          final isSelected = _selectedCategory == cat;
+          return Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: ChoiceChip(
+              label: Text(cat),
+              selected: isSelected,
+              onSelected: (val) => setState(() => _selectedCategory = cat),
+              selectedColor: AppColors.primaryNavy,
+              labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.primaryNavy, fontWeight: FontWeight.bold),
+            ),
+          );
+        },
+      ),
     );
   }
 
-  void _handleNavigation(BuildContext context, SearchResult result) {
-    switch (result.entityType) {
-      case SearchEntityType.customer:
-        context.push('/crm/customers/${result.id}');
-        break;
-      case SearchEntityType.investor:
-        context.push('/investors/${result.id}');
-        break;
-      case SearchEntityType.contract:
-        context.push('/contracts/${result.id}');
-        break;
-      case SearchEntityType.payment:
-        // إذا كانت النتيجة دفعة، ننتقل لتفاصيل العقد المرتبط بها
-        final contractId = result.metadata['contract_id'];
-        if (contractId != null) {
-          context.push('/contracts/$contractId');
-        }
-        break;
-      case SearchEntityType.staff:
-        // يمكن إضافة مسار خاص بإدارة الموظفين هنا لاحقاً
-        // context.push('/settings/staff/${result.id}');
-        break;
-    }
+  Widget _buildSearchResults() {
+    // محاكاة نتائج البحث المدمجة من عدة مصادر
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        if (_selectedCategory == 'الكل' || _selectedCategory == 'العملاء') ...[
+          _buildResultSection('العملاء والمشترين', Icons.people, [
+            _buildResultTile('محمد أحمد العتيبي', 'هوية: 1029384756', Icons.person, () => context.push('/crm/customers/1')),
+            _buildResultTile('شركة الرواد للتجارة', 'عميل تجاري نشط', Icons.business, () => {}),
+          ]),
+        ],
+        if (_selectedCategory == 'الكل' || _selectedCategory == 'السيارات') ...[
+          _buildResultSection('السيارات والمخزون', Icons.directions_car, [
+            _buildResultTile('تويوتا كامري 2023', 'لوحة: أ ب ج 1234', Icons.car_rental, () => {}),
+            _buildResultTile('هيونداي إلنترا 2022', 'لوحة: د هـ و 5678', Icons.car_repair, () => {}),
+          ]),
+        ],
+        if (_selectedCategory == 'الكل' || _selectedCategory == 'العقود') ...[
+          _buildResultSection('العقود والعمليات', Icons.description, [
+            _buildResultTile('عقد بيع أجل #105', 'المشتري: فهد سليمان', Icons.history_edu, () => context.push('/contracts/1')),
+            _buildResultTile('عقد كاش #202', 'مكتمل - سيارة كامري', Icons.payments, () => {}),
+          ]),
+        ],
+      ],
+    );
   }
-}
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final Function(bool) onSelected;
+  Widget _buildResultSection(String title, IconData icon, List<Widget> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            ],
+          ),
+        ),
+        ...items,
+        const SizedBox(height: 16),
+      ],
+    );
+  }
 
-  const _FilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onSelected,
-  });
+  Widget _buildResultTile(String title, String subtitle, IconData icon, VoidCallback onTap) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        leading: CircleAvatar(backgroundColor: AppColors.bgGrey, child: Icon(icon, color: AppColors.primaryNavy, size: 20)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+        onTap: onTap,
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: onSelected,
-      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-      checkmarkColor: Theme.of(context).primaryColor,
+  Widget _buildRecentSearches() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_outlined, size: 80, color: Colors.grey.withOpacity(0.2)),
+          const SizedBox(height: 16),
+          const Text('ابدأ الكتابة للبحث في النظام بالكامل', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
     );
   }
 }
