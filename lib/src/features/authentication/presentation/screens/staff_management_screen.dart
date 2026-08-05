@@ -71,7 +71,6 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
                     indicatorColor: AppColors.accentGold,
                     labelColor: AppColors.accentGold,
                     unselectedLabelColor: Colors.white60,
-                    indicatorWeight: 4,
                     tabs: const [
                       Tab(text: 'فريق العمل النشط'),
                       Tab(text: 'طلبات الانضمام المعلقة'),
@@ -87,8 +86,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
           backgroundColor: AppColors.accentGold,
           foregroundColor: AppColors.primaryNavy,
           icon: const Icon(Icons.person_add_alt_1_rounded),
-          label: const Text('إضافة موظف جديد',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          label: const Text('إضافة موظف جديد', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         body: staffAsync.when(
           data: (staffList) {
@@ -104,7 +102,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
             return TabBarView(
               controller: _tabController,
               children: [
-                _buildStaffTabContent(activeStaff, pendingUsers, rolesAsync),
+                _buildStaffList(activeStaff, rolesAsync),
                 _buildPendingList(pendingUsers, rolesAsync),
               ],
             );
@@ -114,89 +112,6 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
           ),
           error: (err, _) =>
               Center(child: Text(Failure.fromException(err).message)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStaffTabContent(List<AppUser> activeStaff,
-      List<AppUser> pendingUsers, AsyncValue rolesAsync) {
-    return Column(
-      children: [
-        _buildQuickStats(activeStaff, pendingUsers),
-        _buildSearchAndFilter(rolesAsync),
-        Expanded(
-          child: _buildStaffList(activeStaff, rolesAsync),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickStats(List<AppUser> activeStaff, List<AppUser> pendingUsers) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
-      child: Row(
-        children: [
-          _buildStatCard(
-            'إجمالي الفريق',
-            activeStaff.length.toString(),
-            Icons.people_alt_rounded,
-            Colors.blue,
-          ),
-          const SizedBox(width: 16),
-          _buildStatCard(
-            'بانتظار الاعتماد',
-            pendingUsers.length.toString(),
-            Icons.hourglass_empty_rounded,
-            AppColors.accentGold,
-          ),
-          const SizedBox(width: 16),
-          _buildStatCard(
-            'نشط الآن',
-            activeStaff.where((u) => u.isActive).length.toString(),
-            Icons.check_circle_outline_rounded,
-            AppColors.successGreen,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryNavy,
-              ),
-            ),
-            Text(
-              title,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ),
       ),
     );
@@ -213,35 +128,33 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
       return matchesSearch && matchesRole;
     }).toList();
 
-    if (filtered.isEmpty) {
-      return _buildEmptyState(
-        searchQuery.isEmpty && selectedRole == null
-            ? 'لم يتم إضافة أي موظفين بعد'
-            : 'لا توجد نتائج تطابق بحثك',
-        showButton: searchQuery.isEmpty && selectedRole == null,
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(32),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 450,
-        mainAxisExtent: 140,
-        crossAxisSpacing: 24,
-        mainAxisSpacing: 24,
-      ),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) => _buildEmployeeProfileCard(
-        filtered[index],
-        rolesAsync.valueOrNull ?? [],
-      ),
+    return Column(
+      children: [
+        _buildSearchAndFilter(rolesAsync),
+        Expanded(
+          child: filtered.isEmpty
+              ? _buildEmptyState('لا يوجد موظفين نشطين حالياً')
+              : GridView.builder(
+                  padding: const EdgeInsets.all(32),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 450,
+                    mainAxisExtent: 140,
+                    crossAxisSpacing: 24,
+                    mainAxisSpacing: 24,
+                  ),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) => _buildEmployeeProfileCard(
+                    filtered[index],
+                    rolesAsync.valueOrNull ?? [],
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
   Widget _buildPendingList(List<AppUser> list, AsyncValue rolesAsync) {
-    if (list.isEmpty) {
-      return _buildEmptyState('لا توجد طلبات انضمام جديدة حالياً');
-    }
+    if (list.isEmpty) return _buildEmptyState('لا توجد طلبات انضمام جديدة');
 
     return ListView.builder(
       padding: const EdgeInsets.all(32),
@@ -255,7 +168,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -311,8 +224,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
                     TextButton.icon(
                       onPressed: () => _handleReject(user),
                       icon: const Icon(Icons.close, size: 18, color: Colors.red),
-                      label: const Text('رفض الطلب',
-                          style: TextStyle(color: Colors.red)),
+                      label: const Text('رفض الطلب', style: TextStyle(color: Colors.red)),
                       style: TextButton.styleFrom(
                         minimumSize: const Size(140, 40),
                       ),
@@ -359,8 +271,9 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
 
   void _showApprovalDialog(BuildContext context, AppUser user, List roles) {
     String? selectedRoleId;
-    final filteredRoles =
-        roles.where((r) => _allowedRoles.contains(r['slug'])).toList();
+    final filteredRoles = roles
+        .where((r) => _allowedRoles.contains(r['slug']))
+        .toList();
 
     showDialog(
       context: context,
@@ -425,7 +338,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
     );
   }
 
-  Widget _buildEmptyState(String msg, {bool showButton = false}) {
+  Widget _buildEmptyState(String msg) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -433,20 +346,13 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
           Icon(
             Icons.person_search_rounded,
             size: 80,
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 20),
           Text(
             msg,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
           ),
-          if (showButton) ...[
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _showAddStaffDialog(context),
-              child: const Text('إضافة أول موظف الآن'),
-            ),
-          ]
         ],
       ),
     );
@@ -474,72 +380,61 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
             ),
           ],
         ),
-        IconButton(
-          onPressed: () => ref.invalidate(staffListControllerProvider),
-          icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
-          tooltip: 'تحديث البيانات',
-        ),
+        const SizedBox(),
       ],
     );
   }
 
   Widget _buildSearchAndFilter(AsyncValue rolesAsync) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(32, 24, 32, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
+      child: Row(
         children: [
-          TextField(
-            onChanged: (val) => setState(() => searchQuery = val),
-            decoration: const InputDecoration(
-              hintText: 'البحث عن موظف بالاسم أو البريد...',
-              prefixIcon: Icon(Icons.search_rounded),
-              filled: true,
-              fillColor: Colors.white,
+          Expanded(
+            child: TextField(
+              onChanged: (val) => setState(() => searchQuery = val),
+              decoration: const InputDecoration(
+                hintText: 'البحث عن موظف بالاسم أو البريد...',
+                prefixIcon: Icon(Icons.search_rounded),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          _buildRoleFilterChips(rolesAsync),
+          const SizedBox(width: 20),
+          _buildRoleFilter(rolesAsync),
         ],
       ),
     );
   }
 
-  Widget _buildRoleFilterChips(AsyncValue rolesAsync) {
+  Widget _buildRoleFilter(AsyncValue rolesAsync) {
     return rolesAsync.maybeWhen(
       data: (roles) {
         final filteredRoles = (roles as List)
             .where((r) => _allowedRoles.contains(r['slug']))
             .toList();
-        return Wrap(
-          spacing: 8,
-          children: [
-            ChoiceChip(
-              label: const Text('الكل'),
-              selected: selectedRole == null,
-              onSelected: (selected) => setState(() => selectedRole = null),
-              selectedColor: AppColors.primaryNavy,
-              labelStyle: TextStyle(
-                color: selectedRole == null ? Colors.white : AppColors.primaryNavy,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            ...filteredRoles.map((r) {
-              final slug = r['slug'].toString();
-              final isSelected = selectedRole == slug;
-              return ChoiceChip(
-                label: Text(_translateRole(slug)),
-                selected: isSelected,
-                onSelected: (selected) =>
-                    setState(() => selectedRole = selected ? slug : null),
-                selectedColor: AppColors.primaryNavy,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.primaryNavy,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: selectedRole,
+              hint: const Text('تصفية بالرتبة'),
+              onChanged: (val) => setState(() => selectedRole = val),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('الكل')),
+                ...filteredRoles.map(
+                  (r) => DropdownMenuItem(
+                    value: r['slug'].toString(),
+                    child: Text(_translateRole(r['slug'])),
+                  ),
                 ),
-              );
-            }),
-          ],
+              ],
+            ),
+          ),
         );
       },
       orElse: () => const SizedBox(),
@@ -553,7 +448,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 15,
           ),
         ],
@@ -577,18 +472,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
                       color: AppColors.primaryNavy,
                     ),
                   ),
-                  Row(
-                    children: [
-                      _buildRoleBadge(_translateRole(member.role.name)),
-                      if (!member.isActive) ...[
-                        const SizedBox(width: 8),
-                        const Text(
-                          '• معطل',
-                          style: TextStyle(color: Colors.red, fontSize: 11),
-                        ),
-                      ]
-                    ],
-                  ),
+                  _buildRoleBadge(_translateRole(member.role.name)),
                 ],
               ),
             ),
@@ -607,7 +491,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
         gradient: LinearGradient(
           colors: [
             AppColors.primaryNavy,
-            AppColors.primaryNavy.withOpacity(0.8),
+            AppColors.primaryNavy.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
@@ -630,7 +514,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
       margin: const EdgeInsets.only(top: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryNavy.withOpacity(0.05),
+        color: AppColors.primaryNavy.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -654,6 +538,11 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
               .updateStatus(member.id, !member.isActive);
         }
         if (val == 'edit_name') _showEditNameDialog(context, member);
+        if (val.startsWith('role_')) {
+          await ref
+              .read(staffListControllerProvider.notifier)
+              .updateRole(member.id, val.substring(5));
+        }
       },
       itemBuilder: (context) => [
         const PopupMenuItem(

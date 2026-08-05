@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../authentication/presentation/auth_controller.dart';
@@ -13,222 +14,572 @@ class StaffDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(staffStatsProvider);
+    final growthAsync = ref.watch(monthlyGrowthDataProvider);
     final user = ref.watch(currentUserProvider);
 
     if (user == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)));
     }
+
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.bgGrey,
+        backgroundColor: const Color(0xFFF6F8FA),
         body: statsAsync.when(
           data: (stats) => RefreshIndicator(
-            onRefresh: () async => ref.invalidate(staffStatsProvider),
+            onRefresh: () async {
+              ref.invalidate(staffStatsProvider);
+              ref.invalidate(monthlyGrowthDataProvider);
+            },
             child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
               slivers: [
-                _buildHeader(user.fullName),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildUrgentTasks(stats, context),
-                        const SizedBox(height: 32),
-                        _buildQuickActions(context),
-                        const SizedBox(height: 32),
-                        const Text('نظرة عامة على الأداء', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 16),
-                        _buildStatsGrid(stats),
+                SliverToBoxAdapter(child: _buildUnifiedHeader(user.fullName, stats, f)),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildSectionHeader('توصيات النظام والذكاء المالي', Icons.auto_awesome_rounded),
+                      const SizedBox(height: 16),
+                      _buildInsightsGrid(stats, context),
+                      const SizedBox(height: 32),
+                      _buildMainAnalyticsRow(stats, growthAsync, f),
+                      const SizedBox(height: 24),
+                      _buildBottomOperationsRow(stats, context),
+                      const SizedBox(height: 60),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
+          error: (err, _) => _buildProfessionalErrorState(ref, err),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfessionalErrorState(WidgetRef ref, dynamic err) {
+    final failure = Failure.fromException(err);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30)]),
+              child: const Icon(Icons.wifi_off_rounded, size: 64, color: AppColors.errorRed),
+            ),
+            const SizedBox(height: 24),
+            Text(failure.message, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primaryNavy)),
+            const SizedBox(height: 8),
+            const Text('يرجى التأكد من استقرار الإنترنت والمحاولة مرة أخرى', style: TextStyle(color: AppColors.textGrey, fontSize: 14, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                ref.invalidate(staffStatsProvider);
+                ref.invalidate(monthlyGrowthDataProvider);
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة محاولة المزامنة الآن'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryNavy,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnifiedHeader(String name, Map<String, dynamic> stats, intl.NumberFormat f) {
+    return SizedBox(
+      height: 260,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [AppColors.primaryNavy, Color(0xFF1B2A4A)]),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(32, 60, 32, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('نظام الإدارة الذكي', style: TextStyle(color: AppColors.accentGold.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      Text('أهلاً بك، $name', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text('إليك نظرة شاملة على أداء المنظومة اليوم', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                    ],
+                  ),
+                  _buildClockWidget(),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 150,
+            left: 24,
+            right: 24,
+            child: Row(
+              children: [
+                _buildKPICard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
+                const SizedBox(width: 12),
+                _buildKPICard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, Colors.green),
+                const SizedBox(width: 12),
+                _buildKPICard('سيولة الممولين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKPICard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        height: 100,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 10))]),
+        child: Row(
+          children: [
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.primaryNavy), overflow: TextOverflow.ellipsis),
+                  Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold), maxLines: 1),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsightsGrid(Map<String, dynamic> stats, BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _InsightTile('سيولة فائضة', 'توجد مبالغ جاهزة للتوظيف', Icons.trending_up_rounded, Colors.blue, () => context.push('/inventory/new'))),
+        const SizedBox(width: 16),
+        Expanded(child: _InsightTile('المخزون الحالي', 'سيارات بانتظار تخصيص تمويل', Icons.inventory_2_rounded, Colors.purple, () => context.push('/inventory'))),
+        const SizedBox(width: 16),
+        Expanded(child: _InsightTile('التحصيل', 'راجع أقساط هذا الأسبوع', Icons.payments_rounded, Colors.teal, () => context.push('/reports'))),
+      ],
+    );
+  }
+
+  Widget _buildMainAnalyticsRow(Map<String, dynamic> stats, AsyncValue<List<Map<String, dynamic>>> growthAsync, intl.NumberFormat f) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: _DashboardCard(
+            title: 'تحليل النمو المالي',
+            subtitle: 'صافي الأرباح لآخر 6 أشهر',
+            child: SizedBox(
+              height: 250,
+              child: growthAsync.when(
+                data: (data) => _ModernGrowthChart(data: data),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Center(child: Text('جاري تحليل البيانات...')),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(child: _DashboardCard(title: 'إدارة المخاطر', subtitle: 'توزيع المتأخرات المالية', child: _RiskAnalysisList(stats: stats, f: f))),
+      ],
+    );
+  }
+
+  Widget _buildBottomOperationsRow(Map<String, dynamic> stats, BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 2, child: _DashboardCard(title: 'آخر العمليات المبرمة', subtitle: 'متابعة فورية للعقود الجديدة', child: _RecentOperationsList(stats: stats, context: context))),
+        const SizedBox(width: 24),
+        Expanded(child: _DashboardCard(title: 'إجراءات سريعة', subtitle: 'العمليات الأكثر تكراراً', child: _QuickActionsSection(context: context))),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primaryNavy, size: 20),
+        const SizedBox(width: 12),
+        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+      ],
+    );
+  }
+
+  Widget _buildClockWidget() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.access_time_filled_rounded, color: AppColors.accentGold, size: 16),
+          const SizedBox(width: 8),
+          Text(intl.DateFormat('HH:mm').format(DateTime.now()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightTile extends StatelessWidget {
+  final String title, desc;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _InsightTile(this.title, this.desc, this.icon, this.color, this.onTap);
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.1))),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [Icon(icon, color: color, size: 20), const SizedBox(width: 10), Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13))]),
+            const SizedBox(height: 12),
+            Text(desc, style: const TextStyle(fontSize: 11, color: Colors.blueGrey, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardCard extends StatelessWidget {
+  final String title, subtitle;
+  final Widget child;
+  const _DashboardCard({required this.title, required this.subtitle, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 30, offset: const Offset(0, 10))]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+          Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider(height: 1, color: Color(0xFFF1F1F1))),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ModernGrowthChart extends StatelessWidget {
+  final List<Map<String, dynamic>> data;
+  const _ModernGrowthChart({required this.data});
+
+  static const _arabicMonths = [
+    '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return const Center(
+        child: Text('لا توجد بيانات كافية للتحليل', style: TextStyle(color: Colors.grey, fontSize: 13)),
+      );
+    }
+
+    final f = intl.NumberFormat.compactCurrency(symbol: '', decimalDigits: 0);
+
+    // تجهيز النقاط وحساب الحد الأقصى للمحور الصادي
+    final spots = <FlSpot>[];
+    double maxY = 100;
+    bool hasNonZero = false;
+
+    for (int i = 0; i < data.length; i++) {
+      final val = (data[i]['gross_profit'] as num?)?.toDouble() ?? 0.0;
+      if (val > 0) hasNonZero = true;
+      if (val > maxY) maxY = val;
+      spots.add(FlSpot(i.toDouble(), val));
+    }
+
+    // إضافة هامش لقمة الشارت
+    maxY = maxY * 1.2;
+
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 10, right: 10, left: 10, bottom: 0),
+          child: LineChart(
+            LineChartData(
+              minY: 0,
+              maxY: maxY,
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: maxY / 4 > 0 ? maxY / 4 : 25,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: Colors.grey.withOpacity(0.12),
+                  strokeWidth: 1,
+                  dashArray: [5, 5],
+                ),
+              ),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 45,
+                    interval: maxY / 4 > 0 ? maxY / 4 : 25,
+                    getTitlesWidget: (val, meta) {
+                      if (val == 0) return const Text('0', style: TextStyle(fontSize: 10, color: Colors.grey));
+                      return Text(
+                        f.format(val),
+                        style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 28,
+                    interval: 1,
+                    getTitlesWidget: (val, meta) {
+                      final idx = val.toInt();
+                      if (idx < 0 || idx >= data.length) return const SizedBox();
+                      final mInt = data[idx]['month'] as int? ?? 1;
+                      final mName = (mInt >= 1 && mInt <= 12) ? _arabicMonths[mInt] : '$mInt';
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          mName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: idx == data.length - 1 ? AppColors.primaryNavy : Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(show: false),
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  tooltipBgColor: AppColors.primaryNavy,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final idx = spot.x.toInt();
+                      final mInt = (idx >= 0 && idx < data.length) ? (data[idx]['month'] as int? ?? 1) : 1;
+                      final mName = (mInt >= 1 && mInt <= 12) ? _arabicMonths[mInt] : '';
+                      return LineTooltipItem(
+                        '$mName\n${intl.NumberFormat.currency(symbol: 'ر.س', decimalDigits: 0).format(spot.y)}',
+                        const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  curveSmoothness: 0.35,
+                  color: AppColors.primaryNavy,
+                  barWidth: 3.5,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                      radius: 4,
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                      strokeColor: AppColors.primaryNavy,
+                    ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryNavy.withOpacity(0.18),
+                        AppColors.primaryNavy.withOpacity(0.0),
                       ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('حدث خطأ: $err')),
         ),
-      ),
+        if (!hasNonZero)
+          Positioned.fill(
+            child: Container(
+              alignment: Alignment.center,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.92),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.info_outline_rounded, size: 16, color: AppColors.accentGold),
+                    SizedBox(width: 8),
+                    Text(
+                      'لا توجد تحصيلات أو أرباح مسجلة لآخر 6 أشهر بعد',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryNavy),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _RiskAnalysisList extends StatelessWidget {
+  final Map<String, dynamic> stats;
+  final intl.NumberFormat f;
+  const _RiskAnalysisList({required this.stats, required this.f});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildRow('متأخرات حرجة', f.format(stats['overdue_over_90'] ?? 0), Colors.red, stats['c_max'] ?? 0),
+        const SizedBox(height: 20),
+        _buildRow('تحت المتابعة', f.format(stats['overdue_60_90'] ?? 0), Colors.orange, stats['c_90'] ?? 0),
+        const SizedBox(height: 20),
+        _buildRow('مستحقات قريبة', f.format(stats['overdue_under_30'] ?? 0), Colors.blue, stats['c_30'] ?? 0),
+      ],
     );
   }
 
-  Widget _buildHeader(String name) {
-    return SliverAppBar(
-      expandedHeight: 160,
-      pinned: true,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryNavy, Color(0xFF1B2A4A)],
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
+  Widget _buildRow(String label, String value, Color color, int count) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(width: 4, height: 32, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
+            const SizedBox(width: 16),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('أهلاً بك، $name 👋', 
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                const Text('إليك ملخص سريع لما يحتاج انتباهك اليوم', 
-                  style: TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Text('$count حالة', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
               ],
             ),
-          ),
+          ],
         ),
-      ),
+        Text('$value ر.س', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primaryNavy)),
+      ],
     );
   }
+}
 
-  Widget _buildUrgentTasks(Map<String, dynamic> stats, BuildContext context) {
-    // محاكاة لمهام عاجلة بناءً على الإحصائيات
-    final pendingContracts = stats['active_contracts'] ?? 0; // سنفترض وجود عقود تحتاج مراجعة
-    
+class _RecentOperationsList extends StatelessWidget {
+  final Map<String, dynamic> stats;
+  final BuildContext context;
+  const _RecentOperationsList({required this.stats, required this.context});
+
+  @override
+  Widget build(BuildContext context) {
+    final recent = (stats['recent_contracts'] as List?) ?? [];
+    if (recent.isEmpty) return const Center(child: Text('لا توجد عقود مسجلة بعد'));
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('مهام تتطلب اتخاذ إجراء', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildTaskCard(
-                'عقود بانتظار التمويل',
-                '$pendingContracts عقد جديد',
-                Icons.pending_actions_rounded,
-                Colors.orange,
-                () => context.push('/contracts'),
-              ),
-              const SizedBox(width: 16),
-              _buildTaskCard(
-                'تحصيلات اليوم',
-                '12 قسط مستحق',
-                Icons.payments_rounded,
-                AppColors.successGreen,
-                () => context.push('/payments'),
-              ),
-              const SizedBox(width: 16),
-              _buildTaskCard(
-                'طلبات انضمام موظفين',
-                '2 طلب معلق',
-                Icons.person_add_rounded,
-                Colors.blue,
-                () => context.push('/staff'),
-              ),
-            ],
+      children: recent.take(4).map((c) => Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
+          child: ListTile(
+            dense: true,
+            leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.description_outlined, color: AppColors.primaryNavy, size: 18)),
+            title: Text(c['contract_no'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            subtitle: Text(c['customers']?['full_name'] ?? '-', style: const TextStyle(fontSize: 12)),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+            onTap: () => context.push('/contracts/${c['id']}'),
           ),
         ),
+      ).toList(),
+    );
+  }
+}
+
+class _QuickActionsSection extends StatelessWidget {
+  final BuildContext context;
+  const _QuickActionsSection({required this.context});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _ActionBtn('إصدار عقد جديد', Icons.add_moderator_rounded, Colors.blue, () => context.push('/contracts/new')),
+        const SizedBox(height: 12),
+        _ActionBtn('إضافة مستثمر', Icons.person_add_rounded, AppColors.accentGold, () => context.push('/investors')),
+        const SizedBox(height: 12),
+        _ActionBtn('تسجيل مركبة', Icons.add_road_rounded, Colors.orange, () => context.push('/inventory/new')),
       ],
     );
   }
 
-  Widget _buildTaskCard(String title, String value, IconData icon, Color color, VoidCallback onTap) {
+  Widget _ActionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 200,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+        child: Row(
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(height: 4),
-            Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 16)),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 16),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryNavy)),
+            const Spacer(),
+            const Icon(Icons.add, size: 16, color: Colors.grey),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('إجراءات سريعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 2.5,
-          children: [
-            _buildActionButton(context, 'عقد جديد', Icons.add_moderator_rounded, AppColors.primaryNavy, '/contracts/new'),
-            _buildActionButton(context, 'إضافة عميل', Icons.person_add_alt_1_rounded, Colors.teal, '/crm/customers/new'),
-            _buildActionButton(context, 'تسجيل قسط', Icons.add_card_rounded, AppColors.accentGold, '/payments'),
-            _buildActionButton(context, 'إضافة سيارة', Icons.add_road_rounded, Colors.blueGrey, '/inventory/new'),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton(BuildContext context, String label, IconData icon, Color color, String route) {
-    return ElevatedButton.icon(
-      onPressed: () => context.push(route),
-      icon: Icon(icon, size: 20),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: color,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: color.withOpacity(0.1)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid(Map<String, dynamic> stats) {
-    final f = intl.NumberFormat.compactCurrency(symbol: 'ر.س', locale: 'ar');
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
-      children: [
-        _buildStatTile('السيولة المتاحة', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
-        _buildStatTile('السيارات المتوفرة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
-        _buildStatTile('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, AppColors.successGreen),
-        _buildStatTile('إجمالي الاستثمارات', f.format(1250000), Icons.trending_up_rounded, Colors.blue),
-      ],
-    );
-  }
-
-  Widget _buildStatTile(String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-        ],
       ),
     );
   }
