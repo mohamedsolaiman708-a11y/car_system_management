@@ -128,7 +128,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   ],
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'يرجى إدخال المبلغ';
+                    if (val == null || val.isEmpty) return 'يرجى إدخل المبلغ';
                     final amount = double.tryParse(val);
                     if (amount == null || amount <= 0) return 'المبلغ غير صحيح';
                     return null;
@@ -149,10 +149,6 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(color: Colors.grey.shade200),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
                   ),
                   validator: (val) => val == null || val.isEmpty ? 'الوصف مطلوب للتوثيق المالي' : null,
                 ),
@@ -167,9 +163,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          side: BorderSide(color: Colors.grey.shade300),
                         ),
-                        child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+                        child: const Text('إلغاء'),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -180,12 +175,11 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                           backgroundColor: themeColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         child: _isSubmitting 
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('تأكيد العملية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          : const Text('تأكيد العملية'),
                       ),
                     ),
                   ],
@@ -199,12 +193,13 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isSubmitting || !_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
     try {
       final amount = double.parse(_amountController.text);
+      // نقوم باستدعاء الـ Controller مرة واحدة فقط وننتظر النتيجة
       final success = await ref.read(investorTransactionsControllerProvider(widget.investorId).notifier).addTransaction(
         investorId: widget.investorId,
         amount: amount,
@@ -217,11 +212,15 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           Navigator.pop(context);
           SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح وتحديث السجلات');
         } else {
-          SnackBarHelper.showError(context, 'فشلت العملية. يرجى مراجعة الرصيد المتاح.');
+          setState(() => _isSubmitting = false);
+          SnackBarHelper.showError(context, 'فشلت العملية. يرجى المحاولة لاحقاً.');
         }
       }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        SnackBarHelper.showError(context, 'حدث خطأ: $e');
+      }
     }
   }
 }

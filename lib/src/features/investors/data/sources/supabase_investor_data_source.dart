@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart'; // نحتاج إضافة هذه المكتبة في الـ pubspec.yaml
 import '../../../../core/providers/supabase_provider.dart';
-import '../../../../core/utils/error_handler.dart';
 import 'investor_data_source.dart';
 
 part 'supabase_investor_data_source.g.dart';
@@ -24,21 +24,10 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<Map<String, dynamic>?> getInvestorById(String id) async {
     final user = _client.auth.currentUser;
-
-    var response = await _client
-        .from('investors')
-        .select()
-        .eq('id', id)
-        .maybeSingle();
-
+    var response = await _client.from('investors').select().eq('id', id).maybeSingle();
     if (response == null && user != null && user.email != null) {
-      response = await _client
-          .from('investors')
-          .select()
-          .eq('email', user.email!)
-          .maybeSingle();
+      response = await _client.from('investors').select().eq('email', user.email!).maybeSingle();
     }
-
     return response;
   }
 
@@ -46,22 +35,13 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   Future<Map<String, dynamic>> createInvestor(Map<String, dynamic> data) async {
     final payload = Map<String, dynamic>.from(data);
     payload.removeWhere((key, value) => value == null);
-
     try {
-      final response = await _client
-          .from('investors')
-          .insert(payload)
-          .select()
-          .single();
+      final response = await _client.from('investors').insert(payload).select().single();
       return response;
     } catch (e) {
       if (payload.containsKey('phone')) {
         payload.remove('phone');
-        final response = await _client
-            .from('investors')
-            .insert(payload)
-            .select()
-            .single();
+        final response = await _client.from('investors').insert(payload).select().single();
         return response;
       }
       rethrow;
@@ -69,9 +49,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getInvestorTransactions(
-    String investorId,
-  ) async {
+  Future<List<Map<String, dynamic>>> getInvestorTransactions(String investorId) async {
     final response = await _client
         .from('investor_transactions')
         .select()
@@ -81,9 +59,7 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getInvestorFundedContracts(
-    String investorId,
-  ) async {
+  Future<List<Map<String, dynamic>>> getInvestorFundedContracts(String investorId) async {
     final response = await _client
         .from('contract_funding')
         .select('*, financing_contracts(*, customers(full_name))')
@@ -97,45 +73,36 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   }
 
   @override
-  Future<void> processDeposit(
-    String investorId,
-    double amount,
-    String description,
-  ) async {
+  Future<void> processDeposit(String investorId, double amount, String description) async {
+    // استخدام Idempotency Key لمنع التكرار في قاعدة البيانات
+    final idempotencyKey = const Uuid().v4();
     await _client.rpc(
       'process_investor_deposit',
       params: {
         'p_investor_id': investorId,
         'p_amount': amount,
         'p_description': description,
-        'p_idempotency_key': null,
+        'p_idempotency_key': idempotencyKey,
       },
     );
   }
 
   @override
-  Future<void> processWithdrawal(
-    String investorId,
-    double amount,
-    String description,
-  ) async {
+  Future<void> processWithdrawal(String investorId, double amount, String description) async {
+    final idempotencyKey = const Uuid().v4();
     await _client.rpc(
       'process_investor_withdrawal',
       params: {
         'p_investor_id': investorId,
         'p_amount': amount,
         'p_description': description,
-        'p_idempotency_key': null,
+        'p_idempotency_key': idempotencyKey,
       },
     );
   }
 
   @override
-  Future<void> allocateFunding(
-    String contractId,
-    String investorId,
-    double amount,
-  ) async {
+  Future<void> allocateFunding(String contractId, String investorId, double amount) async {
     await _client.rpc(
       'allocate_contract_funding',
       params: {
@@ -150,96 +117,41 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   Future<List<Map<String, dynamic>>> getPendingInvestorRequests() async {
     try {
       final response = await _client.rpc('get_pending_investors');
-      if (response is List) {
-        return List<Map<String, dynamic>>.from(response);
-      }
+      if (response is List) return List<Map<String, dynamic>>.from(response);
     } catch (_) {}
 
-    try {
-      final response = await _client.from('profiles').select('*, roles(slug)');
-      if (response == null) return [];
-      final List<dynamic> data = response as List;
-
-      return data
-          .map((item) {
-            final Map<String, dynamic> p = Map<String, dynamic>.from(item);
-            final status = (p['status'] ?? '').toString().toLowerCase().trim();
-            final roleData = p['roles'];
-            String? roleSlug;
-            if (roleData is Map) {
-              roleSlug = roleData['slug'];
-            }
-            final isInvestorType = roleSlug == null || roleSlug == 'investor';
-            final isPendingStatus = status == 'pending' || status == 'waiting' || status == '';
-            return (isInvestorType && isPendingStatus) ? p : null;
-          })
-          .whereType<Map<String, dynamic>>()
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    final response = await _client.from('profiles').select('*, roles(slug)');
+    final List<dynamic> data = response as List;
+    return data.map((item) {
+      final Map<String, dynamic> p = Map<String, dynamic>.from(item);
+      final status = (p['status'] ?? '').toString().toLowerCase().trim();
+      final isPendingStatus = status == 'pending' || status == 'waiting' || status == '';
+      return (p['roles']?['slug'] == 'investor' && isPendingStatus) ? p : null;
+    }).whereType<Map<String, dynamic>>().toList();
   }
 
   @override
   Future<void> approveInvestor(String profileId) async {
-    await _client.rpc(
-      'approve_investor_profile',
-      params: {'p_profile_id': profileId},
-    );
+    await _client.rpc('approve_investor_profile', params: {'p_profile_id': profileId});
   }
 
   @override
   Future<void> rejectInvestor(String profileId, String reason) async {
-    try {
-      await _client.rpc(
-        'reject_investor_profile',
-        params: {'p_profile_id': profileId, 'p_reason': reason},
-      );
-    } catch (_) {
-      await _client
-          .from('profiles')
-          .update({
-            'status': 'rejected',
-            'rejection_reason': reason,
-            'rejected_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', profileId);
-    }
+    await _client.from('profiles').update({'status': 'rejected', 'rejection_reason': reason}).eq('id', profileId);
   }
 
   @override
   Stream<Map<String, dynamic>?> watchInvestor(String id) {
-    return _client
-        .from('investors')
-        .stream(primaryKey: ['id'])
-        .eq('id', id)
-        .map((data) => data.isNotEmpty ? data.first : null);
+    return _client.from('investors').stream(primaryKey: ['id']).eq('id', id).map((data) => data.isNotEmpty ? data.first : null);
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getInvestorDocuments(
-    String investorId,
-  ) async {
-    try {
-      final funding = await _client
-          .from('contract_funding')
-          .select('contract_id')
-          .eq('investor_id', investorId);
-      
-      final contractIds = (funding as List).map((f) => f['contract_id']).toList();
-      
-      if (contractIds.isEmpty) return [];
-
-      final response = await _client
-          .from('contract_documents')
-          .select()
-          .inFilter('contract_id', contractIds);
-      
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      print('Error fetching documents: $e');
-      return [];
-    }
+  Future<List<Map<String, dynamic>>> getInvestorDocuments(String investorId) async {
+    final funding = await _client.from('contract_funding').select('contract_id').eq('investor_id', investorId);
+    final contractIds = (funding as List).map((f) => f['contract_id']).toList();
+    if (contractIds.isEmpty) return [];
+    final response = await _client.from('contract_documents').select().inFilter('contract_id', contractIds);
+    return List<Map<String, dynamic>>.from(response);
   }
 
   @override
@@ -253,104 +165,37 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   }
 
   @override
-  Future<void> distributeProfit(
-    String investorId,
-    double amount,
-    String description,
-  ) async {
-    await _client.rpc(
-      'process_manual_profit_distribution',
-      params: {
-        'p_investor_id': investorId,
-        'p_amount': amount,
-        'p_description': description,
-        'p_idempotency_key': null,
-      },
-    );
+  Future<void> distributeProfit(String investorId, double amount, String description) async {
+    await _client.rpc('process_manual_profit_distribution', params: {'p_investor_id': investorId, 'p_amount': amount, 'p_description': description});
   }
 
   @override
   Future<void> requestWithdrawal(double amount, String bankDetails) async {
-    await _client.rpc(
-      'request_withdrawal',
-      params: {'p_amount': amount, 'p_bank_details': bankDetails},
-    );
+    await _client.rpc('request_withdrawal', params: {'p_amount': amount, 'p_bank_details': bankDetails});
   }
 
-  Future<List<Map<String, dynamic>>> getWithdrawalRequests({
-    String? investorId,
-    String? status,
-  }) async {
-    try {
-      // 1. جلب طلبات السحب الأساسية
-      var query = _client.from('withdrawal_requests').select();
-
-      if (investorId != null) query = query.eq('investor_id', investorId);
-      if (status != null) query = query.eq('status', status);
-
-      final List<dynamic> requests = await query.order('created_at', ascending: false);
-
-      if (requests.isEmpty) return [];
-
-      // 2. تجميع كل الـ IDs الفريدة للمستثمرين من الطلبات
-      final userIds = requests.map((r) => r['investor_id'].toString()).toSet().toList();
-
-      // 3. جلب الأسماء من جدول profiles (لأنه المصدر المضمون)
-      final profilesResponse = await _client
-          .from('profiles')
-          .select('id, full_name')
-          .inFilter('id', userIds);
-
-      final Map<String, String> nameMap = {
-        for (var p in (profilesResponse as List)) p['id'].toString(): p['full_name'].toString()
-      };
-
-      // 4. دمج الأسماء مع الطلبات يدوياً
-      return requests.map((req) {
-        final Map<String, dynamic> mappedReq = Map<String, dynamic>.from(req);
-        final String uid = req['investor_id'].toString();
-        // بنضيف الاسم جوه Map اسمها profiles عشان الـ UI يفهمها
-        mappedReq['profiles'] = {'full_name': nameMap[uid] ?? 'مستثمر غير معروف'};
-        return mappedReq;
-      }).toList();
-
-    } catch (e) {
-      print('DEBUG: Withdrawal Final Error: $e');
-      // Fallback الأخير
-      final response = await _client.from('withdrawal_requests').select().order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
-    }
+  @override
+  Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? investorId, String? status}) async {
+    var query = _client.from('withdrawal_requests').select();
+    if (investorId != null) query = query.eq('investor_id', investorId);
+    if (status != null) query = query.eq('status', status);
+    final List<dynamic> requests = await query.order('created_at', ascending: false);
+    return requests.map((req) => Map<String, dynamic>.from(req)).toList();
   }
 
   @override
   Future<void> approveWithdrawalRequest(String requestId) async {
-    await _client.rpc(
-      'approve_withdrawal_request',
-      params: {'p_request_id': requestId},
-    );
+    await _client.rpc('approve_withdrawal_request', params: {'p_request_id': requestId});
   }
 
   @override
   Future<void> rejectWithdrawalRequest(String requestId, String reason) async {
-    await _client
-        .from('withdrawal_requests')
-        .update({
-          'status': 'rejected',
-          'rejection_reason': reason,
-          'processed_at': DateTime.now().toIso8601String(),
-          'processed_by': _client.auth.currentUser?.id,
-        })
-        .eq('id', requestId);
+    await _client.from('withdrawal_requests').update({'status': 'rejected', 'rejection_reason': reason}).eq('id', requestId);
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getInvestorProjections(
-    String investorId,
-  ) async {
-    final response = await _client.rpc(
-      'get_investor_expected_cashflow',
-      params: {'p_investor_id': investorId},
-    );
+  Future<List<Map<String, dynamic>>> getInvestorProjections(String investorId) async {
+    final response = await _client.rpc('get_investor_expected_cashflow', params: {'p_investor_id': investorId});
     return List<Map<String, dynamic>>.from(response as List);
   }
 }
