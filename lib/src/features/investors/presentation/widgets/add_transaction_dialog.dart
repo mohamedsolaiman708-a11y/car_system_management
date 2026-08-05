@@ -43,146 +43,44 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       textDirection: TextDirection.rtl,
       child: Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
         child: Container(
           width: 450,
           padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              )
-            ],
-          ),
           child: Form(
             key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: themeColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        isDeposit ? Icons.account_balance_rounded : Icons.payments_rounded,
-                        color: themeColor,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(title,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryNavy,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isDeposit ? 'إضافة أموال إلى المحفظة الاستثمارية' : 'خصم مبالغ من الرصيد الحالي للمستثمر',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                // Amount Field
-                const Text('المبلغ المطلوب',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
-                const SizedBox(height: 12),
+                Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 24),
                 TextFormField(
                   controller: _amountController,
+                  enabled: !_isSubmitting,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: themeColor),
-                  decoration: InputDecoration(
-                    hintText: '0.00',
-                    suffixText: 'ر.س',
-                    prefixIcon: const Icon(Icons.money_rounded),
-                    filled: true,
-                    fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+                  decoration: const InputDecoration(hintText: '0.00', suffixText: 'ر.س', filled: true),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                  ],
-                  validator: (val) {
-                    if (val == null || val.isEmpty) return 'يرجى إدخل المبلغ';
-                    final amount = double.tryParse(val);
-                    if (amount == null || amount <= 0) return 'المبلغ غير صحيح';
-                    return null;
-                  },
+                  validator: (val) => (double.tryParse(val ?? '') ?? 0) <= 0 ? 'مبلغ غير صحيح' : null,
                 ),
-                const SizedBox(height: 24),
-
-                // Description Field
-                const Text('وصف المعاملة',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    hintText: 'اكتب ملاحظات التدقيق هنا...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'الوصف مطلوب للتوثيق المالي' : null,
+                  enabled: !_isSubmitting,
+                  decoration: const InputDecoration(labelText: 'البيان / ملاحظات', filled: true),
+                  validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null,
                 ),
                 const SizedBox(height: 32),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        ),
-                        child: const Text('إلغاء'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: themeColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        ),
-                        child: _isSubmitting
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('تأكيد العملية'),
-                      ),
-                    ),
-                  ],
+                ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeColor,
+                    minimumSize: const Size(0, 56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: _isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('تأكيد العملية الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -193,13 +91,12 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   }
 
   Future<void> _submit() async {
-    if (_isSubmitting || !_formKey.currentState!.validate()) return;
-
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
 
     try {
       final amount = double.parse(_amountController.text);
-      // نقوم باستدعاء الـ Controller مرة واحدة فقط وننتظر النتيجة
+      // استدعاء الـ Controller والانتظار حتى ينتهي تماماً من قاعدة البيانات
       final success = await ref.read(investorTransactionsControllerProvider(widget.investorId).notifier).addTransaction(
         investorId: widget.investorId,
         amount: amount,
@@ -207,19 +104,14 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         description: _descriptionController.text.trim(),
       );
 
-      if (mounted) {
-        if (success) {
-          Navigator.pop(context);
-          SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح وتحديث السجلات');
-        } else {
-          setState(() => _isSubmitting = false);
-          SnackBarHelper.showError(context, 'فشلت العملية. يرجى المحاولة لاحقاً.');
-        }
+      if (mounted && success) {
+        Navigator.pop(context);
+        SnackBarHelper.showSuccess(context, 'تمت العملية بنجاح');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        SnackBarHelper.showError(context, 'حدث خطأ: $e');
+        SnackBarHelper.showError(context, 'خطأ: $e');
       }
     }
   }
