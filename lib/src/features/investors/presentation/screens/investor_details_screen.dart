@@ -192,7 +192,7 @@ class _InvestorDetailsSliverHeader extends StatelessWidget {
                         ],
                       ),
 
-                      const Spacer(),
+                      const SizedBox(height: 10,),
 
                       // ── Hero Total Balance ──
                       Column(
@@ -255,7 +255,7 @@ class _InvestorDetailsSliverHeader extends StatelessWidget {
                         ],
                       ),
 
-                      const Spacer(),
+                      const SizedBox(height: 10,),
 
                       // ── 3 Mini KPI Cards ──
                       Row(
