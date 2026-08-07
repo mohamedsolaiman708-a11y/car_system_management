@@ -12,49 +12,48 @@ class ContractController extends _$ContractController {
 
   Future<bool> createContract(Map<String, dynamic> data) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).createContract(data));
     
-    if (!result.hasError) {
+    // استخدام try-catch العادي هنا أكثر أماناً لمنع أخطاء التكرار في الحالات
+    try {
+      await ref.read(contractRepositoryProvider).createContract(data);
+      
+      // تحديث البيانات الضرورية فقط
       ref.invalidate(contractsListProvider);
       ref.invalidate(contractStatsProvider);
+      
       state = const AsyncData(null);
       return true;
-    } else {
-      state = AsyncError(result.error!, result.stackTrace!);
+    } catch (e, st) {
+      state = AsyncError(e, st);
       return false;
     }
   }
 
   Future<bool> updateContract(String id, Map<String, dynamic> data) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).updateContract(id, data));
-    
-    if (!result.hasError) {
+    try {
+      await ref.read(contractRepositoryProvider).updateContract(id, data);
       ref.invalidate(contractDetailsProvider(id));
       ref.invalidate(contractsListProvider);
       state = const AsyncData(null);
       return true;
-    } else {
-      state = AsyncError(result.error!, result.stackTrace!);
+    } catch (e, st) {
+      state = AsyncError(e, st);
       return false;
     }
   }
 
   Future<bool> activateContract(String id) async {
-    if (state.isLoading) return false;
     state = const AsyncLoading();
-    
-    final result = await AsyncValue.guard(() async {
+    try {
       await ref.read(contractRepositoryProvider).activateContract(id);
       _refreshContractData(id);
-    });
-    
-    if (result.hasError) {
-      state = AsyncError(result.error!, result.stackTrace!);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
       return false;
     }
-    state = const AsyncData(null);
-    return true;
   }
 
   Future<bool> processPayment({
@@ -65,10 +64,8 @@ class ContractController extends _$ContractController {
     String? idempotencyKey,
     String? notes,
   }) async {
-    if (state.isLoading) return false;
     state = const AsyncLoading();
-    
-    final result = await AsyncValue.guard(() async {
+    try {
       await ref.read(contractRepositoryProvider).processPayment(
         contractId: contractId,
         amount: amount,
@@ -78,31 +75,25 @@ class ContractController extends _$ContractController {
         notes: notes,
       );
       _refreshContractData(contractId);
-    });
-    
-    if (result.hasError) {
-      state = AsyncError(result.error!, result.stackTrace!);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
       return false;
     }
-    state = const AsyncData(null);
-    return true;
   }
 
   Future<bool> reversePayment(String contractId, String paymentId, String reason) async {
-    if (state.isLoading) return false;
     state = const AsyncLoading();
-    
-    final result = await AsyncValue.guard(() async {
+    try {
       await ref.read(contractRepositoryProvider).reversePayment(paymentId, reason);
       _refreshContractData(contractId);
-    });
-    
-    if (result.hasError) {
-      state = AsyncError(result.error!, result.stackTrace!);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
       return false;
     }
-    state = const AsyncData(null);
-    return true;
   }
 
   void _refreshContractData(String contractId) {
