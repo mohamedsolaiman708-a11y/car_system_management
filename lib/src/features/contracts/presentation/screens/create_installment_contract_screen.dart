@@ -53,7 +53,6 @@ class _CreateInstallmentContractScreenState
   void initState() {
     super.initState();
     _selectedVehicleId = widget.initialVehicleId;
-    // إذا تم تمرير معرف عميل ابتدائي، سيتم محاولة جلب بياناته (سيتم جلب القائمة كاملة في الـ build)
   }
 
   @override
@@ -128,7 +127,6 @@ class _CreateInstallmentContractScreenState
     final contractState = ref.watch(contractControllerProvider);
     final isLoading = contractState.isLoading;
 
-    // معالجة العميل الابتدائي لو وجد
     if (widget.initialCustomerId != null && _selectedCustomer == null) {
       final customers = ref.watch(customersListProvider()).valueOrNull;
       if (customers != null) {
@@ -141,12 +139,15 @@ class _CreateInstallmentContractScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-
         backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
           foregroundColor: Colors.white,
           backgroundColor: AppColors.primaryNavy,
           elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            onPressed: () => context.pop(),
+          ),
           title: const Text('إصدار عقد تمويل جديد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           actions: [
             Center(

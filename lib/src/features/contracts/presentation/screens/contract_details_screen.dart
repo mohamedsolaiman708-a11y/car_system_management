@@ -102,7 +102,7 @@ class ContractDetailsScreen extends ConsumerWidget {
                           _InstallmentsTab(contractId: contract.id),
                           _PaymentsTab(contract: contract),
                           _FundingTab(contract: contract),
-                          _AccountingTab(contractId: contract.id),
+                          _AccountingTab(contractNo: contract.contractNo),
                           _TimelineTab(contractId: contract.id),
                           Padding(
                             padding: const EdgeInsets.all(24.0),
@@ -274,7 +274,6 @@ class _OverviewTab extends ConsumerWidget {
                       isBold: true,
                     ),
 
-                    // حساب المبلغ المتبقي بناءً على إجمالي المدفوعات الفعلية (الحل الصحيح)
                     paymentsAsync.when(
                       data: (payments) {
                         final double totalPaid = payments.fold(
@@ -431,7 +430,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color = Colors.grey;
-    if (status == 'active')
+    if (status == 'active' || status == 'completed')
       color = AppColors.successGreen;
     else if (status == 'draft')
       color = Colors.orange;
@@ -466,28 +465,31 @@ class _InstallmentsTab extends ConsumerWidget {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return installmentsAsync.when(
-      data: (list) => ListView.builder(
-        padding: const EdgeInsets.all(24),
-        itemCount: list.length,
-        itemBuilder: (context, index) {
-          final inst = list[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ListTile(
-              title: Text(
-                'تاريخ الاستحقاق: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(inst['due_date']))}',
+      data: (list) {
+        if (list.isEmpty) return const _EmptyState(message: 'لا يوجد جدول سداد لهذا العقد');
+        return ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: list.length,
+          itemBuilder: (context, index) {
+            final inst = list[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              subtitle: Text(
-                'المبلغ: ${f.format(inst['expected_amount'])} ر.س',
+              child: ListTile(
+                title: Text(
+                  'تاريخ الاستحقاق: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(inst['due_date']))}',
+                ),
+                subtitle: Text(
+                  'المبلغ: ${f.format(inst['expected_amount'])} ر.س',
+                ),
+                trailing: _StatusBadge(status: inst['status']),
               ),
-              trailing: _StatusBadge(status: inst['status']),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        );
+      },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(e.toString())),
     );
@@ -523,23 +525,26 @@ class _PaymentsTab extends ConsumerWidget {
           ),
         Expanded(
           child: paymentsAsync.when(
-            data: (list) => ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: list.length,
-              itemBuilder: (context, index) {
-                final p = list[index];
-                return ListTile(
-                  leading: const Icon(
-                    Icons.verified_rounded,
-                    color: AppColors.successGreen,
-                  ),
-                  title: Text('${f.format(p['amount_total'])} ر.س'),
-                  subtitle: Text(
-                    'التاريخ: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(p['payment_date']))}',
-                  ),
-                );
-              },
-            ),
+            data: (list) {
+              if (list.isEmpty) return const _EmptyState(message: 'لم يتم تسجيل أي دفعات بعد');
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: list.length,
+                itemBuilder: (context, index) {
+                  final p = list[index];
+                  return ListTile(
+                    leading: const Icon(
+                      Icons.verified_rounded,
+                      color: AppColors.successGreen,
+                    ),
+                    title: Text('${f.format(p['amount_total'])} ر.س'),
+                    subtitle: Text(
+                      'التاريخ: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(p['payment_date']))}',
+                    ),
+                  );
+                },
+              );
+            },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text(e.toString())),
           ),
@@ -556,18 +561,30 @@ class _FundingTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fundingAsync = ref.watch(contractFundingProvider(contract.id));
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
     return fundingAsync.when(
-      data: (list) => ListView(
-        padding: const EdgeInsets.all(24),
-        children: list
-            .map(
-              (f) => ListTile(
-                title: Text(f['investors']?['full_name'] ?? 'مستثمر'),
-                trailing: Text('${f['amount_allocated']} ر.س'),
-              ),
-            )
-            .toList(),
-      ),
+      data: (list) {
+        if (list.isEmpty) return const _EmptyState(message: 'لا يوجد شركاء تمويل لهذا العقد');
+        return ListView(
+          padding: const EdgeInsets.all(24),
+          children: list
+              .map(
+                (fund) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: const Icon(Icons.account_balance_rounded, color: AppColors.accentGold),
+                    title: Text(fund['investors']?['full_name'] ?? 'مستثمر'),
+                    trailing: Text(
+                      '${f.format(fund['amount_allocated'])} ر.س',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(e.toString())),
     );
@@ -575,12 +592,63 @@ class _FundingTab extends ConsumerWidget {
 }
 
 class _AccountingTab extends ConsumerWidget {
-  final String contractId;
-  const _AccountingTab({required this.contractId});
+  final String contractNo;
+  const _AccountingTab({required this.contractNo});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const Center(child: Text('القيود المحاسبية تظهر هنا'));
+    final entriesAsync = ref.watch(journalEntriesControllerProvider);
+    final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+
+    return entriesAsync.when(
+      data: (allEntries) {
+        // تصفية القيود التي تحتوي على رقم العقد في البيان أو المرجع
+        final filtered = allEntries.where((e) => 
+          (e.description?.contains(contractNo) ?? false) || 
+          (e.reference?.contains(contractNo) ?? false)
+        ).toList();
+
+        if (filtered.isEmpty) return const _EmptyState(message: 'لا توجد قيود محاسبية مسجلة لهذا العقد');
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: filtered.length,
+          itemBuilder: (context, index) {
+            final entry = filtered[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: ExpansionTile(
+                title: Text(entry.description ?? 'قيد محاسبي'),
+                subtitle: Text('التاريخ: ${intl.DateFormat('yyyy/MM/dd').format(entry.entryDate)}'),
+                children: [
+                  ...entry.lines.map((line) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(line.accounts?['name'] ?? '-'),
+                        Text(
+                          line.debit > 0 
+                            ? 'مدين: ${f.format(line.debit)}' 
+                            : 'دائن: ${f.format(line.credit)}',
+                          style: TextStyle(
+                            color: line.debit > 0 ? AppColors.errorRed : AppColors.successGreen,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text(e.toString())),
+    );
   }
 }
 
@@ -592,27 +660,50 @@ class _TimelineTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final timelineAsync = ref.watch(contractTimelineProvider(contractId));
     return timelineAsync.when(
-      data: (logs) => ListView.builder(
-        padding: const EdgeInsets.all(24),
-        itemCount: logs.length,
-        itemBuilder: (context, index) {
-          final log = logs[index];
-          return ListTile(
-            title: Text(ArabicTranslator.eventType(log.eventType)),
-            subtitle: Text(
-              intl.DateFormat('yyyy/MM/dd HH:mm').format(log.occurredAt),
-            ),
-            trailing: log.profileName != null
-                ? Text(
-                    log.profileName!,
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                  )
-                : null,
-          );
-        },
-      ),
+      data: (logs) {
+        if (logs.isEmpty) return const _EmptyState(message: 'لا يوجد سجل أحداث لهذا العقد');
+        return ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: logs.length,
+          itemBuilder: (context, index) {
+            final log = logs[index];
+            return ListTile(
+              leading: const Icon(Icons.history_rounded, color: AppColors.primaryNavy),
+              title: Text(ArabicTranslator.eventType(log.eventType)),
+              subtitle: Text(
+                intl.DateFormat('yyyy/MM/dd HH:mm').format(log.occurredAt),
+              ),
+              trailing: log.profileName != null
+                  ? Text(
+                      log.profileName!,
+                      style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    )
+                  : null,
+            );
+          },
+        );
+      },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(e.toString())),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String message;
+  const _EmptyState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(message, style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+        ],
+      ),
     );
   }
 }

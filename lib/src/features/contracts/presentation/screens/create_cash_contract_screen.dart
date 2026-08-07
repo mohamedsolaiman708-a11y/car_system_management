@@ -134,9 +134,14 @@ class _CreateCashContractScreenState
         foregroundColor: Colors.white,
         backgroundColor: AppColors.primaryNavy,
         elevation: 0,
+        // إضافة أيقونة الرجوع يدوياً لضمان ظهورها دائماً
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
         title: const Text(
           'إنشاء عقد بيع نقدي مباشر',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18,color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
         ),
       ),
       body: _isLoading
@@ -149,7 +154,7 @@ class _CreateCashContractScreenState
                   Text(
                     'جاري إنشاء عقد البيع النقدي وتوليد السجلات...',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.primaryNavy, // تعديل اللون ليصبح مرئياً
                       fontWeight: FontWeight.bold,
                     ),
                   ),
