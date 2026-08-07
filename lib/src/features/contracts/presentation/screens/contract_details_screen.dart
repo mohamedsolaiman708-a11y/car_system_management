@@ -604,8 +604,8 @@ class _AccountingTab extends ConsumerWidget {
       data: (allEntries) {
         // تصفية القيود التي تحتوي على رقم العقد في البيان أو المرجع
         final filtered = allEntries.where((e) => 
-          (e.description?.contains(contractNo) ?? false) || 
-          (e.reference?.contains(contractNo) ?? false)
+          (e.description.contains(contractNo) ?? false) ||
+          (e.referenceNo?.contains(contractNo) ?? false)
         ).toList();
 
         if (filtered.isEmpty) return const _EmptyState(message: 'لا توجد قيود محاسبية مسجلة لهذا العقد');
