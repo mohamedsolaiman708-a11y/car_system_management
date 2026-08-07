@@ -131,11 +131,12 @@ class _CreateCashContractScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FD),
       appBar: AppBar(
+        foregroundColor: Colors.white,
         backgroundColor: AppColors.primaryNavy,
         elevation: 0,
         title: const Text(
           'إنشاء عقد بيع نقدي مباشر',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18,color: Colors.white),
         ),
       ),
       body: _isLoading
@@ -148,7 +149,7 @@ class _CreateCashContractScreenState
                   Text(
                     'جاري إنشاء عقد البيع النقدي وتوليد السجلات...',
                     style: TextStyle(
-                      color: AppColors.primaryNavy,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

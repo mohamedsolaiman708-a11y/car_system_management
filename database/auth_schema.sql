@@ -6,110 +6,64 @@
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
-        CREATE TYPE public.user_role AS ENUM ('admin', 'manager', 'accountant', 'investor');
+        CREATE TYPE public.user_role AS ENUM ('admin', 'sales', 'accountant', 'investor');
+    ELSE
+        BEGIN
+            ALTER TYPE public.user_role ADD VALUE 'sales';
+            ALTER TYPE public.user_role ADD VALUE 'accountant';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
     END IF;
 END $$;
 
--- 2. Create the Profiles table (Public Schema)
+-- 2. Ensure Roles table exists and is accessible
+CREATE TABLE IF NOT EXISTS public.roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS on roles
+ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to view roles (Important for the dropdown to work)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow authenticated users to view roles') THEN
+        CREATE POLICY "Allow authenticated users to view roles" 
+        ON public.roles FOR SELECT 
+        TO authenticated 
+        USING (true);
+    END IF;
+END $$;
+
+-- 3. Create the Profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
-    role public.user_role NOT NULL DEFAULT 'investor',
+    role_id UUID REFERENCES public.roles(id),
     is_active BOOLEAN NOT NULL DEFAULT true,
+    status TEXT DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3. Create the Security Logs table
-CREATE TABLE IF NOT EXISTS public.security_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    event_type TEXT NOT NULL, -- e.g., 'LOGIN_SUCCESS', 'LOGIN_FAILURE', 'LOGOUT'
-    ip_address TEXT,
-    user_agent TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- 4. Enable Row Level Security (RLS)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.security_logs ENABLE ROW LEVEL SECURITY;
-
--- 5. RLS Policies for Profiles
-
--- Users can view their own profile
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view own profile') THEN
-        CREATE POLICY "Users can view own profile" 
-        ON public.profiles FOR SELECT 
-        USING (auth.uid() = id);
-    END IF;
-END $$;
-
--- Admins and Managers can view all profiles
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins/Managers can view all profiles') THEN
-        CREATE POLICY "Admins/Managers can view all profiles" 
-        ON public.profiles FOR SELECT 
-        USING (
-          EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND role IN ('admin', 'manager')
-          )
-        );
-    END IF;
-END $$;
-
--- Only Admins can update roles or activity status
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can update profiles') THEN
-        CREATE POLICY "Admins can update profiles" 
-        ON public.profiles FOR UPDATE 
-        USING (
-          EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND role = 'admin'
-          )
-        );
-    END IF;
-END $$;
-
--- 6. RLS Policies for Security Logs
-
--- Only Admins can view logs
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view security logs') THEN
-        CREATE POLICY "Admins can view security logs" 
-        ON public.security_logs FOR SELECT 
-        USING (
-          EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND role = 'admin'
-          )
-        );
-    END IF;
-END $$;
-
--- 7. Automated Profile Creation Trigger
--- This function runs every time a new user is created in Supabase Auth
+-- 4. Automated Profile Creation Trigger
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_role_id UUID;
 BEGIN
-  INSERT INTO public.profiles (id, full_name, role)
+  SELECT id INTO v_role_id FROM public.roles WHERE slug = 'investor' LIMIT 1;
+
+  INSERT INTO public.profiles (id, full_name, role_id, status)
   VALUES (
     NEW.id, 
-    COALESCE(NEW.raw_user_meta_data->>'full_name', 'New User'),
-    COALESCE((NEW.raw_user_meta_data->>'role')::public.user_role, 'investor')
+    COALESCE(NEW.raw_user_meta_data->>'full_name', 'مستخدم جديد'),
+    v_role_id,
+    'pending'
   );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger for new user creation
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

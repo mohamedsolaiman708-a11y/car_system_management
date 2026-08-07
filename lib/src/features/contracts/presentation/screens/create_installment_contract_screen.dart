@@ -141,8 +141,10 @@ class _CreateInstallmentContractScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+
         backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
+          foregroundColor: Colors.white,
           backgroundColor: AppColors.primaryNavy,
           elevation: 0,
           title: const Text('إصدار عقد تمويل جديد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
