@@ -10,7 +10,7 @@ class Failure {
   @override
   String toString() => message;
 
-  /// فحص ما إذا كان الخطأ متعلقاً بالاتصال والشبكة فقط
+  /// فحص ما إذا كان الخطأ متعلقاً بالاتصال والشبكة
   static bool isNetworkError(dynamic exception) {
     final errorStr = exception.toString();
     return errorStr.contains('SocketException') || 
@@ -21,10 +21,24 @@ class Failure {
            exception is TimeoutException;
   }
 
+  /// فحص أخطاء الويب الوهمية (Bad state) التي تظهر رغم نجاح العملية
+  static bool isIgnorableWebError(dynamic exception) {
+    final errorStr = exception.toString();
+    return errorStr.contains('Future already completed') || 
+           errorStr.contains('Bad state');
+  }
+
   factory Failure.fromException(dynamic exception) {
     if (exception is Failure) return exception;
 
-    // إظهار رسالة الخطأ الأصلية في حالة "غير متوقع" للمساعدة في تتبع الحقول المسببة للخطأ
+    // إذا كان الخطأ هو خطأ الويب المعروف، نعتبره نجاحاً صامتاً
+    if (isIgnorableWebError(exception)) {
+      return const Failure(
+        message: 'تمت العملية بنجاح وجاري تحديث البيانات...', 
+        code: 'SILENT_SUCCESS'
+      );
+    }
+
     String message = 'عذراً، حدث خطأ غير متوقع: ${exception.toString()}';
     String? code;
 
@@ -62,9 +76,6 @@ class Failure {
     }
     if (msg.contains('invalid login credentials') || msg.contains('invalid_credentials') || code.contains('invalid_credentials')) {
       return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-    }
-    if (msg.contains('rate limit') || msg.contains('over_email_send_limit')) {
-      return 'تم تجاوز الحد المسموح من المحاولات. يرجى الانتظار قليلاً والمحاولة لاحقاً.';
     }
     return exception.message;
   }

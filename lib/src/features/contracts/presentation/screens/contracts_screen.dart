@@ -31,7 +31,8 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
   @override
   void didUpdateWidget(covariant ContractsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialType != oldWidget.initialType && widget.initialType != null) {
+    if (widget.initialType != oldWidget.initialType &&
+        widget.initialType != null) {
       setState(() {
         _selectedTypeFilter = widget.initialType!;
       });
@@ -40,10 +41,9 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final contractsAsync = ref.watch(contractsListProvider(
-      searchQuery: searchQuery,
-      status: statusFilter,
-    ));
+    final contractsAsync = ref.watch(
+      contractsListProvider(searchQuery: searchQuery, status: statusFilter),
+    );
     final statsAsync = ref.watch(contractStatsProvider);
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
@@ -56,7 +56,10 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
           color: AppColors.primaryNavy,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20,
+              ),
               child: _buildPremiumHeader(contractsAsync),
             ),
           ),
@@ -146,7 +149,11 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
       child: Row(
         children: [
           _buildTabOption('all', 'جميع العقود', Icons.all_inbox_rounded),
-          _buildTabOption('installments', 'بيع بالأجل (أقساط)', Icons.history_edu_rounded),
+          _buildTabOption(
+            'installments',
+            'بيع بالأجل (أقساط)',
+            Icons.history_edu_rounded,
+          ),
           _buildTabOption('cash', 'بيع نقدي مباشر', Icons.payments_rounded),
         ],
       ),
@@ -285,13 +292,18 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                   color: AppColors.primaryNavy.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.history_edu_rounded, color: AppColors.primaryNavy),
+                child: const Icon(
+                  Icons.history_edu_rounded,
+                  color: AppColors.primaryNavy,
+                ),
               ),
               title: const Text(
                 'عقد بيع بالأجل (أقساط)',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              subtitle: const Text('يتضمن دفعة مقدماً وجدولة أقساط شهرية مع المستثمر'),
+              subtitle: const Text(
+                'يتضمن دفعة مقدماً وجدولة أقساط شهرية مع المستثمر',
+              ),
               onTap: () {
                 Navigator.pop(context);
                 context.push('/contracts/new-installment');
@@ -311,7 +323,9 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                 'عقد بيع نقدي مباشر',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              subtitle: const Text('بيع مباشر كاش بتسديد كامل المبلغ دفعة واحدة'),
+              subtitle: const Text(
+                'بيع مباشر كاش بتسديد كامل المبلغ دفعة واحدة',
+              ),
               onTap: () {
                 Navigator.pop(context);
                 context.push('/contracts/new-cash');
@@ -372,7 +386,14 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
   }
 
   Future<void> _handleExport(String type, List<dynamic> data) async {
-    final headers = ['رقم العقد', 'النوع', 'العميل', 'السيارة', 'القيمة الإجمالية', 'الحالة'];
+    final headers = [
+      'رقم العقد',
+      'النوع',
+      'العميل',
+      'السيارة',
+      'القيمة الإجمالية',
+      'الحالة',
+    ];
     final rows = data.map((c) {
       final typeStr = (c.type == 'cash') ? 'بيع نقدي' : 'بيع بالأجل';
       return [
@@ -387,28 +408,63 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
 
     switch (type) {
       case 'csv':
-        await ExportHelper.exportToCsv(fileName: 'contracts_report', headers: headers, rows: rows);
+        await ExportHelper.exportToCsv(
+          fileName: 'contracts_report',
+          headers: headers,
+          rows: rows,
+        );
         break;
       case 'excel':
-        await ExportHelper.exportToExcel(fileName: 'contracts_report', headers: headers, rows: rows);
+        await ExportHelper.exportToExcel(
+          fileName: 'contracts_report',
+          headers: headers,
+          rows: rows,
+        );
         break;
       case 'pdf':
-        await ExportHelper.exportToPdfTable(title: 'تقرير سجل العقود والتمويل', headers: headers, rows: rows);
+        await ExportHelper.exportToPdfTable(
+          title: 'تقرير سجل العقود والتمويل',
+          headers: headers,
+          rows: rows,
+        );
         break;
     }
   }
 
-  Widget _buildExecutiveStats(AsyncValue<Map<String, dynamic>> statsAsync, intl.NumberFormat f) {
+  Widget _buildExecutiveStats(
+    AsyncValue<Map<String, dynamic>> statsAsync,
+    intl.NumberFormat f,
+  ) {
     return statsAsync.when(
       data: (stats) => Row(
         children: [
-          _buildExecutiveStatCard('إجمالي العقود', stats['total'] ?? 0, Icons.assignment_rounded, Colors.blue),
+          _buildExecutiveStatCard(
+            'إجمالي العقود',
+            stats['total'] ?? 0,
+            Icons.assignment_rounded,
+            Colors.blue,
+          ),
           const SizedBox(width: 20),
-          _buildExecutiveStatCard('عقود نشطة', stats['active'] ?? 0, Icons.check_circle_rounded, Colors.green),
+          _buildExecutiveStatCard(
+            'عقود نشطة',
+            stats['active'] ?? 0,
+            Icons.check_circle_rounded,
+            Colors.green,
+          ),
           const SizedBox(width: 20),
-          _buildExecutiveStatCard('متأخرات (قيمة)', f.format(stats['total_overdue'] ?? 0), Icons.warning_amber_rounded, Colors.red),
+          _buildExecutiveStatCard(
+            'متأخرات (قيمة)',
+            f.format(stats['total_overdue'] ?? 0),
+            Icons.warning_amber_rounded,
+            Colors.red,
+          ),
           const SizedBox(width: 20),
-          _buildExecutiveStatCard('مسودات', stats['draft'] ?? 0, Icons.edit_note_rounded, Colors.orange),
+          _buildExecutiveStatCard(
+            'مسودات',
+            stats['draft'] ?? 0,
+            Icons.edit_note_rounded,
+            Colors.orange,
+          ),
         ],
       ),
       loading: () => const LinearProgressIndicator(),
@@ -416,7 +472,12 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
     );
   }
 
-  Widget _buildExecutiveStatCard(String label, dynamic value, IconData icon, Color color) {
+  Widget _buildExecutiveStatCard(
+    String label,
+    dynamic value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -490,7 +551,10 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
               onChanged: (val) => setState(() => searchQuery = val),
               decoration: InputDecoration(
                 hintText: 'البحث برقم العقد، اسم العميل، أو السيارة...',
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.primaryNavy,
+                ),
                 filled: true,
                 fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
                 border: OutlineInputBorder(
@@ -501,10 +565,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
-            flex: 1,
-            child: _buildPremiumFilterDropdown(),
-          ),
+          Expanded(flex: 1, child: _buildPremiumFilterDropdown()),
         ],
       ),
     );
@@ -558,14 +619,54 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
             dataRowMinHeight: 80,
             dataRowMaxHeight: 80,
             columns: const [
-              DataColumn(label: Text('رقم العقد', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('نوع العقد', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('المستثمر (البائع)', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('العميل المشتري', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('المركبة', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('القيمة الإجمالية', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('الحالة', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('الإجراءات', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  'رقم العقد',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'نوع العقد',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'المستثمر (البائع)',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'العميل المشتري',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'المركبة',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'القيمة الإجمالية',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'الحالة',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'الإجراءات',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             rows: contracts.map((c) {
               final isCash = c.type == 'cash';
@@ -583,7 +684,10 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                   ),
                   DataCell(
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: (isCash ? Colors.green : AppColors.primaryNavy)
                             .withValues(alpha: 0.08),
@@ -594,7 +698,9 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isCash ? Colors.green.shade800 : AppColors.primaryNavy,
+                          color: isCash
+                              ? Colors.green.shade800
+                              : AppColors.primaryNavy,
                         ),
                       ),
                     ),
@@ -665,11 +771,17 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                   children: [
                     Text(
                       c.contractNo,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: (isCash ? Colors.green : AppColors.primaryNavy)
                             .withValues(alpha: 0.08),
@@ -680,7 +792,9 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isCash ? Colors.green.shade800 : AppColors.primaryNavy,
+                          color: isCash
+                              ? Colors.green.shade800
+                              : AppColors.primaryNavy,
                         ),
                       ),
                     ),
@@ -693,11 +807,27 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
-                Text('المستثمر: ${c.investor?['full_name'] ?? '-'}', style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                Text('العميل المشتري: ${c.customer?['full_name'] ?? '-'}', style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                Text('السيارة: ${c.vehicle?['make'] ?? ''} ${c.vehicle?['model'] ?? ''}', style: const TextStyle(fontSize: 12)),
+                Text(
+                  'المستثمر: ${c.investor?['full_name'] ?? '-'}',
+                  style: const TextStyle(color: Colors.black87, fontSize: 13),
+                ),
+                Text(
+                  'العميل المشتري: ${c.customer?['full_name'] ?? '-'}',
+                  style: const TextStyle(color: Colors.black87, fontSize: 13),
+                ),
+                Text(
+                  'السيارة: ${c.vehicle?['make'] ?? ''} ${c.vehicle?['model'] ?? ''}',
+                  style: const TextStyle(fontSize: 12),
+                ),
                 const SizedBox(height: 8),
-                Text('${f.format(c.totalContractValue)} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 16)),
+                Text(
+                  '${f.format(c.totalContractValue)} ر.س',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryNavy,
+                    fontSize: 16,
+                  ),
+                ),
               ],
             ),
             onTap: () => context.push('/contracts/${c.id}'),
@@ -710,10 +840,22 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
   Widget _buildStatusBadge(String status) {
     Color color = Colors.grey;
     String label = status;
-    if (status == 'active') { color = Colors.green; label = 'نشط'; }
-    if (status == 'draft') { color = Colors.orange; label = 'مسودة'; }
-    if (status == 'closed') { color = Colors.blue; label = 'مغلق'; }
-    if (status == 'defaulted') { color = Colors.red; label = 'متعثر'; }
+    if (status == 'active') {
+      color = Colors.green;
+      label = 'نشط';
+    }
+    if (status == 'draft') {
+      color = Colors.orange;
+      label = 'مسودة';
+    }
+    if (status == 'closed') {
+      color = Colors.blue;
+      label = 'مغلق';
+    }
+    if (status == 'defaulted') {
+      color = Colors.red;
+      label = 'متعثر';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -723,7 +865,11 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -733,9 +879,16 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.description_outlined, size: 80, color: Colors.grey.shade300),
+          Icon(
+            Icons.description_outlined,
+            size: 80,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
-          const Text('لا توجد عقود مسجلة لهذا القسم حالياً', style: TextStyle(color: Colors.grey, fontSize: 16)),
+          const Text(
+            'لا توجد عقود مسجلة لهذا القسم حالياً',
+            style: TextStyle(color: Colors.grey, fontSize: 16),
+          ),
         ],
       ),
     );

@@ -11,16 +11,13 @@ class SupabaseStaffRepository {
 
   SupabaseStaffRepository(this._client);
 
-  /// جلب أعضاء فريق العمل (بمن فيهم الذين سجلوا وينتظرون رتبهم)
   Future<List<AppUser>> getStaffMembers() async {
     try {
-      // 1. جلب كافة البروفايلات مع أدوارها
       final profilesResponse = await _client
           .from('profiles')
           .select('*, roles!inner(*)')
           .order('full_name', ascending: true);
       
-      // 2. جلب كافة إيميلات الموظفين المدعوين لتمييزهم
       final invitesResponse = await _client
           .from('user_invitations')
           .select('email');
@@ -32,7 +29,6 @@ class SupabaseStaffRepository {
       final allUsers = (profilesResponse as List).map((json) {
         final roleData = json['roles'];
         
-        // جلب الإيميل من العمود المباشر أو البيانات الوصفية (Metadata)
         String? userEmail = json['email']?.toString();
         if (userEmail == null || userEmail.isEmpty) {
           userEmail = json['raw_user_meta_data']?['email']?.toString();
@@ -45,9 +41,6 @@ class SupabaseStaffRepository {
         });
       }).toList();
 
-      // الفلترة الذكية:
-      // يظهر هنا: أي شخص رتبته ليست "investor"
-      // أو: أي شخص بريده موجود في قائمة دعوات الموظفين (موظف سجل بنفسه وينتظر التفعيل)
       return allUsers.where((u) {
         final isStaffRole = u.role.name != 'investor';
         final userEmail = u.email?.toLowerCase().trim();
@@ -60,7 +53,6 @@ class SupabaseStaffRepository {
     }
   }
 
-  /// طلب إعادة تعيين كلمة المرور
   Future<void> resetStaffPassword(String email) async {
     try {
       await _client.auth.resetPasswordForEmail(

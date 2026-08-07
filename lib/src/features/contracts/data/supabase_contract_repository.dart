@@ -77,11 +77,13 @@ class SupabaseContractRepository implements ContractRepository {
       Map<String, dynamic>? data;
 
       try {
-        data = await _client
+        // تجنب maybeSingle لمنع خطأ الويب
+        final res = await _client
             .from('financing_contracts')
             .select()
             .or('id.eq.$cleanId,contract_no.eq.$cleanId')
-            .maybeSingle();
+            .limit(1);
+        if ((res as List).isNotEmpty) data = Map<String, dynamic>.from(res.first);
       } catch (e) {
         print('DB_LOG: Primary fetch failed: $e');
       }
@@ -93,28 +95,28 @@ class SupabaseContractRepository implements ContractRepository {
 
       try {
         if (data['customer_id'] != null) {
-          final customer = await _client
+          final customerRes = await _client
               .from('customers')
               .select()
               .eq('id', data['customer_id'])
-              .maybeSingle();
-          enrichedData['customers'] = customer;
+              .limit(1);
+          if ((customerRes as List).isNotEmpty) enrichedData['customers'] = customerRes.first;
         }
         if (data['inventory_item_id'] != null) {
-          final vehicle = await _client
+          final vehicleRes = await _client
               .from('inventory_items')
               .select()
               .eq('id', data['inventory_item_id'])
-              .maybeSingle();
-          enrichedData['inventory_items'] = vehicle;
+              .limit(1);
+          if ((vehicleRes as List).isNotEmpty) enrichedData['inventory_items'] = vehicleRes.first;
         }
         if (data['investor_id'] != null) {
-          final investor = await _client
+          final investorRes = await _client
               .from('investors')
               .select()
               .eq('id', data['investor_id'])
-              .maybeSingle();
-          enrichedData['investors'] = investor;
+              .limit(1);
+          if ((investorRes as List).isNotEmpty) enrichedData['investors'] = investorRes.first;
         }
       } catch (e) {
         print('DB_LOG: Relation enrichment warning: $e');
@@ -156,6 +158,9 @@ class SupabaseContractRepository implements ContractRepository {
         json[field] = 0.0;
       }
     }
+    if (json['duration_months'] != null) {
+      json['duration_months'] = int.tryParse(json['duration_months'].toString()) ?? 0;
+    }
   }
 
   @override
@@ -164,11 +169,14 @@ class SupabaseContractRepository implements ContractRepository {
       final response = await _client
           .from('financing_contracts')
           .insert(data)
-          .select()
-          .single();
+          .select();
       
-      final map = Map<String, dynamic>.from(response);
-      _sanitizeNumericFields(map); // تطهير البيانات الرقمية لمنع الخطأ الوهمي
+      if ((response as List).isEmpty) {
+        throw const Failure(message: 'فشل إنشاء السجل في قاعدة البيانات');
+      }
+      
+      final map = Map<String, dynamic>.from(response.first);
+      _sanitizeNumericFields(map);
       
       clearCache();
       return Contract.fromJson(map);
@@ -187,10 +195,13 @@ class SupabaseContractRepository implements ContractRepository {
           .from('financing_contracts')
           .update(data)
           .eq('id', id)
-          .select()
-          .single();
+          .select();
           
-      final map = Map<String, dynamic>.from(response);
+      if ((response as List).isEmpty) {
+        throw const Failure(message: 'فشل تحديث السجل في قاعدة البيانات');
+      }
+
+      final map = Map<String, dynamic>.from(response.first);
       _sanitizeNumericFields(map);
       
       clearCache();
@@ -388,8 +399,9 @@ class SupabaseContractRepository implements ContractRepository {
 
   Future<String> _getEffectiveId(String inputId) async {
     if (inputId.contains('-') && inputId.length > 30) return inputId;
-    final contract = await getContractById(inputId);
-    return contract?.id ?? inputId;
+    final res = await _client.from('financing_contracts').select('id').or('id.eq.$inputId,contract_no.eq.$inputId').limit(1);
+    if ((res as List).isNotEmpty) return res.first['id'];
+    return inputId;
   }
 }
 

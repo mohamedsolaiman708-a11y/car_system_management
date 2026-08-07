@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart'; // نحتاج إضافة هذه المكتبة في الـ pubspec.yaml
+import 'package:uuid/uuid.dart'; 
 import '../../../../core/providers/supabase_provider.dart';
 import 'investor_data_source.dart';
 
@@ -24,11 +24,15 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
   @override
   Future<Map<String, dynamic>?> getInvestorById(String id) async {
     final user = _client.auth.currentUser;
-    var response = await _client.from('investors').select().eq('id', id).maybeSingle();
-    if (response == null && user != null && user.email != null) {
-      response = await _client.from('investors').select().eq('email', user.email!).maybeSingle();
+    // استبدال maybeSingle بـ select().limit(1) لمنع خطأ الويب
+    final response = await _client.from('investors').select().eq('id', id).limit(1);
+    
+    if ((response as List).isEmpty && user != null && user.email != null) {
+      final emailResponse = await _client.from('investors').select().eq('email', user.email!).limit(1);
+      return (emailResponse as List).isNotEmpty ? Map<String, dynamic>.from(emailResponse.first) : null;
     }
-    return response;
+    
+    return response.isNotEmpty ? Map<String, dynamic>.from(response.first) : null;
   }
 
   @override
@@ -36,13 +40,16 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
     final payload = Map<String, dynamic>.from(data);
     payload.removeWhere((key, value) => value == null);
     try {
-      final response = await _client.from('investors').insert(payload).select().single();
-      return response;
+      // تجنب .single()
+      final response = await _client.from('investors').insert(payload).select();
+      if ((response as List).isEmpty) throw Exception('Failed to create investor');
+      return Map<String, dynamic>.from(response.first);
     } catch (e) {
       if (payload.containsKey('phone')) {
         payload.remove('phone');
-        final response = await _client.from('investors').insert(payload).select().single();
-        return response;
+        final response = await _client.from('investors').insert(payload).select();
+        if ((response as List).isEmpty) throw Exception('Failed to create investor without phone');
+        return Map<String, dynamic>.from(response.first);
       }
       rethrow;
     }
@@ -74,7 +81,6 @@ class SupabaseInvestorDataSource implements InvestorDataSource {
 
   @override
   Future<void> processDeposit(String investorId, double amount, String description) async {
-    // استخدام Idempotency Key لمنع التكرار في قاعدة البيانات
     final idempotencyKey = const Uuid().v4();
     await _client.rpc(
       'process_investor_deposit',

@@ -48,7 +48,9 @@ class SupabaseInventoryRepository implements InventoryRepository {
       _memCache[cacheKey] = list;
       return list;
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       if (_memCache.containsKey(cacheKey)) {
         return _memCache[cacheKey] as List<Vehicle>;
       }
@@ -60,15 +62,15 @@ class SupabaseInventoryRepository implements InventoryRepository {
   Future<Vehicle?> getVehicleById(String id) async {
     final cacheKey = 'getVehicleById_$id';
     try {
-      final response = await _client.from('inventory_items').select().eq('id', id).maybeSingle();
-      if (response == null) return null;
-      final vehicle = Vehicle.fromJson(response);
+      // استبدال maybeSingle بـ limit(1) لمنع تعطل الويب
+      final response = await _client.from('inventory_items').select().eq('id', id).limit(1);
+      if ((response as List).isEmpty) return null;
+      final vehicle = Vehicle.fromJson(response.first);
       _memCache[cacheKey] = vehicle;
       return vehicle;
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
-      if (_memCache.containsKey(cacheKey)) {
-        return _memCache[cacheKey] as Vehicle?;
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
       }
       throw Failure.fromException(e);
     }
@@ -77,22 +79,25 @@ class SupabaseInventoryRepository implements InventoryRepository {
   @override
   Future<Vehicle> createVehicle(Map<String, dynamic> data) async {
     try {
-      final response = await _client.from('inventory_items').insert(data).select().single();
-      _memCache.clear(); // Invalidate cache
+      // تجنب .single()
+      final response = await _client.from('inventory_items').insert(data).select();
+      if ((response as List).isEmpty) throw const Failure(message: 'فشل إضافة المركبة');
+      
+      final record = response.first;
+      _memCache.clear(); 
 
       try {
         await _client.from('audit_logs').insert({
           'profile_id': _client.auth.currentUser?.id,
           'event_type': 'VEHICLE_CREATED',
           'table_name': 'inventory_items',
-          'record_id': response['id'],
-          'new_values': response,
+          'record_id': record['id'],
+          'new_values': record,
         });
       } catch (_) {}
 
-      return Vehicle.fromJson(response);
+      return Vehicle.fromJson(record);
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
       throw Failure.fromException(e);
     }
   }
@@ -100,9 +105,15 @@ class SupabaseInventoryRepository implements InventoryRepository {
   @override
   Future<Vehicle> updateVehicle(String id, Map<String, dynamic> data) async {
     try {
-      final oldData = await _client.from('inventory_items').select().eq('id', id).single();
-      final response = await _client.from('inventory_items').update(data).eq('id', id).select().single();
-      _memCache.clear(); // Invalidate cache
+      // تجنب .single()
+      final oldDataQuery = await _client.from('inventory_items').select().eq('id', id).limit(1);
+      final oldData = (oldDataQuery as List).isNotEmpty ? oldDataQuery.first : null;
+      
+      final response = await _client.from('inventory_items').update(data).eq('id', id).select();
+      if ((response as List).isEmpty) throw const Failure(message: 'فشل تحديث بيانات المركبة');
+
+      final record = response.first;
+      _memCache.clear(); 
 
       try {
         await _client.from('audit_logs').insert({
@@ -111,13 +122,12 @@ class SupabaseInventoryRepository implements InventoryRepository {
           'table_name': 'inventory_items',
           'record_id': id,
           'old_values': oldData,
-          'new_values': response,
+          'new_values': record,
         });
       } catch (_) {}
 
-      return Vehicle.fromJson(response);
+      return Vehicle.fromJson(record);
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
       throw Failure.fromException(e);
     }
   }
@@ -126,34 +136,26 @@ class SupabaseInventoryRepository implements InventoryRepository {
   Future<void> deleteVehicle(String id) async {
     try {
       await _client.from('inventory_items').delete().eq('id', id);
-      _memCache.clear(); // Invalidate cache
+      _memCache.clear();
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
       throw Failure.fromException(e);
     }
   }
 
   @override
   Future<List<String>> getMakes() async {
-    const cacheKey = 'getMakes';
     try {
       final response = await _client.from('inventory_items').select('make');
       final makes = (response as List).map((item) => item['make'] as String).toSet().toList();
       makes.sort();
-      _memCache[cacheKey] = makes;
       return makes;
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
-      if (_memCache.containsKey(cacheKey)) {
-        return _memCache[cacheKey] as List<String>;
-      }
       throw Failure.fromException(e);
     }
   }
 
   @override
   Future<Map<String, dynamic>> getInventoryStats() async {
-    const cacheKey = 'getInventoryStats';
     try {
       final responses = await Future.wait<dynamic>([
         _client.from('inventory_items').select('id').count(CountOption.exact),
@@ -162,31 +164,19 @@ class SupabaseInventoryRepository implements InventoryRepository {
         _client.from('inventory_items').select('id').eq('status', 'maintenance').count(CountOption.exact),
       ]);
 
-      final totalRes = responses[0] as PostgrestResponse;
-      final availableRes = responses[1] as PostgrestResponse;
-      final onContractRes = responses[2] as PostgrestResponse;
-      final maintenanceRes = responses[3] as PostgrestResponse;
-
-      final stats = {
-        'total': totalRes.count ?? 0,
-        'available': availableRes.count ?? 0,
-        'on_contract': onContractRes.count ?? 0,
-        'maintenance': maintenanceRes.count ?? 0,
+      return {
+        'total': (responses[0] as PostgrestResponse).count ?? 0,
+        'available': (responses[1] as PostgrestResponse).count ?? 0,
+        'on_contract': (responses[2] as PostgrestResponse).count ?? 0,
+        'maintenance': (responses[3] as PostgrestResponse).count ?? 0,
       };
-      _memCache[cacheKey] = stats;
-      return stats;
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
-      if (_memCache.containsKey(cacheKey)) {
-        return _memCache[cacheKey] as Map<String, dynamic>;
-      }
       throw Failure.fromException(e);
     }
   }
 
   @override
   Future<List<Map<String, dynamic>>> getMaintenanceLogs(String vehicleId) async {
-    final cacheKey = 'getMaintenanceLogs_$vehicleId';
     try {
       final response = await _client
           .from('maintenance_logs')
@@ -194,14 +184,8 @@ class SupabaseInventoryRepository implements InventoryRepository {
           .eq('inventory_item_id', vehicleId)
           .order('performed_at', ascending: false);
 
-      final list = List<Map<String, dynamic>>.from(response as List);
-      _memCache[cacheKey] = list;
-      return list;
+      return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
-      if (_memCache.containsKey(cacheKey)) {
-        return _memCache[cacheKey] as List<Map<String, dynamic>>;
-      }
       throw Failure.fromException(e);
     }
   }
@@ -219,9 +203,7 @@ class SupabaseInventoryRepository implements InventoryRepository {
         'cost': cost,
         'performed_at': DateTime.now().toIso8601String().split('T')[0],
       });
-      _memCache.remove('getMaintenanceLogs_$vehicleId'); // Invalidate specific log cache
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
       throw Failure.fromException(e);
     }
   }

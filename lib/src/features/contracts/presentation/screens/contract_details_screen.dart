@@ -31,25 +31,40 @@ class ContractDetailsScreen extends ConsumerWidget {
           backgroundColor: AppColors.primaryNavy,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: () => context.pop(),
           ),
           title: const Text(
             'تفاصيل الملف التعاقدي',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
           ),
           actions: [
             contractAsync.maybeWhen(
               data: (contract) => contract != null
                   ? IconButton(
-                      icon: const Icon(Icons.print_rounded, color: Colors.white, size: 26),
+                      icon: const Icon(
+                        Icons.print_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
                       tooltip: 'طباعة العقد',
                       onPressed: () async {
                         try {
                           await ContractPrintHelper.printContract(contract);
                         } catch (e) {
                           if (context.mounted) {
-                            SnackBarHelper.showError(context, 'فشل تحضير ملف الطباعة: $e');
+                            SnackBarHelper.showError(
+                              context,
+                              'فشل تحضير ملف الطباعة: $e',
+                            );
                           }
                         }
                       },
@@ -58,7 +73,11 @@ class ContractDetailsScreen extends ConsumerWidget {
               orElse: () => const SizedBox.shrink(),
             ),
             IconButton(
-              icon: const Icon(Icons.edit_note_rounded, color: AppColors.accentGold, size: 28),
+              icon: const Icon(
+                Icons.edit_note_rounded,
+                color: AppColors.accentGold,
+                size: 28,
+              ),
               onPressed: () => context.push('/contracts/$id/edit'),
             ),
             const SizedBox(width: 8),
@@ -100,8 +119,11 @@ class ContractDetailsScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy)),
-          error: (err, _) => Center(child: Text(Failure.fromException(err).message)),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryNavy),
+          ),
+          error: (err, _) =>
+              Center(child: Text(Failure.fromException(err).message)),
         ),
       ),
     );
@@ -122,7 +144,11 @@ class ContractDetailsScreen extends ConsumerWidget {
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.assignment_rounded, size: 40, color: AppColors.accentGold),
+            child: const Icon(
+              Icons.assignment_rounded,
+              size: 40,
+              color: AppColors.accentGold,
+            ),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -133,7 +159,11 @@ class ContractDetailsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'عقد رقم: ${contract.contractNo}',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     _StatusBadge(status: contract.status),
@@ -168,7 +198,11 @@ class ContractDetailsScreen extends ConsumerWidget {
           indicatorWeight: 4,
           labelColor: AppColors.primaryNavy,
           unselectedLabelColor: Colors.grey.shade400,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, fontFamily: 'Cairo'),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+            fontFamily: 'Cairo',
+          ),
           tabs: const [
             Tab(text: 'ملخص العقد'),
             Tab(text: 'جدول السداد'),
@@ -192,7 +226,7 @@ class _OverviewTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final paymentsAsync = ref.watch(contractPaymentsProvider(contract.id));
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -206,32 +240,66 @@ class _OverviewTab extends ConsumerWidget {
                   title: 'التفاصيل المالية وأطراف العقد',
                   icon: Icons.account_balance_wallet_rounded,
                   children: [
-                    _InfoRow('نوع العقد', contract.type == 'cash' ? 'بيع نقدي مباشر' : 'بيع بالأجل (أقساط)', isBold: true),
-                    _InfoRow('الطرف الأول (المستثمر البائع)', contract.investor?['full_name'] ?? '-'),
-                    _InfoRow('الطرف الثاني (المشتري)', contract.customer?['full_name'] ?? '-'),
+                    _InfoRow(
+                      'نوع العقد',
+                      contract.type == 'cash'
+                          ? 'بيع نقدي مباشر'
+                          : 'بيع بالأجل (أقساط)',
+                      isBold: true,
+                    ),
+                    _InfoRow(
+                      'الطرف الأول (المستثمر البائع)',
+                      contract.investor?['full_name'] ?? '-',
+                    ),
+                    _InfoRow(
+                      'الطرف الثاني (المشتري)',
+                      contract.customer?['full_name'] ?? '-',
+                    ),
                     const Divider(height: 24),
-                    _InfoRow('قيمة السيارة (الأصل)', '${f.format(contract.principalAmount)} ر.س'),
+                    _InfoRow(
+                      'قيمة السيارة (الأصل)',
+                      '${f.format(contract.principalAmount)} ر.س',
+                    ),
                     if (contract.type != 'cash') ...[
-                      _InfoRow('نسبة الربح السنوية', '${contract.financeProfitRate}%'),
+                      _InfoRow(
+                        'نسبة الربح السنوية',
+                        '${contract.financeProfitRate}%',
+                      ),
                       _InfoRow('مدة التمويل', '${contract.durationMonths} شهر'),
                     ],
                     const Divider(height: 24),
-                    _InfoRow('إجمالي قيمة العقد', '${f.format(contract.totalContractValue)} ر.س', isBold: true),
-                    
+                    _InfoRow(
+                      'إجمالي قيمة العقد',
+                      '${f.format(contract.totalContractValue)} ر.س',
+                      isBold: true,
+                    ),
+
                     // حساب المبلغ المتبقي بناءً على إجمالي المدفوعات الفعلية (الحل الصحيح)
                     paymentsAsync.when(
                       data: (payments) {
-                        final double totalPaid = payments.fold(0.0, (sum, p) => sum + (p['amount_total'] as num).toDouble());
-                        final double remaining = contract.totalContractValue - totalPaid;
+                        final double totalPaid = payments.fold(
+                          0.0,
+                          (sum, p) =>
+                              sum + (p['amount_total'] as num).toDouble(),
+                        );
+                        final double remaining =
+                            contract.totalContractValue - totalPaid;
                         return _InfoRow(
-                          'المبلغ المتبقي للسداد', 
-                          '${f.format(remaining > 0 ? remaining : 0.0)} ر.س', 
-                          isBold: true, 
-                          color: remaining > 0 ? AppColors.errorRed : AppColors.successGreen
+                          'المبلغ المتبقي للسداد',
+                          '${f.format(remaining > 0 ? remaining : 0.0)} ر.س',
+                          isBold: true,
+                          color: remaining > 0
+                              ? AppColors.errorRed
+                              : AppColors.successGreen,
                         );
                       },
-                      loading: () => _InfoRow('المبلغ المتبقي', 'جاري الحساب...', isBold: true),
-                      error: (_, __) => _InfoRow('المبلغ المتبقي', '-', isBold: true),
+                      loading: () => _InfoRow(
+                        'المبلغ المتبقي',
+                        'جاري الحساب...',
+                        isBold: true,
+                      ),
+                      error: (_, __) =>
+                          _InfoRow('المبلغ المتبقي', '-', isBold: true),
                     ),
                   ],
                 ),
@@ -242,12 +310,32 @@ class _OverviewTab extends ConsumerWidget {
                   title: 'بيانات الأصول',
                   icon: Icons.directions_car_filled_rounded,
                   children: [
-                    _InfoRow('المركبة', '${contract.vehicle?['make'] ?? ""} ${contract.vehicle?['model'] ?? ""}'),
-                    _InfoRow('رقم اللوحة', contract.vehicle?['license_plate'] ?? '-'),
+                    _InfoRow(
+                      'المركبة',
+                      '${contract.vehicle?['make'] ?? ""} ${contract.vehicle?['model'] ?? ""}',
+                    ),
+                    _InfoRow(
+                      'رقم اللوحة',
+                      contract.vehicle?['license_plate'] ?? '-',
+                    ),
                     const SizedBox(height: 16),
-                    const Text('الكفيل الغارم', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'الكفيل الغارم',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    Text(contract.guarantor1Name ?? 'لا يوجد كفيل مسجل', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
+                    Text(
+                      contract.guarantor1Name ?? 'لا يوجد كفيل مسجل',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.primaryNavy,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -263,7 +351,11 @@ class _SectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final List<Widget> children;
-  const _SectionCard({required this.title, required this.icon, required this.children});
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +364,9 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +375,14 @@ class _SectionCard extends StatelessWidget {
             children: [
               Icon(icon, color: AppColors.accentGold, size: 20),
               const SizedBox(width: 12),
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryNavy,
+                ),
+              ),
             ],
           ),
           const Divider(height: 32),
@@ -305,8 +406,18 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textGrey, fontSize: 14)),
-          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.w900 : FontWeight.w700, color: color ?? AppColors.primaryNavy, fontSize: 14)),
+          Text(
+            label,
+            style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+              color: color ?? AppColors.primaryNavy,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
@@ -320,13 +431,25 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color = Colors.grey;
-    if (status == 'active') color = AppColors.successGreen;
-    else if (status == 'draft') color = Colors.orange;
-    
+    if (status == 'active')
+      color = AppColors.successGreen;
+    else if (status == 'draft')
+      color = Colors.orange;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-      child: Text(ArabicTranslator.status(status), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        ArabicTranslator.status(status),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
     );
   }
 }
@@ -337,7 +460,9 @@ class _InstallmentsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final installmentsAsync = ref.watch(contractInstallmentsProvider(contractId));
+    final installmentsAsync = ref.watch(
+      contractInstallmentsProvider(contractId),
+    );
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return installmentsAsync.when(
@@ -348,10 +473,16 @@ class _InstallmentsTab extends ConsumerWidget {
           final inst = list[index];
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: ListTile(
-              title: Text('تاريخ الاستحقاق: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(inst['due_date']))}'),
-              subtitle: Text('المبلغ: ${f.format(inst['expected_amount'])} ر.س'),
+              title: Text(
+                'تاريخ الاستحقاق: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(inst['due_date']))}',
+              ),
+              subtitle: Text(
+                'المبلغ: ${f.format(inst['expected_amount'])} ر.س',
+              ),
               trailing: _StatusBadge(status: inst['status']),
             ),
           );
@@ -378,10 +509,16 @@ class _PaymentsTab extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(24),
             child: ElevatedButton.icon(
-              onPressed: () => showDialog(context: context, builder: (context) => AddPaymentDialog(contract: contract)),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (context) => AddPaymentDialog(contract: contract),
+              ),
               icon: const Icon(Icons.add_card_rounded),
               label: const Text('تسجيل دفعة سداد جديدة'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.successGreen, minimumSize: const Size(double.infinity, 56)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.successGreen,
+                minimumSize: const Size(double.infinity, 56),
+              ),
             ),
           ),
         Expanded(
@@ -392,9 +529,14 @@ class _PaymentsTab extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final p = list[index];
                 return ListTile(
-                  leading: const Icon(Icons.verified_rounded, color: AppColors.successGreen),
+                  leading: const Icon(
+                    Icons.verified_rounded,
+                    color: AppColors.successGreen,
+                  ),
                   title: Text('${f.format(p['amount_total'])} ر.س'),
-                  subtitle: Text('التاريخ: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(p['payment_date']))}'),
+                  subtitle: Text(
+                    'التاريخ: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(p['payment_date']))}',
+                  ),
                 );
               },
             ),
@@ -417,10 +559,14 @@ class _FundingTab extends ConsumerWidget {
     return fundingAsync.when(
       data: (list) => ListView(
         padding: const EdgeInsets.all(24),
-        children: list.map((f) => ListTile(
-          title: Text(f['investors']?['full_name'] ?? 'مستثمر'),
-          trailing: Text('${f['amount_allocated']} ر.س'),
-        )).toList(),
+        children: list
+            .map(
+              (f) => ListTile(
+                title: Text(f['investors']?['full_name'] ?? 'مستثمر'),
+                trailing: Text('${f['amount_allocated']} ر.س'),
+              ),
+            )
+            .toList(),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(e.toString())),
@@ -449,10 +595,21 @@ class _TimelineTab extends ConsumerWidget {
       data: (logs) => ListView.builder(
         padding: const EdgeInsets.all(24),
         itemCount: logs.length,
-        itemBuilder: (context, index) => ListTile(
-          title: Text(ArabicTranslator.eventType(logs[index]['event_type'])),
-          subtitle: Text(intl.DateFormat('yyyy/MM/dd HH:mm').format(DateTime.parse(logs[index]['created_at']))),
-        ),
+        itemBuilder: (context, index) {
+          final log = logs[index];
+          return ListTile(
+            title: Text(ArabicTranslator.eventType(log.eventType)),
+            subtitle: Text(
+              intl.DateFormat('yyyy/MM/dd HH:mm').format(log.occurredAt),
+            ),
+            trailing: log.profileName != null
+                ? Text(
+                    log.profileName!,
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  )
+                : null,
+          );
+        },
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(e.toString())),

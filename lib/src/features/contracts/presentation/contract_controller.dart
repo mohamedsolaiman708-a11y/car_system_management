@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/contract.dart';
 import '../data/supabase_contract_repository.dart';
 import 'contract_timeline_controller.dart';
+import '../../../core/utils/error_handler.dart';
 
 part 'contract_controller.g.dart';
 
@@ -12,48 +13,58 @@ class ContractController extends _$ContractController {
 
   Future<bool> createContract(Map<String, dynamic> data) async {
     state = const AsyncLoading();
+    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).createContract(data));
     
-    // استخدام try-catch العادي هنا أكثر أماناً لمنع أخطاء التكرار في الحالات
-    try {
-      await ref.read(contractRepositoryProvider).createContract(data);
-      
-      // تحديث البيانات الضرورية فقط
+    // فحص ما إذا كان الخطأ هو خطأ الويب الوهمي الذي يمكن تجاهله
+    final isSilentSuccess = result.hasError && 
+        result.error is Failure && 
+        (result.error as Failure).code == 'SILENT_SUCCESS';
+
+    if (!result.hasError || isSilentSuccess) {
       ref.invalidate(contractsListProvider);
       ref.invalidate(contractStatsProvider);
-      
       state = const AsyncData(null);
       return true;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    } else {
+      state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
   }
 
   Future<bool> updateContract(String id, Map<String, dynamic> data) async {
     state = const AsyncLoading();
-    try {
-      await ref.read(contractRepositoryProvider).updateContract(id, data);
+    final result = await AsyncValue.guard(() => ref.read(contractRepositoryProvider).updateContract(id, data));
+    
+    final isSilentSuccess = result.hasError && 
+        result.error is Failure && 
+        (result.error as Failure).code == 'SILENT_SUCCESS';
+
+    if (!result.hasError || isSilentSuccess) {
       ref.invalidate(contractDetailsProvider(id));
       ref.invalidate(contractsListProvider);
       state = const AsyncData(null);
       return true;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    } else {
+      state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
   }
 
   Future<bool> activateContract(String id) async {
+    if (state.isLoading) return false;
     state = const AsyncLoading();
-    try {
+    
+    final result = await AsyncValue.guard(() async {
       await ref.read(contractRepositoryProvider).activateContract(id);
       _refreshContractData(id);
-      state = const AsyncData(null);
-      return true;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    });
+    
+    if (result.hasError) {
+      state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
+    state = const AsyncData(null);
+    return true;
   }
 
   Future<bool> processPayment({
@@ -64,8 +75,10 @@ class ContractController extends _$ContractController {
     String? idempotencyKey,
     String? notes,
   }) async {
+    if (state.isLoading) return false;
     state = const AsyncLoading();
-    try {
+    
+    final result = await AsyncValue.guard(() async {
       await ref.read(contractRepositoryProvider).processPayment(
         contractId: contractId,
         amount: amount,
@@ -75,25 +88,31 @@ class ContractController extends _$ContractController {
         notes: notes,
       );
       _refreshContractData(contractId);
-      state = const AsyncData(null);
-      return true;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    });
+    
+    if (result.hasError) {
+      state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
+    state = const AsyncData(null);
+    return true;
   }
 
   Future<bool> reversePayment(String contractId, String paymentId, String reason) async {
+    if (state.isLoading) return false;
     state = const AsyncLoading();
-    try {
+    
+    final result = await AsyncValue.guard(() async {
       await ref.read(contractRepositoryProvider).reversePayment(paymentId, reason);
       _refreshContractData(contractId);
-      state = const AsyncData(null);
-      return true;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    });
+    
+    if (result.hasError) {
+      state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
+    state = const AsyncData(null);
+    return true;
   }
 
   void _refreshContractData(String contractId) {

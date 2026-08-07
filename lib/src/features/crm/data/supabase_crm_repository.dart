@@ -39,20 +39,20 @@ class SupabaseCrmRepository implements CrmRepository {
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 
-      // تأكد من أن الرد قائمة وليس null
       final data = response as List? ?? [];
       return data.map((json) {
         try {
           return Customer.fromJson(json);
         } catch (e) {
-          // لو فيه سجل واحد فيه مشكلة ميبوظش القائمة كلها
           debugPrint('Error mapping customer: $e');
           return null;
         }
       }).whereType<Customer>().toList();
 
     } catch (e) {
-      _ref.read(connectionNotifierProvider.notifier).setOffline();
+      if (Failure.isNetworkError(e)) {
+        _ref.read(connectionNotifierProvider.notifier).setOffline();
+      }
       if (_memCache.containsKey(cacheKey)) {
         return _memCache[cacheKey] as List<Customer>;
       }
@@ -74,9 +74,13 @@ class SupabaseCrmRepository implements CrmRepository {
   @override
   Future<Customer> createCustomer(Map<String, dynamic> data) async {
     try {
-      final response = await _client.from('customers').insert(data).select().single();
+      // تجنب .single() في الويب لمنع خطأ Future already completed
+      final response = await _client.from('customers').insert(data).select();
+      if ((response as List).isEmpty) {
+        throw const Failure(message: 'فشل إنشاء سجل العميل في قاعدة البيانات');
+      }
       _memCache.clear();
-      return Customer.fromJson(response);
+      return Customer.fromJson(response.first);
     } catch (e) {
       throw Failure.fromException(e);
     }
@@ -85,9 +89,13 @@ class SupabaseCrmRepository implements CrmRepository {
   @override
   Future<Customer> updateCustomer(String id, Map<String, dynamic> data) async {
     try {
-      final response = await _client.from('customers').update(data).eq('id', id).select().single();
+      // تجنب .single() في الويب
+      final response = await _client.from('customers').update(data).eq('id', id).select();
+      if ((response as List).isEmpty) {
+        throw const Failure(message: 'فشل تحديث سجل العميل في قاعدة البيانات');
+      }
       _memCache.clear();
-      return Customer.fromJson(response);
+      return Customer.fromJson(response.first);
     } catch (e) {
       throw Failure.fromException(e);
     }
