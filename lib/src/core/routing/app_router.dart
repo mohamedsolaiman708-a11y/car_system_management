@@ -155,9 +155,19 @@ GoRouter goRouter(GoRouterRef ref) {
         return '/portal-selection';
       }
 
-      // --- التحقق من تعطيل الحساب (Phase 21) ---
+      // --- التحقق من حالة الحساب للأدوار كافة (موظفين ومستثمرين) ---
+      if (user.status == 'pending') {
+        if (path != '/auth/pending') return '/auth/pending';
+        return null;
+      }
+
+      if (user.status == 'rejected') {
+        if (path != '/auth/rejected') return '/auth/rejected';
+        return null;
+      }
+
       final isStaff = user.role != UserRole.investor;
-      
+
       if (isStaff) {
         if (!user.isActive && path != '/auth/disabled') {
           return '/auth/disabled';
@@ -167,17 +177,13 @@ GoRouter goRouter(GoRouterRef ref) {
         }
 
         if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
-          if (path != '/auth/disabled') return '/dashboard';
+          return '/dashboard';
         }
         return null;
       }
 
-      // --- لوجيك المستثمرين ---
-      if (user.status == 'pending' && path != '/auth/pending') return '/auth/pending';
-      if (user.status == 'rejected' && path != '/auth/rejected') return '/auth/rejected';
-
-      if ((user.status == 'approved' || user.status == 'active') &&
-          (path == '/' || path == '/portal-selection' || path.startsWith('/auth'))) {
+      // --- لوجيك المستثمرين المعتمدين ---
+      if (path == '/' || path == '/portal-selection' || path.startsWith('/auth')) {
         return '/investor-portal';
       }
 

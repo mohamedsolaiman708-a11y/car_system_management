@@ -161,14 +161,29 @@ class _FundContractDialogState extends ConsumerState<FundContractDialog> {
                                   'خطأ في تحميل المستثمرين',
                                   style: TextStyle(color: Colors.red)),
                               data: (investors) {
+                                // Always sync _selectedInvestor from the list
                                 if (_selectedInvestorId != null &&
                                     _selectedInvestor == null) {
                                   final m = investors
                                       .where((i) => i.id == _selectedInvestorId);
                                   if (m.isNotEmpty) {
-                                    _selectedInvestor = m.first;
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                      if (mounted) {
+                                        setState(
+                                            () => _selectedInvestor = m.first);
+                                      }
+                                    });
                                   }
                                 }
+
+                                // Lock dropdown to contract's investor if set
+                                final contractInvestorId =
+                                    widget.contract.investorId ??
+                                        widget.contract.investor?['id']
+                                            as String?;
+                                final isLocked = contractInvestorId != null;
+
                                 return DropdownButtonFormField<String>(
                                   decoration: _dec(
                                     hint: 'اختر المستثمر...',
@@ -218,7 +233,7 @@ class _FundContractDialogState extends ConsumerState<FundContractDialog> {
                                       ),
                                     );
                                   }).toList(),
-                                  onChanged: _isSubmitting
+                                  onChanged: (_isSubmitting || isLocked)
                                       ? null
                                       : (val) => setState(() {
                                             _selectedInvestorId = val;
@@ -230,6 +245,18 @@ class _FundContractDialogState extends ConsumerState<FundContractDialog> {
                                 );
                               },
                             ),
+
+                            // Lock notice when investor is pre-set from contract
+                            if ((widget.contract.investorId ??
+                                    widget.contract.investor?['id']) !=
+                                null) ...[
+                              const SizedBox(height: 8),
+                              const Text(
+                                'ملاحظة: هذا العقد مرتبط بمستثمر محدد ولا يمكن تغييره هنا.',
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey),
+                              ),
+                            ],
 
                             // Selected investor balance card
                             if (_selectedInvestor != null) ...[

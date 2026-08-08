@@ -56,9 +56,32 @@ class _CreateInstallmentContractScreenState
   // الحقول المالية
   final _totalSalePriceController = TextEditingController();
   final _installmentAmountController = TextEditingController();
+  int _durationMonths = 12; // عدد الأشهر (للأقساط)
   final DateTime _contractDate = DateTime.now();
   DateTime _firstInstallmentDate = DateTime.now().add(const Duration(days: 30));
   DateTime _waadaDueDate = DateTime.now().add(const Duration(days: 365));
+
+  // ===== Auto-fill: يُستدعى عند الانتقال للخطوة 3 =====
+  void _autoFillFromVehicle() {
+    if (_selectedVehicles.isEmpty) return;
+    final vehicle = _selectedVehicles.first;
+    // استخدم القيمة السوقية التقديرية إن وجدت، وإلا سعر الشراء
+    final suggestedPrice =
+        vehicle.estimatedMarketValue ?? vehicle.purchasePrice;
+    if (_totalSalePriceController.text.isEmpty) {
+      _totalSalePriceController.text = suggestedPrice.toStringAsFixed(0);
+      _recalcInstallment();
+    }
+  }
+
+  // ===== حساب القسط تلقائياً =====
+  void _recalcInstallment() {
+    final total = double.tryParse(_totalSalePriceController.text) ?? 0;
+    if (total > 0 && _durationMonths > 0) {
+      final inst = total / _durationMonths;
+      _installmentAmountController.text = inst.toStringAsFixed(0);
+    }
+  }
 
   @override
   void initState() {
@@ -90,7 +113,11 @@ class _CreateInstallmentContractScreenState
         SnackBarHelper.showWarning(context, 'يرجى تحديد أطراف العقد (البائع والمشتري)');
         return;
       }
-      setState(() => _currentStep++);
+      setState(() {
+        _currentStep++;
+        // Auto-fill عند الوصول للخطوة 3
+        if (_currentStep == 2) _autoFillFromVehicle();
+      });
     } else {
       _submit();
     }
@@ -108,15 +135,22 @@ class _CreateInstallmentContractScreenState
       return;
     }
 
+    // Validation: منع البيع بأقل من سعر الشراء
+    if (_selectedVehicles.isNotEmpty) {
+      final costPrice = _selectedVehicles.first.purchasePrice;
+      if (totalValue < costPrice) {
+        SnackBarHelper.showError(
+          context,
+          'سعر البيع (${totalValue.toStringAsFixed(0)} ر.س) أقل من سعر الشراء (${costPrice.toStringAsFixed(0)} ر.س). لا يمكن البيع بخسارة.',
+        );
+        return;
+      }
+    }
+
     int duration = 1;
 
     if (_installmentSubtype == 'installments') {
-      final double instValue = double.tryParse(_installmentAmountController.text) ?? 0;
-      if (instValue <= 0) {
-        SnackBarHelper.showError(context, 'يرجى إدخال قيمة قسط صحيحة');
-        return;
-      }
-      duration = (totalValue / instValue).ceil();
+      duration = _durationMonths;
     } else {
       // وعدة
       final daysDiff = _waadaDueDate.difference(_contractDate).inDays;
@@ -790,9 +824,16 @@ class _CreateInstallmentContractScreenState
 
   Widget _stepFinancial() {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
+    final vehicle =
+        _selectedVehicles.isNotEmpty ? _selectedVehicles.first : null;
+    final costPrice = vehicle?.purchasePrice ?? 0;
+    final total = double.tryParse(_totalSalePriceController.text) ?? 0;
+    final isBelowCost = total > 0 && total < costPrice;
+
     return _buildStepLayout(
       title: 'الحسابات والجدولة المالية',
-      subtitle: 'تحديد نوع البيع بالأجل (أقساط شهرية أو وعدة) والقيمة الاتفاقية المعتمدة',
+      subtitle:
+          'تحديد نوع البيع بالأجل (أقساط شهرية أو وعدة) والقيمة الاتفاقية المعتمدة',
       icon: Icons.calculate_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -804,14 +845,21 @@ class _CreateInstallmentContractScreenState
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15)
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 15)
               ],
-              border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.08)),
+              border: Border.all(
+                  color: AppColors.primaryNavy.withValues(alpha: 0.08)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('صيغة البيع بالأجل المعتمدة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
+                const Text('صيغة البيع بالأجل المعتمدة:',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.primaryNavy)),
                 const SizedBox(height: 12),
                 SegmentedButton<String>(
                   segments: const [
@@ -827,28 +875,250 @@ class _CreateInstallmentContractScreenState
                     ),
                   ],
                   selected: {_installmentSubtype},
-                  onSelectionChanged: (val) => setState(() => _installmentSubtype = val.first),
+                  onSelectionChanged: (val) => setState(() {
+                    _installmentSubtype = val.first;
+                    _recalcInstallment();
+                  }),
                   style: ButtonStyle(
-                    textStyle: WidgetStateProperty.all(const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    textStyle: WidgetStateProperty.all(const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          _buildTextField(
-            _totalSalePriceController,
-            _installmentSubtype == 'waada' ? 'سعر البيع الأجل (وعدة) *' : 'إجمالي قيمة العقد بالأقساط *',
-            Icons.money,
-            isNumber: true,
+
+          // ─── سعر السيارة المرجعي ───
+          if (vehicle != null) ...[  
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.primaryNavy.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: AppColors.primaryNavy.withValues(alpha: 0.12)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.directions_car_rounded,
+                      color: AppColors.primaryNavy, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${vehicle.make} ${vehicle.model} ${vehicle.year}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryNavy,
+                              fontSize: 13),
+                        ),
+                        Text(
+                          'سعر الشراء: ${f.format(costPrice)} ر.س  •  الحد الأدنى للبيع',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (vehicle.estimatedMarketValue != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('القيمة السوقية',
+                            style: TextStyle(
+                                fontSize: 10, color: Colors.grey)),
+                        Text(
+                          '${f.format(vehicle.estimatedMarketValue)} ر.س',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryNavy,
+                              fontSize: 13),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // ─── إجمالي سعر البيع ───
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTextField(
+                _totalSalePriceController,
+                _installmentSubtype == 'waada'
+                    ? 'سعر البيع الأجل (وعدة) *'
+                    : 'إجمالي قيمة العقد بالأقساط *',
+                Icons.money,
+                isNumber: true,
+                onChanged: (_) => setState(_recalcInstallment),
+              ),
+              if (isBelowCost) ...[  
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: Colors.orange, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      'تحذير: السعر أقل من سعر الشراء (${f.format(costPrice)} ر.س)',
+                      style: const TextStyle(
+                          color: Colors.orange,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 16),
-          if (_installmentSubtype == 'installments') ...[
-            _buildTextField(_installmentAmountController, 'قيمة القسط الشهري *', Icons.payments, isNumber: true),
+
+          // ─── مدة التقسيط (Slider) أو تاريخ الوعدة ───
+          if (_installmentSubtype == 'installments') ...[  
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 12)
+                ],
+                border: Border.all(
+                    color: AppColors.primaryNavy.withValues(alpha: 0.08)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('مدة التقسيط',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: AppColors.primaryNavy)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryNavy,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$_durationMonths شهراً',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Slider(
+                    value: _durationMonths.toDouble(),
+                    min: 1,
+                    max: 60,
+                    divisions: 59,
+                    activeColor: AppColors.primaryNavy,
+                    inactiveColor:
+                        AppColors.primaryNavy.withValues(alpha: 0.15),
+                    onChanged: (val) => setState(() {
+                      _durationMonths = val.round();
+                      _recalcInstallment();
+                    }),
+                  ),
+                  // أزرار سريعة للمدد الشائعة
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [6, 12, 18, 24, 36, 48]
+                        .map((m) => GestureDetector(
+                              onTap: () => setState(() {
+                                _durationMonths = m;
+                                _recalcInstallment();
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: _durationMonths == m
+                                      ? AppColors.accentGold
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '$m ش',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: _durationMonths == m
+                                          ? Colors.white
+                                          : Colors.grey.shade700),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  // القسط المحسوب تلقائياً
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentGold.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: AppColors.accentGold.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.calculate_rounded,
+                                color: AppColors.accentGold, size: 18),
+                            SizedBox(width: 8),
+                            Text('القسط الشهري المحسوب',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13)),
+                          ],
+                        ),
+                        Text(
+                          total > 0
+                              ? '${f.format(total / _durationMonths)} ر.س'
+                              : '— ر.س',
+                          style: const TextStyle(
+                              color: AppColors.primaryNavy,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
-            _buildDatePicker('تاريخ استحقاق أول قسط', _firstInstallmentDate, (d) => setState(() => _firstInstallmentDate = d)),
+            _buildDatePicker(
+              'تاريخ استحقاق أول قسط',
+              _firstInstallmentDate,
+              (d) => setState(() => _firstInstallmentDate = d),
+            ),
           ] else
-            _buildDatePicker('تاريخ سداد الوعدة', _waadaDueDate, (d) => setState(() => _waadaDueDate = d)),
+            _buildDatePicker(
+              'تاريخ سداد الوعدة',
+              _waadaDueDate,
+              (d) => setState(() => _waadaDueDate = d),
+            ),
           const SizedBox(height: 32),
           _buildCalculatedSummary(f),
         ],
@@ -889,8 +1159,7 @@ class _CreateInstallmentContractScreenState
       );
     }
 
-    final inst = double.tryParse(_installmentAmountController.text) ?? 0;
-    final int count = inst > 0 ? (total / inst).ceil() : 0;
+    final int count = _durationMonths;
     final endDate = _firstInstallmentDate.add(Duration(days: (count - 1) * 30));
 
     return Container(
@@ -1036,10 +1305,13 @@ class _CreateInstallmentContractScreenState
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false}) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, ValueChanged<String>? onChanged}) {
     return TextFormField(
       controller: controller,
-      onChanged: (_) => setState(() {}),
+      onChanged: (val) {
+        setState(() {});
+        onChanged?.call(val);
+      },
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,

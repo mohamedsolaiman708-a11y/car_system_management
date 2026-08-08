@@ -77,6 +77,16 @@ class InvestorTransactionsController extends _$InvestorTransactionsController {
         throw Exception('بيانات المستثمر أو العقد غير موجودة');
       }
 
+      // 0. تحقق أن المستثمر هو نفس مستثمر العقد (النموذج: مستثمر واحد لكل عقد)
+      final contractInvestorId =
+          contract.investorId ?? contract.investor?['id'] as String?;
+      if (contractInvestorId != null && contractInvestorId != investorId) {
+        throw Exception(
+          'لا يمكن تمويل هذا العقد بمستثمر مختلف.\n'
+          'العقد مرتبط بالمستثمر الأصلي ولا يقبل تمويلاً من مستثمر آخر.',
+        );
+      }
+
       // 1. تحقق الرصيد (منع الرصيد السالب)
       if (investor.availableBalance < amount) {
         throw Exception('رصيد المستثمر غير كافٍ. المتاح: ${investor.availableBalance} ر.س');

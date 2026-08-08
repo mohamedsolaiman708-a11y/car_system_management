@@ -697,6 +697,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
             rows: contracts.map((c) {
               final isCash = c.type == 'cash';
               return DataRow(
+                onSelectChanged: (_) => context.push('/contracts/${c.id}'),
                 cells: [
                   DataCell(
                     Text(
@@ -757,13 +758,10 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                   ),
                   DataCell(_buildStatusBadge(c.status)),
                   DataCell(
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 16,
-                        color: AppColors.primaryNavy,
-                      ),
-                      onPressed: () => context.push('/contracts/${c.id}'),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: AppColors.primaryNavy,
                     ),
                   ),
                 ],
@@ -790,6 +788,7 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.all(20),
+            onTap: () => context.push('/contracts/${c.id}'),
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

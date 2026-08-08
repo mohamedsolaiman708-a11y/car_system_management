@@ -45,11 +45,7 @@ class _InvestorRegisterScreenState extends ConsumerState<InvestorRegisterScreen>
         );
 
     if (success && mounted) {
-      if (widget.type == 'staff') {
-        context.go('/dashboard');
-      } else {
-        context.go('/auth/pending');
-      }
+      context.go('/auth/pending');
     }
   }
 
