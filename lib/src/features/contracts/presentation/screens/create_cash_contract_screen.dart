@@ -253,17 +253,10 @@ class _CreateCashContractScreenState
                               _buildCashSummaryCard(),
                               const SizedBox(height: 40),
 
-                              ElevatedButton(
+                              ElevatedButton.icon(
                                 onPressed: _isLoading ? null : _submit,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryNavy,
-                                  minimumSize: const Size(double.infinity, 60),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 3,
-                                ),
-                                child: const Text(
+                                icon: const Icon(Icons.check_circle_rounded, size: 22),
+                                label: const Text(
                                   'اعتماد وإنشاء عقد البيع النقدي المباشر',
                                   style: TextStyle(
                                     fontSize: 17,
@@ -271,8 +264,18 @@ class _CreateCashContractScreenState
                                     color: Colors.white,
                                   ),
                                 ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryNavy,
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(double.infinity, 60),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  elevation: 4,
+                                  shadowColor: AppColors.primaryNavy.withValues(alpha: 0.4),
+                                ),
                               ),
-                              const SizedBox(height: 80),
+                              const SizedBox(height: 60),
                             ],
                           ),
                         ),
@@ -288,36 +291,55 @@ class _CreateCashContractScreenState
   Widget _buildFormHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      color: AppColors.primaryNavy,
-      child: const Column(
+      padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 20 : 32),
+      decoration: const BoxDecoration(
+        color: AppColors.primaryNavy,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.payments_rounded,
-                color: AppColors.accentGold,
-                size: 20,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.payments_rounded,
+                  color: AppColors.accentGold,
+                  size: 18,
+                ),
               ),
-              SizedBox(width: 8),
-              Text(
+              const SizedBox(width: 10),
+              const Text(
                 'قسم عقود البيع النقدي المباشر',
                 style: TextStyle(
                   color: AppColors.accentGold,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             'إصدار عقد بيع نقدي مباشر وتسليم السيارة',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontSize: ResponsiveLayout.isMobile(context) ? 20 : 26,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'تعبئة أطراف العقد والقيمة النقدية لاعتماد الفاتورة والسندات تلقائياً',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 13,
             ),
           ),
         ],
@@ -332,16 +354,16 @@ class _CreateCashContractScreenState
     required List<Widget> children,
   }) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.12)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -351,8 +373,8 @@ class _CreateCashContractScreenState
           Row(
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 decoration: const BoxDecoration(
                   color: AppColors.primaryNavy,
                   shape: BoxShape.circle,
@@ -361,7 +383,7 @@ class _CreateCashContractScreenState
                   child: Text(
                     stepNumber,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.accentGold,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -369,14 +391,23 @@ class _CreateCashContractScreenState
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(icon, color: AppColors.accentGold, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: AppColors.primaryNavy,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: AppColors.accentGold, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppColors.primaryNavy,
+                  ),
                 ),
               ),
             ],

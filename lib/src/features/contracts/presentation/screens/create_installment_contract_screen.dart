@@ -230,20 +230,116 @@ class _CreateInstallmentContractScreenState
   }
 
   Widget _buildProgressBar() {
+    final steps = [
+      {'title': 'اختيار السيارات', 'icon': Icons.directions_car_rounded},
+      {'title': 'أطراف العقد', 'icon': Icons.people_alt_rounded},
+      {'title': 'الحسابات والجدولة', 'icon': Icons.calculate_rounded},
+    ];
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-      color: AppColors.primaryNavy,
-      child: Row(
-        children: List.generate(3, (index) => Expanded(
-          child: Container(
-            height: 6,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: index <= _currentStep ? AppColors.accentGold : Colors.white12,
-              borderRadius: BorderRadius.circular(10),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveLayout.isMobile(context) ? 16 : 32,
+        vertical: 16,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primaryNavy,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: List.generate(3, (index) {
+              final isCurrent = index == _currentStep;
+              final isPassed = index < _currentStep;
+              final stepData = steps[index];
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: isPassed ? () => setState(() => _currentStep = index) : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: isCurrent
+                          ? AppColors.accentGold.withValues(alpha: 0.15)
+                          : isPassed
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isCurrent
+                            ? AppColors.accentGold
+                            : isPassed
+                                ? Colors.white24
+                                : Colors.white10,
+                        width: isCurrent ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isCurrent
+                                ? AppColors.accentGold
+                                : isPassed
+                                    ? Colors.white24
+                                    : Colors.white10,
+                          ),
+                          child: Center(
+                            child: isPassed
+                                ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                                : Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color: isCurrent ? AppColors.primaryNavy : Colors.white54,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        if (!ResponsiveLayout.isMobile(context)) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              stepData['title'] as String,
+                              style: TextStyle(
+                                color: isCurrent ? AppColors.accentGold : Colors.white70,
+                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (_currentStep + 1) / 3,
+              backgroundColor: Colors.white10,
+              color: AppColors.accentGold,
+              minHeight: 4,
             ),
           ),
-        )),
+        ],
       ),
     );
   }
@@ -262,8 +358,9 @@ class _CreateInstallmentContractScreenState
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
     return _buildStepLayout(
-      title: '١. اختيار السيارات من المخزون',
-      subtitle: 'اختر سيارة أو أكثر من السيارات المتاحة بالمخزون لإضافتها للعقد',
+      title: 'اختيار السيارات من المخزون',
+      subtitle: 'اختر المركبات المتاحة بالمخزون المالي لإدراجها في العقد التعاقدي الحالي',
+      icon: Icons.directions_car_filled_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -272,52 +369,168 @@ class _CreateInstallmentContractScreenState
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'إضافة سيارة من المخزون', 
-                      prefixIcon: Icon(Icons.directions_car),
-                      border: OutlineInputBorder(),
-                      filled: true,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 15,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                      border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.1)),
                     ),
-                    items: list.map((v) => DropdownMenuItem(
-                      value: v.id, 
-                      child: Text('${v.make} ${v.model} (${v.year}) - لوحة: ${v.licensePlate ?? "بدون"}'),
-                    )).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        final v = list.firstWhere((x) => x.id == val);
-                        if (!_selectedVehicles.any((element) => element.id == v.id)) {
-                          setState(() {
-                            _selectedVehicles.add(v);
-                          });
-                        }
-                      }
-                    },
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'إضافة سيارة من المخزون المتاح',
+                          labelStyle: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy, fontSize: 14),
+                          prefixIcon: Icon(Icons.add_road_rounded, color: AppColors.accentGold, size: 24),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        items: list.map((v) => DropdownMenuItem(
+                          value: v.id, 
+                          child: Text(
+                            '${v.make} ${v.model} (${v.year}) - لوحة: ${v.licensePlate ?? "بدون"}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        )).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            final v = list.firstWhere((x) => x.id == val);
+                            if (!_selectedVehicles.any((element) => element.id == v.id)) {
+                              setState(() {
+                                _selectedVehicles.add(v);
+                              });
+                            }
+                          }
+                        },
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   if (_selectedVehicles.isEmpty)
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.shade200),
+                        color: Colors.amber.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                       ),
-                      child: const Text('لم يتم اختيار أي سيارة بعد. يرجى اختيار سيارة من القائمة أعلاه.', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, color: Colors.amber, size: 24),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'لم يتم اختيار أي سيارة بعد. يرجى التحديد من القائمة أعلاه لبدء إجراءات العقد.',
+                              style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   else
                     Column(
-                      children: _selectedVehicles.map((v) => Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: const Icon(Icons.directions_car_filled, color: AppColors.primaryNavy),
-                          title: Text('${v.make} ${v.model} (${v.year})'),
-                          subtitle: Text('لوحة: ${v.licensePlate ?? "بدون"} | الشراء: ${f.format(v.purchasePrice)} ر.س'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
-                            onPressed: () => setState(() => _selectedVehicles.removeWhere((x) => x.id == v.id)),
-                          ),
+                      children: _selectedVehicles.map((v) => Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            )
+                          ],
+                          border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.3), width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryNavy.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: const Icon(Icons.directions_car_filled_rounded, color: AppColors.primaryNavy, size: 30),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${v.make} ${v.model}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.primaryNavy),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryNavy.withValues(alpha: 0.05),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.1)),
+                                        ),
+                                        child: Text(
+                                          'لوحة: ${v.licensePlate ?? "بدون"}',
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryNavy),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'الشراء: ${f.format(v.purchasePrice)} ر.س',
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.accentGold.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'سنة ${v.year}',
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryNavy),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            IconButton(
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.08),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                              ),
+                              onPressed: () => setState(() => _selectedVehicles.removeWhere((x) => x.id == v.id)),
+                              tooltip: 'إزالة المركبة',
+                            ),
+                          ],
                         ),
                       )).toList(),
                     ),
@@ -334,29 +547,30 @@ class _CreateInstallmentContractScreenState
 
   Widget _stepParties() {
     return _buildStepLayout(
-      title: '٢. أطراف العقد والضمانات',
-      subtitle: 'تحديد البائع الممول، المشتري، وبيانات الكفيل الغارم إن وجد',
+      title: 'أطراف العقد والضمانات',
+      subtitle: 'تحديد المستثمر الممول (البائع)، العميل (المشتري)، وبيانات الكفيل الغارم إن وجد',
+      icon: Icons.people_alt_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchSelectionTile(
             label: 'المستثمر (الطرف الأول - البائع)',
-            hint: 'ابحث عن مستثمر...',
-            icon: Icons.account_balance,
+            hint: 'انقر لاختيار المستثمر الممول...',
+            icon: Icons.account_balance_rounded,
             selectedName: _selectedInvestor?.fullName,
             onTap: () => _showInvestorSearch(),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildSearchSelectionTile(
-            label: 'المشتري (الطرف الثاني)',
-            hint: 'ابحث عن عميل...',
-            icon: Icons.person,
+            label: 'المشتري (الطرف الثاني - العميل)',
+            hint: 'انقر لاختيار العميل المشتري...',
+            icon: Icons.person_rounded,
             selectedName: _selectedCustomer?.fullName,
             onTap: () => _showCustomerSearch(),
           ),
           const SizedBox(height: 32),
-          const Divider(),
-          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 24),
           _buildGuarantorSection(),
         ],
       ),
@@ -370,35 +584,88 @@ class _CreateInstallmentContractScreenState
     String? selectedName,
     required VoidCallback onTap,
   }) {
+    final isSelected = selectedName != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, color: AppColors.primaryNavy, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          borderRadius: BorderRadius.circular(20),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: selectedName != null ? AppColors.primaryNavy : Colors.grey.shade300, width: selectedName != null ? 1.5 : 1),
+              color: isSelected ? AppColors.primaryNavy.withValues(alpha: 0.03) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected ? AppColors.accentGold : Colors.grey.shade300,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
             ),
             child: Row(
               children: [
-                Icon(icon, color: selectedName != null ? AppColors.primaryNavy : Colors.grey, size: 20),
-                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.accentGold.withValues(alpha: 0.15) : AppColors.bgGrey,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? AppColors.primaryNavy : Colors.grey,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isSelected ? selectedName : hint,
+                        style: TextStyle(
+                          color: isSelected ? AppColors.primaryNavy : Colors.grey.shade600,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: isSelected ? 15 : 13,
+                        ),
+                      ),
+                      if (isSelected) ...[
+                        const SizedBox(height: 2),
+                        const Text(
+                          'طرف معتمد بالعقد',
+                          style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primaryNavy : AppColors.bgGrey,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Text(
-                    selectedName ?? hint,
+                    isSelected ? 'تغيير' : 'اختيار',
                     style: TextStyle(
-                      color: selectedName != null ? AppColors.primaryNavy : Colors.grey,
-                      fontWeight: selectedName != null ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.white : AppColors.primaryNavy,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                const Icon(Icons.search_rounded, size: 18, color: Colors.grey),
               ],
             ),
           ),
@@ -524,33 +791,45 @@ class _CreateInstallmentContractScreenState
   Widget _stepFinancial() {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
     return _buildStepLayout(
-      title: '٣. الحسابات والجدولة',
-      subtitle: 'تحديد نوع البيع بالأجل (أقساط شهرية أو وعدة) والقيمة الاتفاقية',
+      title: 'الحسابات والجدولة المالية',
+      subtitle: 'تحديد نوع البيع بالأجل (أقساط شهرية أو وعدة) والقيمة الاتفاقية المعتمدة',
+      icon: Icons.calculate_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // اختيار نوع عقد الأجل
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15)
+              ],
+              border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.08)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('صيغة البيع بالأجل:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
-                const SizedBox(height: 8),
+                const Text('صيغة البيع بالأجل المعتمدة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
+                const SizedBox(height: 12),
                 SegmentedButton<String>(
                   segments: const [
-                    ButtonSegment(value: 'installments', label: Text('بيع أقساط شهرية'), icon: Icon(Icons.view_list_rounded, size: 16)),
-                    ButtonSegment(value: 'waada', label: Text('بيع وعدة'), icon: Icon(Icons.event_rounded, size: 16)),
+                    ButtonSegment(
+                      value: 'installments',
+                      label: Text('بيع أقساط شهرية'),
+                      icon: Icon(Icons.view_list_rounded, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: 'waada',
+                      label: Text('بيع وعدة (سداد مؤجل)'),
+                      icon: Icon(Icons.event_rounded, size: 18),
+                    ),
                   ],
                   selected: {_installmentSubtype},
                   onSelectionChanged: (val) => setState(() => _installmentSubtype = val.first),
                   style: ButtonStyle(
-                    textStyle: WidgetStateProperty.all(const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    textStyle: WidgetStateProperty.all(const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                 ),
               ],
@@ -655,26 +934,56 @@ class _CreateInstallmentContractScreenState
 
   Widget _buildControlButtons(bool isLoading) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, border: const Border(top: BorderSide(color: AppColors.bgGrey)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))]),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: AppColors.bgGrey)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          )
+        ],
+      ),
       child: SafeArea(
         child: Row(
           children: [
             if (_currentStep > 0)
               Expanded(
-                child: OutlinedButton(
+                child: OutlinedButton.icon(
                   onPressed: isLoading ? null : _prevStep,
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                  child: const Text('السابق'),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: const Text('السابق'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 56),
+                    foregroundColor: AppColors.primaryNavy,
+                    side: const BorderSide(color: AppColors.primaryNavy),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
                 ),
               ),
             if (_currentStep > 0) const SizedBox(width: 16),
             Expanded(
               flex: 2,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: isLoading ? null : _nextStep,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryNavy, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 2),
-                child: Text(_currentStep < 2 ? 'الخطوة التالية' : 'اعتماد وإصدار العقد الآن', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                icon: Icon(
+                  _currentStep < 2 ? Icons.arrow_forward_rounded : Icons.check_circle_rounded,
+                  size: 20,
+                ),
+                label: Text(
+                  _currentStep < 2 ? 'الخطوة التالية' : 'اعتماد وإصدار العقد الآن',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryNavy,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                  shadowColor: AppColors.primaryNavy.withValues(alpha: 0.4),
+                ),
               ),
             ),
           ],
@@ -683,14 +992,45 @@ class _CreateInstallmentContractScreenState
     );
   }
 
-  Widget _buildStepLayout({required String title, required String subtitle, required Widget child}) {
+  Widget _buildStepLayout({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Widget child,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.primaryNavy)),
-        const SizedBox(height: 8),
-        Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.grey, height: 1.5)),
-        const SizedBox(height: 40),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.accentGold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: AppColors.accentGold, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.primaryNavy),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
         child,
       ],
     );
