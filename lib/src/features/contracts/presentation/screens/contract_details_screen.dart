@@ -563,30 +563,68 @@ class _FundingTab extends ConsumerWidget {
     final fundingAsync = ref.watch(contractFundingProvider(contract.id));
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
-    return fundingAsync.when(
-      data: (list) {
-        if (list.isEmpty) return const _EmptyState(message: 'لا يوجد شركاء تمويل لهذا العقد');
-        return ListView(
+    return Column(
+      children: [
+        Padding(
           padding: const EdgeInsets.all(24),
-          children: list
-              .map(
-                (fund) => Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const Icon(Icons.account_balance_rounded, color: AppColors.accentGold),
-                    title: Text(fund['investors']?['full_name'] ?? 'مستثمر'),
-                    trailing: Text(
-                      '${f.format(fund['amount_allocated'])} ر.س',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(e.toString())),
+          child: ElevatedButton.icon(
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => FundContractDialog(contract: contract),
+            ),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('تخصيص تمويل للعقد'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryNavy,
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: fundingAsync.when(
+            data: (list) {
+              if (list.isEmpty) {
+                return const _EmptyState(message: 'لا يوجد شركاء تمويل لهذا العقد');
+              }
+              return ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                children: list
+                    .map(
+                      (fund) => Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.account_balance_rounded,
+                            color: AppColors.accentGold,
+                          ),
+                          title: Text(
+                            fund['investors']?['full_name'] ?? 'مستثمر',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          trailing: Text(
+                            '${f.format(fund['amount_allocated'])} ر.س',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryNavy,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text(e.toString())),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -604,7 +642,7 @@ class _AccountingTab extends ConsumerWidget {
       data: (allEntries) {
         // تصفية القيود التي تحتوي على رقم العقد في البيان أو المرجع
         final filtered = allEntries.where((e) => 
-          (e.description.contains(contractNo) ?? false) ||
+          e.description.contains(contractNo) ||
           (e.referenceNo?.contains(contractNo) ?? false)
         ).toList();
 
@@ -618,7 +656,7 @@ class _AccountingTab extends ConsumerWidget {
             return Card(
               margin: const EdgeInsets.only(bottom: 16),
               child: ExpansionTile(
-                title: Text(entry.description ?? 'قيد محاسبي'),
+                title: Text(entry.description),
                 subtitle: Text('التاريخ: ${intl.DateFormat('yyyy/MM/dd').format(entry.entryDate)}'),
                 children: [
                   ...entry.lines.map((line) => Padding(
