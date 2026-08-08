@@ -21,6 +21,15 @@ class _FundContractDialogState extends ConsumerState<FundContractDialog> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    final defaultInvestorId = widget.contract.investorId ?? widget.contract.investor?['id'] as String?;
+    if (defaultInvestorId != null) {
+      _selectedInvestorId = defaultInvestorId;
+    }
+  }
+
+  @override
   void dispose() {
     _amountController.dispose();
     super.dispose();
@@ -54,27 +63,36 @@ class _FundContractDialogState extends ConsumerState<FundContractDialog> {
                   Text('المبلغ المطلوب المتبقي: $remainingToFund ر.س', style: const TextStyle(color: Colors.blue, fontSize: 12)),
                   const SizedBox(height: 16),
                   investorsAsync.when(
-                    data: (investors) => DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'اختر المستثمر',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      value: _selectedInvestorId,
-                      items: investors.map((inv) {
-                        return DropdownMenuItem(
-                          value: inv.id,
-                          child: Text('${inv.fullName} (المتاح: ${inv.availableBalance} ر.س)'),
-                        );
-                      }).toList(),
-                      onChanged: _isSubmitting ? null : (val) {
-                        setState(() {
-                          _selectedInvestorId = val;
-                          _selectedInvestor = investors.firstWhere((i) => i.id == val);
-                        });
-                      },
-                      validator: (val) => val == null ? 'مطلوب' : null,
-                    ),
+                    data: (investors) {
+                      if (_selectedInvestorId != null && _selectedInvestor == null) {
+                        final matching = investors.where((i) => i.id == _selectedInvestorId);
+                        if (matching.isNotEmpty) {
+                          _selectedInvestor = matching.first;
+                        }
+                      }
+
+                      return DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'اختر المستثمر',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        value: investors.any((inv) => inv.id == _selectedInvestorId) ? _selectedInvestorId : null,
+                        items: investors.map((inv) {
+                          return DropdownMenuItem(
+                            value: inv.id,
+                            child: Text('${inv.fullName} (المتاح: ${inv.availableBalance} ر.س)'),
+                          );
+                        }).toList(),
+                        onChanged: _isSubmitting ? null : (val) {
+                          setState(() {
+                            _selectedInvestorId = val;
+                            _selectedInvestor = investors.firstWhere((i) => i.id == val);
+                          });
+                        },
+                        validator: (val) => val == null ? 'مطلوب' : null,
+                      );
+                    },
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (_, __) => const Text('خطأ في تحميل المستثمرين', style: TextStyle(color: Colors.red)),
                   ),
