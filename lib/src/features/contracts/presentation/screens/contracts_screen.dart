@@ -855,7 +855,6 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
                 ),
               ],
             ),
-            onTap: () => context.push('/contracts/${c.id}'),
           ),
         );
       },
