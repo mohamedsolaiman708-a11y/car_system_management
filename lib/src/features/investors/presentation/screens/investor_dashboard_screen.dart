@@ -7,7 +7,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 import '../../domain/investor.dart';
-import '../../domain/investor_transaction.dart';
 import '../investor_controller.dart';
 import '../../../authentication/presentation/auth_controller.dart';
 import '../../../documents/presentation/widgets/universal_document_manager.dart';

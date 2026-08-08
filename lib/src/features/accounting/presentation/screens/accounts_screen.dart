@@ -182,7 +182,7 @@ class AccountsScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${f.format(balance)}',
+                          f.format(balance),
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 22,

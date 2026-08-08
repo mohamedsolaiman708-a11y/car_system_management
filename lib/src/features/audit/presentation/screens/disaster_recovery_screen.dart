@@ -125,7 +125,7 @@ class DisasterRecoveryScreen extends ConsumerWidget {
           icon: Icons.auto_mode_rounded,
           color: Colors.orange,
           onTap: () {
-            ref.refresh(staffStatsProvider);
+            ref.invalidate(staffStatsProvider);
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث إحصائيات النظام.')));
           },
         ),

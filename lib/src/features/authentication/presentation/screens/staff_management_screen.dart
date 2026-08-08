@@ -290,7 +290,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
                 ),
                 const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
-                  value: selectedRoleId,
+                  initialValue: selectedRoleId,
                   decoration: const InputDecoration(
                     labelText: 'الرتبة الوظيفية',
                   ),
@@ -537,7 +537,9 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
               .read(staffListControllerProvider.notifier)
               .updateStatus(member.id, !member.isActive);
         }
-        if (val == 'edit_name') _showEditNameDialog(context, member);
+        if (val == 'edit_name') {
+          if (context.mounted) _showEditNameDialog(context, member);
+        }
         if (val.startsWith('role_')) {
           await ref
               .read(staffListControllerProvider.notifier)
@@ -617,7 +619,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen>
                         .toList();
                     return StatefulBuilder(
                       builder: (context, setState) => DropdownButtonFormField<String>(
-                        value: selectedRoleId,
+                        initialValue: selectedRoleId,
                         decoration: const InputDecoration(
                           labelText: 'الرتبة الوظيفية',
                           prefixIcon: Icon(Icons.badge_outlined),

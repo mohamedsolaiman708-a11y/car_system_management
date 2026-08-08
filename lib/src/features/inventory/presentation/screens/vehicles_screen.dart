@@ -337,11 +337,11 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           icon: const Icon(Icons.filter_list_rounded, color: AppColors.primaryNavy),
           isExpanded: true,
           onChanged: (val) => setState(() => statusFilter = val),
-          items: [
-            const DropdownMenuItem(value: null, child: Text('كافة الحالات')),
-            const DropdownMenuItem(value: 'available', child: Text('متاحة')),
-            const DropdownMenuItem(value: 'on_contract', child: Text('تحت عقد')),
-            const DropdownMenuItem(value: 'maintenance', child: Text('صيانة')),
+          items: const [
+            DropdownMenuItem(value: null, child: Text('كافة الحالات')),
+            DropdownMenuItem(value: 'available', child: Text('متاحة')),
+            DropdownMenuItem(value: 'on_contract', child: Text('تحت عقد')),
+            DropdownMenuItem(value: 'maintenance', child: Text('صيانة')),
           ],
         ),
       ),

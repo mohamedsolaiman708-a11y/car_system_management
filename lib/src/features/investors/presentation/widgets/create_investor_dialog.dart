@@ -8,7 +8,8 @@ class CreateInvestorDialog extends ConsumerStatefulWidget {
   const CreateInvestorDialog({super.key});
 
   @override
-  ConsumerState<CreateInvestorDialog> createState() => _CreateInvestorDialogState();
+  ConsumerState<CreateInvestorDialog> createState() =>
+      _CreateInvestorDialogState();
 }
 
 class _CreateInvestorDialogState extends ConsumerState<CreateInvestorDialog> {
@@ -30,75 +31,244 @@ class _CreateInvestorDialogState extends ConsumerState<CreateInvestorDialog> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        title: const Text('تسجيل مستثمر جديد', 
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-        content: Form(
-          key: _formKey,
+      child: Dialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          width: 480,
+          decoration: const BoxDecoration(color: Colors.white),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('إضافة بيانات المستثمر يدوياً للنظام المالي', 
-                style: TextStyle(fontSize: 11, color: Colors.grey)),
-              const SizedBox(height: 20),
-              _buildField(_nameController, 'الاسم الكامل للمستثمر *', Icons.person_outline),
-              const SizedBox(height: 12),
-              _buildField(_emailController, 'البريد الإلكتروني *', Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 12),
-              _buildField(_phoneController, 'رقم الجوال (اختياري)', Icons.phone_android_rounded, keyboardType: TextInputType.phone),
+              // ─── Header ───
+              Container(
+                padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+                decoration: const BoxDecoration(color: AppColors.primaryNavy),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color:
+                                AppColors.accentGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                              Icons.account_balance_wallet_rounded,
+                              color: AppColors.accentGold,
+                              size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'قسم المستثمرين — حساب جديد',
+                          style: TextStyle(
+                            color: AppColors.accentGold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'تسجيل مستثمر جديد',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'إضافة بيانات المستثمر يدوياً للنظام المالي',
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ─── Form Fields ───
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _field(
+                        controller: _nameController,
+                        label: 'الاسم الكامل للمستثمر *',
+                        hint: 'أدخل الاسم الثلاثي...',
+                        icon: Icons.person_outline_rounded,
+                        validator: (val) =>
+                            (val == null || val.isEmpty) ? 'مطلوب' : null,
+                      ),
+                      const SizedBox(height: 14),
+                      _field(
+                        controller: _emailController,
+                        label: 'البريد الإلكتروني *',
+                        hint: 'example@domain.com',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return 'مطلوب';
+                          if (!val.contains('@')) return 'بريد غير صحيح';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      _field(
+                        controller: _phoneController,
+                        label: 'رقم الجوال',
+                        hint: '05xxxxxxxx (اختياري)',
+                        icon: Icons.phone_android_rounded,
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ─── Actions ───
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.04),
+                  border: Border(
+                      top: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.12))),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                              color: Colors.grey.withValues(alpha: 0.3)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('إلغاء',
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSubmitting ? null : _submit,
+                        icon: _isSubmitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(
+                                Icons.account_balance_wallet_rounded,
+                                size: 20),
+                        label: Text(
+                          _isSubmitting ? 'جاري الإنشاء...' : 'إنشاء الحساب',
+                          style:
+                              const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryNavy,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          elevation: 3,
+                          shadowColor: AppColors.primaryNavy
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(fontSize: 12, color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: _isSubmitting ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryNavy,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            ),
-            child: _isSubmitting 
-              ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('إنشاء الحساب', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 13),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 12),
-        prefixIcon: Icon(icon, size: 18),
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-      ),
-      validator: (val) {
-        if (label.contains('*') && (val == null || val.isEmpty)) return 'مطلوب';
-        if (label.contains('البريد') && val != null && !val.contains('@')) return 'بريد غير صحيح';
-        return null;
-      },
+  Widget _field({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryNavy)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle:
+                TextStyle(color: Colors.grey.withValues(alpha: 0.5), fontSize: 13),
+            prefixIcon: Icon(icon, size: 18, color: AppColors.primaryNavy),
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: AppColors.primaryNavy, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+            ),
+          ),
+          validator: validator,
+        ),
+      ],
     );
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSubmitting = true);
     try {
       await ref.read(investorListControllerProvider.notifier).createInvestor(
             _nameController.text.trim(),
             _emailController.text.trim(),
-            _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+            _phoneController.text.trim().isEmpty
+                ? null
+                : _phoneController.text.trim(),
           );
       if (mounted) {
         Navigator.pop(context);

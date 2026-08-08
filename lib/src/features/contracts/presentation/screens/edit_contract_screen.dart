@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 import '../../data/supabase_contract_repository.dart';
 import '../contract_controller.dart';
@@ -135,10 +136,10 @@ class _EditContractScreenState extends ConsumerState<EditContractScreen> {
         backgroundColor: AppColors.primaryNavy,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => context.pop(),
         ),
-        title: const Text('تعديل وثيقة التعاقد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('تعديل وثيقة التعاقد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
       ),
       body: contractAsync.when(
         data: (contract) {
@@ -146,101 +147,102 @@ class _EditContractScreenState extends ConsumerState<EditContractScreen> {
           _initFields(contract);
 
           return SingleChildScrollView(
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  color: AppColors.primaryNavy,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('عقد رقم: ${contract.contractNo}', style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      const Text('تعديل القيم المالية وبيانات الضمانات', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        _buildSectionCard(
-                          title: 'القيم المالية الأساسية',
-                          icon: Icons.account_balance_wallet_rounded,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 860),
+                child: Column(
+                  children: [
+                    _buildFormHeader(contract.contractNo),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveLayout.isMobile(context) ? 16 : 32,
+                        vertical: 24,
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
                           children: [
-                            _buildTextField(_principalController, 'أصل مبلغ التمويل', isNumber: true, icon: Icons.money_rounded),
-                            const SizedBox(height: 16),
-                            Row(
+                            _buildSectionCard(
+                              title: 'القيم المالية الأساسية',
+                              icon: Icons.account_balance_wallet_rounded,
                               children: [
-                                Expanded(child: _buildTextField(_profitRateController, 'نسبة الربح %', isNumber: true, icon: Icons.trending_up_rounded)),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildTextField(_durationController, 'المدة (أشهر)', isNumber: true, icon: Icons.timer_rounded)),
+                                _buildTextField(_principalController, 'أصل مبلغ التمويل', isNumber: true, icon: Icons.money_rounded),
+                                const SizedBox(height: 20),
+                                ResponsiveFormRow(
+                                  children: [
+                                    _buildTextField(_profitRateController, 'نسبة الربح %', isNumber: true, icon: Icons.trending_up_rounded),
+                                    _buildTextField(_durationController, 'المدة (أشهر)', isNumber: true, icon: Icons.timer_rounded),
+                                  ],
+                                ),
                               ],
                             ),
+                            const SizedBox(height: 24),
+                            _buildSectionCard(
+                              title: 'الرسوم الإدارية والضرائب',
+                              icon: Icons.receipt_long_rounded,
+                              children: [
+                                ResponsiveFormRow(
+                                  children: [
+                                    _buildTextField(_moroorFeesController, 'رسوم المرور', isNumber: true, icon: Icons.assignment_rounded),
+                                    _buildTextField(_tammFeesController, 'رسوم تم', isNumber: true, icon: Icons.app_registration_rounded),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                ResponsiveFormRow(
+                                  children: [
+                                    _buildTextField(_insuranceFeesController, 'رسوم التأمين', isNumber: true, icon: Icons.security_rounded),
+                                    _buildTextField(_vatController, 'ضريبة القيمة المضافة', isNumber: true, icon: Icons.calculate_rounded),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            _buildSectionCard(
+                              title: 'بيانات الكفيل الغارم',
+                              icon: Icons.person_search_rounded,
+                              children: [
+                                _buildTextField(_g1NameController, 'اسم الكفيل الكامل', icon: Icons.person_add_rounded),
+                                const SizedBox(height: 20),
+                                ResponsiveFormRow(
+                                  children: [
+                                    _buildTextField(_g1IdController, 'هوية الكفيل', icon: Icons.badge_rounded),
+                                    _buildTextField(_g1PhoneController, 'جوال الكفيل', icon: Icons.phone_android_rounded),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 32),
+                            _buildSummaryCard(),
+                            const SizedBox(height: 40),
+                            ElevatedButton.icon(
+                              onPressed: _isLoading ? null : _submit,
+                              icon: _isLoading
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  : const Icon(Icons.check_circle_rounded, size: 22),
+                              label: Text(_isLoading ? 'جاري التحديث...' : 'حفظ واعتماد التعديلات',
+                                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryNavy,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 60),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                elevation: 4,
+                                shadowColor: AppColors.primaryNavy.withValues(alpha: 0.4),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            TextButton(
+                              onPressed: () => context.pop(),
+                              child: const Text('إلغاء التعديل والعودة', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(height: 40),
                           ],
                         ),
-                        const SizedBox(height: 24),
-                        _buildSectionCard(
-                          title: 'الرسوم الإدارية والضرائب',
-                          icon: Icons.receipt_long_rounded,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(child: _buildTextField(_moroorFeesController, 'رسوم المرور', isNumber: true, icon: Icons.assignment_rounded)),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildTextField(_tammFeesController, 'رسوم تم', isNumber: true, icon: Icons.app_registration_rounded)),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(child: _buildTextField(_insuranceFeesController, 'رسوم التأمين', isNumber: true, icon: Icons.security_rounded)),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildTextField(_vatController, 'ضريبة القيمة المضافة', isNumber: true, icon: Icons.calculate_rounded)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        _buildSectionCard(
-                          title: 'بيانات الكفيل الغارم',
-                          icon: Icons.person_search_rounded,
-                          children: [
-                            _buildTextField(_g1NameController, 'اسم الكفيل الكامل', icon: Icons.person_add_rounded),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(child: _buildTextField(_g1IdController, 'هوية الكفيل', icon: Icons.badge_rounded)),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildTextField(_g1PhoneController, 'جوال الكفيل', icon: Icons.phone_android_rounded)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-                        _buildSummaryCard(),
-                        const SizedBox(height: 32),
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryNavy,
-                            minimumSize: const Size(double.infinity, 64),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 4,
-                          ),
-                          child: _isLoading 
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('حفظ واعتماد التعديلات', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },
@@ -250,27 +252,84 @@ class _EditContractScreenState extends ConsumerState<EditContractScreen> {
     );
   }
 
+  Widget _buildFormHeader(String contractNo) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 20 : 32),
+      decoration: const BoxDecoration(
+        color: AppColors.primaryNavy,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.edit_document, color: AppColors.accentGold, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'عقد رقم: $contractNo',
+                style: const TextStyle(color: AppColors.accentGold, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'تعديل القيم المالية والضمانات',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: ResponsiveLayout.isMobile(context) ? 20 : 26,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'تعديل المبالغ والنسب والرسوم الإدارية وبيانات الكفيل الغارم.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSummaryCard() {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: AppColors.primaryNavy, borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: AppColors.primaryNavy,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryNavy.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('إجمالي قيمة العقد الجديدة', style: TextStyle(color: Colors.white70)), 
-              Text('${f.format(_totalValue)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 20, fontWeight: FontWeight.bold))
-            ]
+              const Text('إجمالي قيمة العقد المعدلة', style: TextStyle(color: Colors.white70, fontSize: 14)),
+              Text('${f.format(_totalValue)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 22, fontWeight: FontWeight.bold)),
+            ],
           ),
-          const Divider(color: Colors.white10, height: 24),
+          const Divider(color: Colors.white12, height: 28),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('القسط الشهري التقريبي', style: TextStyle(color: Colors.white70)), 
-              Text('${f.format(_monthlyInstallment)} ر.س', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))
-            ]
+              const Text('القسط الشهري الجديد', style: TextStyle(color: Colors.white70, fontSize: 14)),
+              Text('${f.format(_monthlyInstallment)} ر.س', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
           ),
         ],
       ),
@@ -279,13 +338,37 @@ class _EditContractScreenState extends ConsumerState<EditContractScreen> {
 
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(icon, color: AppColors.accentGold, size: 20), const SizedBox(width: 12), Text(title, style: const TextStyle(fontWeight: FontWeight.bold))]),
-          const Divider(height: 32),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppColors.accentGold, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+            ],
+          ),
+          const SizedBox(height: 28),
           ...children,
         ],
       ),
@@ -299,10 +382,14 @@ class _EditContractScreenState extends ConsumerState<EditContractScreen> {
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: icon != null ? Icon(icon, size: 18) : null,
+        prefixIcon: icon != null ? Icon(icon, size: 20, color: AppColors.primaryNavy) : null,
         filled: true,
         fillColor: const Color(0xFFF8F9FA),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primaryNavy, width: 1.5),
+        ),
       ),
     );
   }

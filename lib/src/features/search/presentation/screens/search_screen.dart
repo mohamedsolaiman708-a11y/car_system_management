@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
-import '../../../crm/presentation/crm_controller.dart';
-import '../../../inventory/presentation/inventory_controller.dart';
-import '../../../contracts/presentation/contract_controller.dart';
 
 class GlobalSearchScreen extends ConsumerStatefulWidget {
   const GlobalSearchScreen({super.key});

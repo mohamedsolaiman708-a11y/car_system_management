@@ -7,10 +7,8 @@ import '../widgets/add_transaction_dialog.dart';
 import '../../domain/investor_transaction_type.dart';
 import '../../domain/investor.dart';
 import '../../../documents/presentation/widgets/universal_document_manager.dart';
-import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/error_handler.dart';
-import '../../../../core/utils/snack_bar_helper.dart';
 
 const _navy = Color(0xFF0F172A);
 const _gold = Color(0xFFD4AF37);
@@ -149,9 +147,9 @@ class _FinancialTab extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _StatItem('سيولة متاحة', f.format(investor.availableBalance), Colors.green),
-                    _StatItem('رأس مال مشغل', f.format(investor.deployedCapital), Colors.blue),
-                    _StatItem('صافي أرباح', f.format(investor.totalProfitEarned), _gold),
+                    _statItem('سيولة متاحة', f.format(investor.availableBalance), Colors.green),
+                    _statItem('رأس مال مشغل', f.format(investor.deployedCapital), Colors.blue),
+                    _statItem('صافي أرباح', f.format(investor.totalProfitEarned), _gold),
                   ],
                 ),
               ),
@@ -202,7 +200,7 @@ class _FinancialTab extends ConsumerWidget {
 );
 }
 
-  Widget _StatItem(String l, String v, Color c) => Column(children: [Text(l, style: TextStyle(color: Colors.grey, fontSize: 9)), Text(v, style: TextStyle(color: c, fontWeight: FontWeight.bold, fontSize: 13))]);
+  Widget _statItem(String l, String v, Color c) => Column(children: [Text(l, style: const TextStyle(color: Colors.grey, fontSize: 9)), Text(v, style: TextStyle(color: c, fontWeight: FontWeight.bold, fontSize: 13))]);
 
   Widget _actionBtn(BuildContext context, String l, IconData i, Color c, VoidCallback onTap) => InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black.withValues(alpha: 0.05))), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(i, size: 14, color: c), const SizedBox(width: 4), Text(l, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _navy))])));
 

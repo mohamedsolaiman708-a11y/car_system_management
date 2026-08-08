@@ -302,13 +302,13 @@ class _OverviewTab extends ConsumerWidget {
                               : AppColors.successGreen,
                         );
                       },
-                      loading: () => _InfoRow(
+                      loading: () => const _InfoRow(
                         'المبلغ المتبقي',
                         'جاري الحساب...',
                         isBold: true,
                       ),
                       error: (_, __) =>
-                          _InfoRow('المبلغ المتبقي', '-', isBold: true),
+                          const _InfoRow('المبلغ المتبقي', '-', isBold: true),
                     ),
                   ],
                 ),
@@ -374,7 +374,7 @@ class _SectionCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20),
         ],
       ),
       child: Column(
@@ -440,15 +440,16 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color = Colors.grey;
-    if (status == 'active' || status == 'completed')
+    if (status == 'active' || status == 'completed') {
       color = AppColors.successGreen;
-    else if (status == 'draft')
+    } else if (status == 'draft') {
       color = Colors.orange;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -628,7 +629,7 @@ class _PaymentsTab extends ConsumerWidget {
                 );
                 if (success) {
                   await ref.read(contractControllerProvider.notifier).updateContract(contract.id, {'status': 'completed'});
-                  SnackBarHelper.showSuccess(context, 'تمت التسوية وإغلاق العقد بنجاح');
+                  if (context.mounted) SnackBarHelper.showSuccess(context, 'تمت التسوية وإغلاق العقد بنجاح');
                 }
               },
               child: const Text('تأكيد التسوية وإغلاق العقد', style: TextStyle(color: Colors.white)),

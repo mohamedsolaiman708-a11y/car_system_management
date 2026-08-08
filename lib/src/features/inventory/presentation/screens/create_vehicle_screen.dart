@@ -102,135 +102,160 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
                           key: _formKey,
                           child: Column(
                             children: [
-                    _buildSectionCard(
-                      title: 'بيانات الهوية التقنية للمركبة',
-                      icon: Icons.fingerprint_rounded,
-                      children: [
-                        _buildPremiumTextField(
-                          controller: _vinController,
-                          label: 'رقم الهيكل (VIN) - 17 خانة',
-                          prefixIcon: Icons.qr_code_rounded,
-                          validator: (v) => v == null || v.isEmpty ? 'رقم الهيكل مطلوب للتوثيق' : null,
+                              _buildSectionCard(
+                                title: 'بيانات الهوية التقنية للمركبة',
+                                icon: Icons.fingerprint_rounded,
+                                children: [
+                                  _buildPremiumTextField(
+                                    controller: _vinController,
+                                    label: 'رقم الهيكل (VIN) - 17 خانة',
+                                    prefixIcon: Icons.qr_code_rounded,
+                                    validator: (v) => v == null || v.isEmpty ? 'رقم الهيكل مطلوب للتوثيق' : null,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ResponsiveFormRow(
+                                    children: [
+                                      _buildPremiumTextField(
+                                        controller: _makeController,
+                                        label: 'الماركة (تويوتا، نيسان، إلخ)',
+                                        prefixIcon: Icons.branding_watermark_rounded,
+                                        validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+                                      ),
+                                      _buildPremiumTextField(
+                                        controller: _modelController,
+                                        label: 'الموديل (كامري، باترول، إلخ)',
+                                        prefixIcon: Icons.directions_car_rounded,
+                                        validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ResponsiveFormRow(
+                                    children: [
+                                      _buildPremiumTextField(
+                                        controller: _yearController,
+                                        label: 'سنة الصنع',
+                                        prefixIcon: Icons.calendar_today_rounded,
+                                        keyboardType: TextInputType.number,
+                                        validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+                                      ),
+                                      _buildPremiumTextField(
+                                        controller: _colorController,
+                                        label: 'اللون الخارجي',
+                                        prefixIcon: Icons.color_lens_rounded,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              _buildSectionCard(
+                                title: 'بيانات التسجيل والقيمة المالية',
+                                icon: Icons.account_balance_rounded,
+                                children: [
+                                  _buildPremiumTextField(
+                                    controller: _plateController,
+                                    label: 'رقم اللوحة (إن وجد)',
+                                    prefixIcon: Icons.pin_rounded,
+                                    keyboardType: TextInputType.text,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ResponsiveFormRow(
+                                    children: [
+                                      _buildPremiumTextField(
+                                        controller: _priceController,
+                                        label: 'سعر الشراء الفعلي',
+                                        prefixIcon: Icons.payments_rounded,
+                                        suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryNavy)),
+                                        keyboardType: TextInputType.number,
+                                        validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+                                      ),
+                                      _buildPremiumTextField(
+                                        controller: _marketValueController,
+                                        label: 'القيمة السوقية الحالية',
+                                        prefixIcon: Icons.analytics_rounded,
+                                        suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryNavy)),
+                                        keyboardType: TextInputType.number,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 40),
+                              ElevatedButton.icon(
+                                onPressed: _save,
+                                icon: const Icon(Icons.check_circle_rounded, size: 22),
+                                label: const Text('حفظ المركبة في المخزون العام',
+                                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryNavy,
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(double.infinity, 60),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                  elevation: 4,
+                                  shadowColor: AppColors.primaryNavy.withValues(alpha: 0.4),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              TextButton(
+                                onPressed: () => context.pop(),
+                                child: const Text('إلغاء الإدراج والعودة', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                              ),
+                              const SizedBox(height: 40),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                        ResponsiveFormRow(
-                          children: [
-                            _buildPremiumTextField(
-                              controller: _makeController,
-                              label: 'الماركة (تويوتا، الخ)',
-                              prefixIcon: Icons.branding_watermark_rounded,
-                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                            ),
-                            _buildPremiumTextField(
-                              controller: _modelController,
-                              label: 'الموديل (كامري، الخ)',
-                              prefixIcon: Icons.directions_car_rounded,
-                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        ResponsiveFormRow(
-                          children: [
-                            _buildPremiumTextField(
-                              controller: _yearController,
-                              label: 'سنة الصنع',
-                              prefixIcon: Icons.calendar_today_rounded,
-                              keyboardType: TextInputType.number,
-                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                            ),
-                            _buildPremiumTextField(
-                              controller: _colorController,
-                              label: 'اللون الخارجي',
-                              prefixIcon: Icons.color_lens_rounded,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionCard(
-                      title: 'بيانات التسجيل والقيمة المالية',
-                      icon: Icons.account_balance_rounded,
-                      children: [
-                        _buildPremiumTextField(
-                          controller: _plateController,
-                          label: 'رقم اللوحة (إن وجد)',
-                          prefixIcon: Icons.pin_rounded,
-                          keyboardType: TextInputType.text,
-                        ),
-                        const SizedBox(height: 20),
-                        ResponsiveFormRow(
-                          children: [
-                            _buildPremiumTextField(
-                              controller: _priceController,
-                              label: 'سعر الشراء الفعلي',
-                              prefixIcon: Icons.payments_rounded,
-                              suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              keyboardType: TextInputType.number,
-                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                            ),
-                            _buildPremiumTextField(
-                              controller: _marketValueController,
-                              label: 'القيمة السوقية الحالية',
-                              prefixIcon: Icons.analytics_rounded,
-                              suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 40),
-                    ElevatedButton(
-                      onPressed: _save,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryNavy,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 64),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 8,
-                        shadowColor: AppColors.primaryNavy.withValues(alpha: 0.4),
                       ),
-                      child: const Text('حفظ المركبة في المخزون العام',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                    ),
-                    const SizedBox(height: 20),
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text('إلغاء الإدراج والعودة', style: TextStyle(color: Colors.grey)),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    ),
-  ),
-);
+    );
   }
 
   Widget _buildFormHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(32, 20, 32, 40),
+      padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 20 : 32),
       decoration: const BoxDecoration(
         color: AppColors.primaryNavy,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('نموذج تسجيل أصل',
-              style: TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-          const SizedBox(height: 8),
-          const Text('إضافة مركبة جديدة للنظام المالي',
-              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.time_to_leave_rounded, color: AppColors.accentGold, size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'إدارة المخزون — إضافة أصل',
+                style: TextStyle(color: AppColors.accentGold, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'إدخال مركبة جديدة في أصول المعرض',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: ResponsiveLayout.isMobile(context) ? 20 : 26,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('تأكد من دقة رقم الهيكل (VIN) وسعر الشراء لضمان سلامة العمليات المحاسبية.',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, height: 1.4)),
+          Text(
+            'تأكد من دقة رقم الهيكل (VIN) وسعر الشراء لضمان دقة العمليات المحاسبية.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+          ),
         ],
       ),
     );
@@ -238,11 +263,18 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
 
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,14 +283,17 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppColors.accentGold.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Icon(icon, color: AppColors.accentGold, size: 20),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           ...children,
         ],
       ),
@@ -279,13 +314,15 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(prefixIcon, size: 20, color: Colors.grey.shade400),
+        prefixIcon: Icon(prefixIcon, size: 20, color: AppColors.primaryNavy),
         suffixIcon: suffix != null ? Padding(padding: const EdgeInsets.all(14.0), child: suffix) : null,
         filled: true,
-        fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.accentGold, width: 1.5)),
+        fillColor: const Color(0xFFF8F9FA),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primaryNavy, width: 1.5),
+        ),
       ),
     );
   }
