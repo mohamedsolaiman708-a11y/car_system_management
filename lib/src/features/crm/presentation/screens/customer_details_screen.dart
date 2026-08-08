@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../domain/customer.dart';
 import '../crm_controller.dart';
@@ -20,8 +21,9 @@ class CustomerDetailsScreen extends ConsumerWidget {
       backgroundColor: AppColors.bgGrey,
       body: customerAsync.when(
         data: (customer) {
-          if (customer == null)
+          if (customer == null) {
             return const Center(child: Text('العميل غير موجود'));
+          }
 
           return DefaultTabController(
             length: 5,
@@ -69,8 +71,14 @@ class CustomerDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildPremiumHeader(BuildContext context, Customer customer) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 16 : 32,
+        isMobile ? 24 : 40,
+        isMobile ? 16 : 32,
+        isMobile ? 20 : 32,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.primaryNavy,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
@@ -87,49 +95,53 @@ class CustomerDetailsScreen extends ConsumerWidget {
                 ),
                 onPressed: () => context.pop(),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Hero(
                 tag: 'cust-${customer.id}',
                 child: CircleAvatar(
-                  radius: 40,
+                  radius: isMobile ? 28 : 40,
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   child: Text(
-                    customer.fullName[0],
-                    style: const TextStyle(
-                      fontSize: 28,
+                    customer.fullName.isNotEmpty ? customer.fullName[0] : '?',
+                    style: TextStyle(
+                      fontSize: isMobile ? 20 : 28,
                       fontWeight: FontWeight.bold,
                       color: AppColors.accentGold,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Text(
-                          customer.fullName,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        Expanded(
+                          child: Text(
+                            customer.fullName,
+                            style: TextStyle(
+                              fontSize: isMobile ? 20 : 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 8),
                         _buildRiskBadge(customer.riskRating),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
                       children: [
                         _HeaderInfoChip(
                           Icons.badge_rounded,
                           'هوية: ${customer.nationalId}',
                         ),
-                        const SizedBox(width: 20),
                         _HeaderInfoChip(
                           Icons.phone_iphone_rounded,
                           customer.phone,
@@ -139,36 +151,74 @@ class CustomerDetailsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              Column(
-                children: [
-                  ElevatedButton.icon(
+              if (!isMobile) ...[
+                const SizedBox(width: 16),
+                Column(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => context.push(
+                        '/contracts/new?customerId=${customer.id}',
+                      ),
+                      icon: const Icon(Icons.add_task_rounded, size: 18),
+                      label: const Text('تعميد عقد جديد'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentGold,
+                        foregroundColor: AppColors.primaryNavy,
+                        minimumSize: const Size(160, 48),
+                        elevation: 0,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/crm/customers/$id/edit'),
+                      icon: const Icon(Icons.edit_note_rounded, size: 18),
+                      label: const Text('تعديل الملف'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                        minimumSize: const Size(160, 42),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          if (isMobile) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
                     onPressed: () => context.push(
                       '/contracts/new?customerId=${customer.id}',
                     ),
-                    icon: const Icon(Icons.add_task_rounded, size: 18),
-                    label: const Text('تعميد عقد جديد'),
+                    icon: const Icon(Icons.add_task_rounded, size: 16),
+                    label: const Text('عقد جديد', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accentGold,
                       foregroundColor: AppColors.primaryNavy,
-                      minimumSize: const Size(160, 48),
+                      minimumSize: const Size(0, 44),
                       elevation: 0,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
                     onPressed: () => context.push('/crm/customers/$id/edit'),
-                    icon: const Icon(Icons.edit_note_rounded, size: 18),
-                    label: const Text('تعديل الملف'),
+                    icon: const Icon(Icons.edit_note_rounded, size: 16),
+                    label: const Text('تعديل', style: TextStyle(fontSize: 13)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                      minimumSize: const Size(160, 42),
+                      minimumSize: const Size(0, 44),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -266,88 +316,118 @@ class _ExecutiveOverviewTab extends ConsumerWidget {
     final kyc = customer.kycData;
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
+    final isMobile = ResponsiveLayout.isMobile(context);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(isMobile ? 16 : 32),
       child: Column(
         children: [
           summaryAsync.when(
-            data: (summary) => Row(
-              children: [
+            data: (summary) {
+              final boxes = [
                 _ExecutiveStatBox(
                   'إجمالي العقود',
                   summary['total_contracts'].toString(),
                   Icons.assignment_rounded,
                   Colors.blue,
                 ),
-                const SizedBox(width: 24),
                 _ExecutiveStatBox(
                   'الرصيد القائم',
                   '${f.format(summary['outstanding_balance'])} ر.س',
                   Icons.pending_actions_rounded,
                   AppColors.errorRed,
                 ),
-                const SizedBox(width: 24),
                 _ExecutiveStatBox(
                   'إجمالي المسدد',
                   '${f.format(summary['total_paid'])} ر.س',
                   Icons.verified_rounded,
                   AppColors.successGreen,
                 ),
-              ],
-            ),
+              ];
+
+              if (isMobile) {
+                return Column(
+                  children: [
+                    boxes[0],
+                    const SizedBox(height: 12),
+                    boxes[1],
+                    const SizedBox(height: 12),
+                    boxes[2],
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: boxes[0]),
+                  const SizedBox(width: 24),
+                  Expanded(child: boxes[1]),
+                  const SizedBox(width: 24),
+                  Expanded(child: boxes[2]),
+                ],
+              );
+            },
             loading: () => const LinearProgressIndicator(),
             error: (_, __) => const SizedBox(),
           ),
           const SizedBox(height: 32),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: _PremiumInfoCard(
+          if (isMobile)
+            Column(
+              children: [
+                _PremiumInfoCard(
                   title: 'البيانات الوظيفية والدخل',
                   icon: Icons.work_history_rounded,
                   children: [
-                    _DetailRow(
-                      'جهة العمل الحالية',
-                      kyc['employer'] ?? 'غير مسجل',
-                    ),
-                    _DetailRow(
-                      'المسمى الوظيفي',
-                      kyc['job_title'] ?? 'غير مسجل',
-                    ),
-                    _DetailRow(
-                      'صافي الراتب الشهري',
-                      '${f.format(kyc['salary'] ?? 0)} ر.س',
-                    ),
-                    _DetailRow(
-                      'تاريخ الالتحاق',
-                      kyc['join_date'] ?? 'غير مسجل',
-                    ),
+                    _DetailRow('جهة العمل الحالية', kyc['employer'] ?? 'غير مسجل'),
+                    _DetailRow('المسمى الوظيفي', kyc['job_title'] ?? 'غير مسجل'),
+                    _DetailRow('صافي الراتب الشهري', '${f.format(kyc['salary'] ?? 0)} ر.س'),
+                    _DetailRow('تاريخ الالتحاق', kyc['join_date'] ?? 'غير مسجل'),
                   ],
                 ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                flex: 2,
-                child: _PremiumInfoCard(
+                const SizedBox(height: 24),
+                _PremiumInfoCard(
                   title: 'بيانات الضامن',
                   icon: Icons.gpp_good_rounded,
                   children: [
-                    _DetailRow(
-                      'اسم الضامن',
-                      kyc['guarantor']?['name'] ?? 'لا يوجد',
-                    ),
+                    _DetailRow('اسم الضامن', kyc['guarantor']?['name'] ?? 'لا يوجد'),
                     _DetailRow('رقم الجوال', kyc['guarantor']?['phone'] ?? '-'),
-                    _DetailRow(
-                      'صلة القرابة',
-                      kyc['guarantor']?['relationship'] ?? '-',
-                    ),
+                    _DetailRow('صلة القرابة', kyc['guarantor']?['relationship'] ?? '-'),
                   ],
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: _PremiumInfoCard(
+                    title: 'البيانات الوظيفية والدخل',
+                    icon: Icons.work_history_rounded,
+                    children: [
+                      _DetailRow('جهة العمل الحالية', kyc['employer'] ?? 'غير مسجل'),
+                      _DetailRow('المسمى الوظيفي', kyc['job_title'] ?? 'غير مسجل'),
+                      _DetailRow('صافي الراتب الشهري', '${f.format(kyc['salary'] ?? 0)} ر.س'),
+                      _DetailRow('تاريخ الالتحاق', kyc['join_date'] ?? 'غير مسجل'),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 2,
+                  child: _PremiumInfoCard(
+                    title: 'بيانات الضامن',
+                    icon: Icons.gpp_good_rounded,
+                    children: [
+                      _DetailRow('اسم الضامن', kyc['guarantor']?['name'] ?? 'لا يوجد'),
+                      _DetailRow('رقم الجوال', kyc['guarantor']?['phone'] ?? '-'),
+                      _DetailRow('صلة القرابة', kyc['guarantor']?['relationship'] ?? '-'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

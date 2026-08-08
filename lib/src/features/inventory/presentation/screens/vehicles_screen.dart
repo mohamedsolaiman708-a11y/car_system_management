@@ -32,12 +32,15 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(160),
+        preferredSize: Size.fromHeight(ResponsiveLayout.isMobile(context) ? 120 : 160),
         child: Container(
           color: AppColors.primaryNavy,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveLayout.isMobile(context) ? 16.0 : 24.0,
+                vertical: 12.0,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -52,13 +55,18 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
         children: [
           // لوحة الإحصائيات الفاخرة
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            padding: EdgeInsets.fromLTRB(
+              ResponsiveLayout.isMobile(context) ? 16 : 24,
+              ResponsiveLayout.isMobile(context) ? 16 : 24,
+              ResponsiveLayout.isMobile(context) ? 16 : 24,
+              0,
+            ),
             child: _buildExecutiveStats(statsAsync),
           ),
 
           // منطقة الفلاتر والبحث
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 16.0 : 24.0),
             child: _buildModernFilterBar(),
           ),
 
@@ -100,18 +108,29 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 
   Widget _buildPremiumHeader(AsyncValue<List<dynamic>> vehiclesAsync) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('إدارة أصول الأسطول',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 4),
-            Text('تتبع المخزون، تقييم الأصول، وحالات التوافر اللحظية',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'إدارة أصول الأسطول',
+                style: TextStyle(
+                  fontSize: isMobile ? 20 : 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'تتبع المخزون، تقييم الأصول، وحالات التوافر اللحظية',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: isMobile ? 11 : 13),
+              ),
+            ],
+          ),
         ),
         Row(
           children: [
@@ -187,17 +206,36 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
 
   Widget _buildExecutiveStats(AsyncValue<Map<String, dynamic>> statsAsync) {
     return statsAsync.when(
-      data: (stats) => Row(
-        children: [
+      data: (stats) {
+        final cards = [
           _buildExecutiveStatCard('إجمالي الأسطول', stats['total'] ?? 0, Icons.directions_car_rounded, Colors.blue),
-          const SizedBox(width: 20),
           _buildExecutiveStatCard('متاحة للبيع', stats['available'] ?? 0, Icons.check_circle_rounded, Colors.green),
-          const SizedBox(width: 20),
           _buildExecutiveStatCard('تحت التعاقد', stats['on_contract'] ?? 0, Icons.assignment_turned_in_rounded, AppColors.accentGold),
-          const SizedBox(width: 20),
           _buildExecutiveStatCard('في الصيانة', stats['maintenance'] ?? 0, Icons.build_rounded, Colors.orange),
-        ],
-      ),
+        ];
+
+        return LayoutBuilder(builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            return GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 2.2,
+              children: cards,
+            );
+          }
+          return Row(
+            children: [
+              for (int i = 0; i < cards.length; i++) ...[
+                Expanded(child: cards[i]),
+                if (i < cards.length - 1) const SizedBox(width: 16),
+              ],
+            ],
+          );
+        });
+      },
       loading: () => const LinearProgressIndicator(),
       error: (_, __) => const SizedBox(),
     );
@@ -235,6 +273,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 
   Widget _buildModernFilterBar() {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -242,28 +281,45 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 10)],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: TextField(
-              onChanged: (val) => setState(() => searchQuery = val),
-              decoration: InputDecoration(
-                hintText: 'البحث برقم اللوحة، الموديل، أو رقم الهيكل...',
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
-                filled: true,
-                fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-              ),
+      child: isMobile
+          ? Column(
+              children: [
+                TextField(
+                  onChanged: (val) => setState(() => searchQuery = val),
+                  decoration: InputDecoration(
+                    hintText: 'البحث برقم اللوحة، الموديل...',
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
+                    filled: true,
+                    fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildPremiumDropdown(),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    onChanged: (val) => setState(() => searchQuery = val),
+                    decoration: InputDecoration(
+                      hintText: 'البحث برقم اللوحة، الموديل، أو رقم الهيكل...',
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
+                      filled: true,
+                      fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 1,
+                  child: _buildPremiumDropdown(),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 1,
-            child: _buildPremiumDropdown(),
-          ),
-        ],
-      ),
     );
   }
 
@@ -354,10 +410,15 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 
   Widget _buildPremiumGrid(List<dynamic> vehicles, intl.NumberFormat f) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return GridView.builder(
-      padding: const EdgeInsets.all(24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, childAspectRatio: 0.85, crossAxisSpacing: 20, mainAxisSpacing: 20),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isMobile ? 1 : 2,
+        childAspectRatio: isMobile ? 1.6 : 0.85,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
       itemCount: vehicles.length,
       itemBuilder: (context, index) {
         final v = vehicles[index];
@@ -370,40 +431,78 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           child: InkWell(
             onTap: () => context.push('/inventory/${v.id}'),
             borderRadius: BorderRadius.circular(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.bgGrey,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            child: isMobile
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.bgGrey,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Center(child: Icon(Icons.directions_car_filled_rounded, color: AppColors.primaryNavy, size: 36)),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('${v.make} ${v.model}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              const SizedBox(height: 4),
+                              Text('لوحة: ${v.licensePlate ?? "-"}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _buildStatusBadge(v.status),
+                                  Text('${f.format(v.purchasePrice)} ر.س',
+                                      style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 13)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Center(child: Icon(Icons.directions_car_filled_rounded, color: Colors.white, size: 48)),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
+                  )
+                : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${v.make} ${v.model}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildStatusBadge(v.status),
-                          Text(v.licensePlate ?? '-', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        ],
+                      Expanded(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.bgGrey,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          child: const Center(child: Icon(Icons.directions_car_filled_rounded, color: AppColors.primaryNavy, size: 48)),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      Text('${f.format(v.purchasePrice)} ر.س',
-                          style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${v.make} ${v.model}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildStatusBadge(v.status),
+                                Text(v.licensePlate ?? '-', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text('${f.format(v.purchasePrice)} ر.س',
+                                style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ],
-            ),
           ),
         );
       },

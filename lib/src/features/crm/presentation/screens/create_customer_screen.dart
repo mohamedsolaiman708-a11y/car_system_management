@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 import '../crm_controller.dart';
 
@@ -110,15 +111,21 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy))
           : SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildFormHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Column(
+                    children: [
+                      _buildFormHeader(),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveLayout.isMobile(context) ? 16 : 32,
+                          vertical: 24,
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
                     _buildSectionCard(
                       title: 'الهوية والمعلومات الشخصية',
                       icon: Icons.badge_rounded,
@@ -130,24 +137,19 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
                           validator: (v) => v == null || v.isEmpty ? 'يرجى إدخال الاسم الكامل' : null,
                         ),
                         const SizedBox(height: 20),
-                        Row(
+                        ResponsiveFormRow(
                           children: [
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _nationalIdController,
-                                label: 'رقم الهوية الوطنية',
-                                prefixIcon: Icons.fingerprint_rounded,
-                                keyboardType: TextInputType.number,
-                                validator: (v) => (v == null || v.length != 10) ? 'يجب أن يكون 10 أرقام' : null,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _nationalIdController,
+                              label: 'رقم الهوية الوطنية',
+                              prefixIcon: Icons.fingerprint_rounded,
+                              keyboardType: TextInputType.number,
+                              validator: (v) => (v == null || v.length != 10) ? 'يجب أن يكون 10 أرقام' : null,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _cityController,
-                                label: 'المدينة',
-                                prefixIcon: Icons.location_city_rounded,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _cityController,
+                              label: 'المدينة',
+                              prefixIcon: Icons.location_city_rounded,
                             ),
                           ],
                         ),
@@ -164,25 +166,20 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
                       title: 'معلومات التواصل والدخل',
                       icon: Icons.contact_mail_rounded,
                       children: [
-                        Row(
+                        ResponsiveFormRow(
                           children: [
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _phoneController,
-                                label: 'رقم الجوال الأساسي',
-                                prefixIcon: Icons.phone_android_rounded,
-                                keyboardType: TextInputType.phone,
-                                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _phoneController,
+                              label: 'رقم الجوال الأساسي',
+                              prefixIcon: Icons.phone_android_rounded,
+                              keyboardType: TextInputType.phone,
+                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _altPhoneController,
-                                label: 'رقم بديل (اختياري)',
-                                prefixIcon: Icons.phone_rounded,
-                                keyboardType: TextInputType.phone,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _altPhoneController,
+                              label: 'رقم بديل (اختياري)',
+                              prefixIcon: Icons.phone_rounded,
+                              keyboardType: TextInputType.phone,
                             ),
                           ],
                         ),
@@ -202,24 +199,19 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
                           prefixIcon: Icons.business_rounded,
                         ),
                         const SizedBox(height: 20),
-                        Row(
+                        ResponsiveFormRow(
                           children: [
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _jobTitleController,
-                                label: 'المسمى الوظيفي',
-                                prefixIcon: Icons.work_outline_rounded,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _jobTitleController,
+                              label: 'المسمى الوظيفي',
+                              prefixIcon: Icons.work_outline_rounded,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _salaryController,
-                                label: 'الراتب الشهري',
-                                prefixIcon: Icons.payments_rounded,
-                                suffix: const Text('ر.س', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                keyboardType: TextInputType.number,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _salaryController,
+                              label: 'الراتب الشهري',
+                              prefixIcon: Icons.payments_rounded,
+                              suffix: const Text('ر.س', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              keyboardType: TextInputType.number,
                             ),
                           ],
                         ),
@@ -289,7 +281,9 @@ class _CreateCustomerScreenState extends ConsumerState<CreateCustomerScreen> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildFormHeader() {

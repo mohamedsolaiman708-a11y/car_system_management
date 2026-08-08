@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../authentication/presentation/auth_controller.dart';
 import '../dashboard_controller.dart';
@@ -36,16 +37,21 @@ class StaffDashboardScreen extends ConsumerWidget {
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(child: _buildUnifiedHeader(user.fullName, stats, f)),
+                SliverToBoxAdapter(child: _buildUnifiedHeader(user.fullName, stats, f, context)),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsiveLayout.isMobile(context) ? 16 : 24,
+                    16,
+                    ResponsiveLayout.isMobile(context) ? 16 : 24,
+                    40,
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _buildSectionHeader('توصيات النظام والذكاء المالي', Icons.auto_awesome_rounded),
                       const SizedBox(height: 16),
                       _buildInsightsGrid(stats, context),
                       const SizedBox(height: 32),
-                      _buildMainAnalyticsRow(stats, growthAsync, f),
+                      _buildMainAnalyticsRow(stats, growthAsync, f, context),
                       const SizedBox(height: 24),
                       _buildBottomOperationsRow(stats, context),
                       const SizedBox(height: 60),
@@ -72,7 +78,7 @@ class StaffDashboardScreen extends ConsumerWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30)]),
+              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 30)]),
               child: const Icon(Icons.wifi_off_rounded, size: 64, color: AppColors.errorRed),
             ),
             const SizedBox(height: 24),
@@ -100,67 +106,85 @@ class StaffDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildUnifiedHeader(String name, Map<String, dynamic> stats, intl.NumberFormat f) {
+  Widget _buildUnifiedHeader(String name, Map<String, dynamic> stats, intl.NumberFormat f, BuildContext context) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return SizedBox(
-      height: 260,
+      height: isMobile ? 300 : 260,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            height: 200,
+            height: isMobile ? 220 : 200,
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [AppColors.primaryNavy, Color(0xFF1B2A4A)]),
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(32, 60, 32, 0),
+              padding: EdgeInsets.fromLTRB(isMobile ? 20 : 32, 60, isMobile ? 20 : 32, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('نظام الإدارة الذكي', style: TextStyle(color: AppColors.accentGold.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      Text('أهلاً بك، $name', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                      Text('إليك نظرة شاملة على أداء المنظومة اليوم', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('نظام الإدارة الذكي', style: TextStyle(color: AppColors.accentGold.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        Text('أهلاً بك, $name', style: TextStyle(color: Colors.white, fontSize: isMobile ? 18 : 24, fontWeight: FontWeight.bold)),
+                        Text('إليك نظرة شاملة على أداء المنظومة اليوم', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                      ],
+                    ),
                   ),
-                  _buildClockWidget(),
+                  if (!isMobile) _buildClockWidget(),
                 ],
               ),
             ),
           ),
           Positioned(
-            top: 150,
-            left: 24,
-            right: 24,
-            child: Row(
-              children: [
-                _buildKPICard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
-                const SizedBox(width: 12),
-                _buildKPICard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, Colors.green),
-                const SizedBox(width: 12),
-                _buildKPICard('سيولة الممولين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
-              ],
-            ),
+            top: isMobile ? 170 : 150,
+            left: isMobile ? 16 : 24,
+            right: isMobile ? 16 : 24,
+            child: isMobile
+                ? Column(
+                    children: [
+                      Row(
+                        children: [
+                          _buildKPICard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
+                          const SizedBox(width: 12),
+                          _buildKPICard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, Colors.green),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildKPICard('سيولة الممولين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      _buildKPICard('السيارات المتاحة', (stats['available_cars'] ?? 0).toString(), Icons.directions_car_filled_rounded, Colors.orange),
+                      const SizedBox(width: 12),
+                      _buildKPICard('العقود النشطة', (stats['active_contracts'] ?? 0).toString(), Icons.assignment_turned_in_rounded, Colors.green),
+                      const SizedBox(width: 12),
+                      _buildKPICard('سيولة الممولين', f.format(stats['investor_balances'] ?? 0), Icons.account_balance_wallet_rounded, AppColors.accentGold),
+                    ],
+                  ),
           ),
         ],
       ),
     );
   }
 
+
   Widget _buildKPICard(String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
         height: 100,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 10))]),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 10))]),
         child: Row(
           children: [
-            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -179,51 +203,97 @@ class StaffDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildInsightsGrid(Map<String, dynamic> stats, BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: _InsightTile('سيولة فائضة', 'توجد مبالغ جاهزة للتوظيف', Icons.trending_up_rounded, Colors.blue, () => context.push('/inventory/new'))),
-        const SizedBox(width: 16),
-        Expanded(child: _InsightTile('المخزون الحالي', 'سيارات بانتظار تخصيص تمويل', Icons.inventory_2_rounded, Colors.purple, () => context.push('/inventory'))),
-        const SizedBox(width: 16),
-        Expanded(child: _InsightTile('التحصيل', 'راجع أقساط هذا الأسبوع', Icons.payments_rounded, Colors.teal, () => context.push('/reports'))),
-      ],
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 600) {
+        return Column(
+          children: [
+            _InsightTile('سيولة فائضة', 'توجد مبالغ جاهزة للتوظيف', Icons.trending_up_rounded, Colors.blue, () => context.push('/inventory/new')),
+            const SizedBox(height: 12),
+            _InsightTile('المخزون الحالي', 'سيارات بانتظار تخصيص تمويل', Icons.inventory_2_rounded, Colors.purple, () => context.push('/inventory')),
+            const SizedBox(height: 12),
+            _InsightTile('التحصيل', 'راجع أقساط هذا الأسبوع', Icons.payments_rounded, Colors.teal, () => context.push('/reports')),
+          ],
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: _InsightTile('سيولة فائضة', 'توجد مبالغ جاهزة للتوظيف', Icons.trending_up_rounded, Colors.blue, () => context.push('/inventory/new'))),
+          const SizedBox(width: 16),
+          Expanded(child: _InsightTile('المخزون الحالي', 'سيارات بانتظار تخصيص تمويل', Icons.inventory_2_rounded, Colors.purple, () => context.push('/inventory'))),
+          const SizedBox(width: 16),
+          Expanded(child: _InsightTile('التحصيل', 'راجع أقساط هذا الأسبوع', Icons.payments_rounded, Colors.teal, () => context.push('/reports'))),
+        ],
+      );
+    });
   }
 
-  Widget _buildMainAnalyticsRow(Map<String, dynamic> stats, AsyncValue<List<Map<String, dynamic>>> growthAsync, intl.NumberFormat f) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: _DashboardCard(
-            title: 'تحليل النمو المالي',
-            subtitle: 'صافي الأرباح لآخر 6 أشهر',
-            child: SizedBox(
-              height: 250,
-              child: growthAsync.when(
-                data: (data) => _ModernGrowthChart(data: data),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const Center(child: Text('جاري تحليل البيانات...')),
+  Widget _buildMainAnalyticsRow(Map<String, dynamic> stats, AsyncValue<List<Map<String, dynamic>>> growthAsync, intl.NumberFormat f, BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 700) {
+        return Column(
+          children: [
+            _DashboardCard(
+              title: 'تحليل النمو المالي',
+              subtitle: 'صافي الأرباح لآخر 6 أشهر',
+              child: SizedBox(
+                height: 220,
+                child: growthAsync.when(
+                  data: (data) => _ModernGrowthChart(data: data),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => const Center(child: Text('جاري تحليل البيانات...')),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _DashboardCard(title: 'إدارة المخاطر', subtitle: 'توزيع المتأخرات المالية', child: _RiskAnalysisList(stats: stats, f: f)),
+          ],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: _DashboardCard(
+              title: 'تحليل النمو المالي',
+              subtitle: 'صافي الأرباح لآخر 6 أشهر',
+              child: SizedBox(
+                height: 250,
+                child: growthAsync.when(
+                  data: (data) => _ModernGrowthChart(data: data),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => const Center(child: Text('جاري تحليل البيانات...')),
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 24),
-        Expanded(child: _DashboardCard(title: 'إدارة المخاطر', subtitle: 'توزيع المتأخرات المالية', child: _RiskAnalysisList(stats: stats, f: f))),
-      ],
-    );
+          const SizedBox(width: 24),
+          Expanded(child: _DashboardCard(title: 'إدارة المخاطر', subtitle: 'توزيع المتأخرات المالية', child: _RiskAnalysisList(stats: stats, f: f))),
+        ],
+      );
+    });
   }
 
   Widget _buildBottomOperationsRow(Map<String, dynamic> stats, BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 2, child: _DashboardCard(title: 'آخر العمليات المبرمة', subtitle: 'متابعة فورية للعقود الجديدة', child: _RecentOperationsList(stats: stats, context: context))),
-        const SizedBox(width: 24),
-        Expanded(child: _DashboardCard(title: 'إجراءات سريعة', subtitle: 'العمليات الأكثر تكراراً', child: _QuickActionsSection(context: context))),
-      ],
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 700) {
+        return Column(
+          children: [
+            _DashboardCard(title: 'آخر العمليات المبرمة', subtitle: 'متابعة فورية للعقود الجديدة', child: _RecentOperationsList(stats: stats, context: context)),
+            const SizedBox(height: 24),
+            _DashboardCard(title: 'إجراءات سريعة', subtitle: 'العمليات الأكثر تكراراً', child: _QuickActionsSection(context: context)),
+          ],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 2, child: _DashboardCard(title: 'آخر العمليات المبرمة', subtitle: 'متابعة فورية للعقود الجديدة', child: _RecentOperationsList(stats: stats, context: context))),
+          const SizedBox(width: 24),
+          Expanded(child: _DashboardCard(title: 'إجراءات سريعة', subtitle: 'العمليات الأكثر تكراراً', child: _QuickActionsSection(context: context))),
+        ],
+      );
+    });
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
@@ -239,7 +309,7 @@ class StaffDashboardScreen extends ConsumerWidget {
   Widget _buildClockWidget() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -266,7 +336,7 @@ class _InsightTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.1))),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withValues(alpha: 0.1))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -289,7 +359,7 @@ class _DashboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 30, offset: const Offset(0, 10))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 30, offset: const Offset(0, 10))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -350,7 +420,7 @@ class _ModernGrowthChart extends StatelessWidget {
                 drawVerticalLine: false,
                 horizontalInterval: maxY / 4 > 0 ? maxY / 4 : 25,
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: Colors.grey.withOpacity(0.12),
+                  color: Colors.grey.withValues(alpha: 0.12),
                   strokeWidth: 1,
                   dashArray: [5, 5],
                 ),
@@ -436,8 +506,8 @@ class _ModernGrowthChart extends StatelessWidget {
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primaryNavy.withOpacity(0.18),
-                        AppColors.primaryNavy.withOpacity(0.0),
+                        AppColors.primaryNavy.withValues(alpha: 0.18),
+                        AppColors.primaryNavy.withValues(alpha: 0.0),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -455,14 +525,14 @@ class _ModernGrowthChart extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.92),
+                  color: Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Icon(Icons.info_outline_rounded, size: 16, color: AppColors.accentGold),
                     SizedBox(width: 8),
                     Text(
@@ -555,22 +625,22 @@ class _QuickActionsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _ActionBtn('إصدار عقد جديد', Icons.add_moderator_rounded, Colors.blue, () => context.push('/contracts/new')),
+        _buildActionBtn('إصدار عقد جديد', Icons.add_moderator_rounded, Colors.blue, () => context.push('/contracts/new')),
         const SizedBox(height: 12),
-        _ActionBtn('إضافة مستثمر', Icons.person_add_rounded, AppColors.accentGold, () => context.push('/investors')),
+        _buildActionBtn('إضافة مستثمر', Icons.person_add_rounded, AppColors.accentGold, () => context.push('/investors')),
         const SizedBox(height: 12),
-        _ActionBtn('تسجيل مركبة', Icons.add_road_rounded, Colors.orange, () => context.push('/inventory/new')),
+        _buildActionBtn('تسجيل مركبة', Icons.add_road_rounded, Colors.orange, () => context.push('/inventory/new')),
       ],
     );
   }
 
-  Widget _ActionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
         child: Row(
           children: [
             Icon(icon, color: color, size: 20),

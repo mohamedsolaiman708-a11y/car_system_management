@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 import '../../../crm/presentation/crm_controller.dart';
 import '../../../inventory/presentation/inventory_controller.dart';
@@ -166,111 +167,119 @@ class _CreateCashContractScreenState
               ),
             )
           : SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildFormHeader(),
-                  Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          // 1. السيارة من المخزون
-                          _buildSectionCard(
-                            stepNumber: '١',
-                            title: 'اختيار السيارة (من المخزون)',
-                            icon: Icons.directions_car_rounded,
-                            children: [_buildVehicleDropdown(vehiclesAsync)],
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 2. المستثمر (الطرف الأول - البائع)
-                          _buildSectionCard(
-                            stepNumber: '٢',
-                            title: 'الطرف الأول: المستثمر (البائع الممول)',
-                            icon: Icons.account_balance_wallet_rounded,
-                            children: [_buildInvestorDropdown(investorsAsync)],
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 3. المشتري (الطرف الثاني)
-                          _buildSectionCard(
-                            stepNumber: '٣',
-                            title: 'الطرف الثاني: المشتري',
-                            icon: Icons.person_rounded,
-                            children: [_buildCustomerDropdown(customersAsync)],
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 4. سعر البيع النقدي المباشر وتاريخ البيع
-                          _buildSectionCard(
-                            stepNumber: '٤',
-                            title: 'سعر البيع النقدي وتاريخ العقد',
-                            icon: Icons.payments_rounded,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Column(
+                    children: [
+                      _buildFormHeader(),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveLayout.isMobile(context) ? 16 : 24,
+                          vertical: 24,
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
                             children: [
-                              _buildTextField(
-                                _cashPriceController,
-                                'سعر البيع النقدي المباشر (ريال سعودي) *',
-                                Icons.payments_rounded,
-                                isNumber: true,
-                                isRequired: true,
+                              // 1. السيارة من المخزون
+                              _buildSectionCard(
+                                stepNumber: '١',
+                                title: 'اختيار السيارة (من المخزون)',
+                                icon: Icons.directions_car_rounded,
+                                children: [_buildVehicleDropdown(vehiclesAsync)],
                               ),
-                              const SizedBox(height: 16),
-                              _buildDatePickerField(
-                                label: 'تاريخ عقد البيع النقدي',
-                                date: _contractDate,
-                                onSelect: (d) =>
-                                    setState(() => _contractDate = d),
+                              const SizedBox(height: 24),
+
+                              // 2. المستثمر (الطرف الأول - البائع)
+                              _buildSectionCard(
+                                stepNumber: '٢',
+                                title: 'الطرف الأول: المستثمر (البائع الممول)',
+                                icon: Icons.account_balance_wallet_rounded,
+                                children: [_buildInvestorDropdown(investorsAsync)],
                               ),
+                              const SizedBox(height: 24),
+
+                              // 3. المشتري (الطرف الثاني)
+                              _buildSectionCard(
+                                stepNumber: '٣',
+                                title: 'الطرف الثاني: المشتري',
+                                icon: Icons.person_rounded,
+                                children: [_buildCustomerDropdown(customersAsync)],
+                              ),
+                              const SizedBox(height: 24),
+
+                              // 4. سعر البيع النقدي المباشر وتاريخ البيع
+                              _buildSectionCard(
+                                stepNumber: '٤',
+                                title: 'سعر البيع النقدي وتاريخ العقد',
+                                icon: Icons.payments_rounded,
+                                children: [
+                                  _buildTextField(
+                                    _cashPriceController,
+                                    'سعر البيع النقدي المباشر (ريال سعودي) *',
+                                    Icons.payments_rounded,
+                                    isNumber: true,
+                                    isRequired: true,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildDatePickerField(
+                                    label: 'تاريخ عقد البيع النقدي',
+                                    date: _contractDate,
+                                    onSelect: (d) =>
+                                        setState(() => _contractDate = d),
+                                  ),
+                                ],
+                              ),
+                              // 5. خدمات نقل الملكية والإصدار الاختيارية
+                              _buildOptionalServicesCard(),
+                              const SizedBox(height: 24),
+
+                              // 6. الشهود وملاحظات العقد
+                              _buildSectionCard(
+                                stepNumber: '٦',
+                                title: 'ملاحظات العقد النقدي',
+                                icon: Icons.assignment_rounded,
+                                children: [
+                                  _buildTextField(
+                                    _notesController,
+                                    'شروط أو ملاحظات إضافية على البيع النقدي',
+                                    Icons.notes_rounded,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+
+                              _buildCashSummaryCard(),
+                              const SizedBox(height: 40),
+
+                              ElevatedButton(
+                                onPressed: _isLoading ? null : _submit,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryNavy,
+                                  minimumSize: const Size(double.infinity, 60),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 3,
+                                ),
+                                child: const Text(
+                                  'اعتماد وإنشاء عقد البيع النقدي المباشر',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 80),
                             ],
                           ),
-                          // 5. خدمات نقل الملكية والإصدار الاختيارية
-                          _buildOptionalServicesCard(),
-                          const SizedBox(height: 24),
-
-                          // 6. الشهود وملاحظات العقد
-                          _buildSectionCard(
-                            stepNumber: '٦',
-                            title: 'ملاحظات العقد النقدي',
-                            icon: Icons.assignment_rounded,
-                            children: [
-                              _buildTextField(
-                                _notesController,
-                                'شروط أو ملاحظات إضافية على البيع النقدي',
-                                Icons.notes_rounded,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 32),
-
-                          _buildCashSummaryCard(),
-                          const SizedBox(height: 40),
-
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryNavy,
-                              minimumSize: const Size(double.infinity, 60),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 3,
-                            ),
-                            child: const Text(
-                              'اعتماد وإنشاء عقد البيع النقدي المباشر',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 80),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
     );
@@ -382,7 +391,7 @@ class _CreateCashContractScreenState
   Widget _buildVehicleDropdown(AsyncValue<List<Vehicle>> asyncData) {
     return asyncData.when(
       data: (list) => DropdownButtonFormField<String>(
-        value: _selectedVehicleId,
+        initialValue: _selectedVehicleId,
         decoration: InputDecoration(
           labelText: 'اختر السيارة من قائمة السيارات المتاحة بالمخزون *',
           prefixIcon: const Icon(
@@ -420,7 +429,7 @@ class _CreateCashContractScreenState
   Widget _buildInvestorDropdown(AsyncValue<List<Investor>> asyncData) {
     return asyncData.when(
       data: (list) => DropdownButtonFormField<String>(
-        value: _selectedInvestorId,
+        initialValue: _selectedInvestorId,
         decoration: InputDecoration(
           labelText: 'اختر المستثمر (الطرف الأول - البائع) *',
           prefixIcon: const Icon(
@@ -450,7 +459,7 @@ class _CreateCashContractScreenState
   Widget _buildCustomerDropdown(AsyncValue asyncData) {
     return asyncData.when(
       data: (list) => DropdownButtonFormField<String>(
-        value: _selectedCustomerId,
+        initialValue: _selectedCustomerId,
         decoration: InputDecoration(
           labelText: 'اختر المشتري (الطرف الثاني) *',
           prefixIcon: const Icon(Icons.person, color: AppColors.primaryNavy),
@@ -488,8 +497,9 @@ class _CreateCashContractScreenState
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
       validator: (val) {
-        if (isRequired && (val == null || val.isEmpty))
+        if (isRequired && (val == null || val.isEmpty)) {
           return 'هذا الحقل مطلوب';
+        }
         if (isNumber && val != null && val.isNotEmpty) {
           final numVal = double.tryParse(val);
           if (numVal == null) return 'يرجى إدخال رقم صحيح';

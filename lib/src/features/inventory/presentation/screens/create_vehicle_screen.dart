@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 import '../inventory_controller.dart';
 
@@ -86,15 +87,21 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy))
           : SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildFormHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Column(
+                    children: [
+                      _buildFormHeader(),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveLayout.isMobile(context) ? 16 : 32,
+                          vertical: 24,
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
                     _buildSectionCard(
                       title: 'بيانات الهوية التقنية للمركبة',
                       icon: Icons.fingerprint_rounded,
@@ -106,46 +113,36 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
                           validator: (v) => v == null || v.isEmpty ? 'رقم الهيكل مطلوب للتوثيق' : null,
                         ),
                         const SizedBox(height: 20),
-                        Row(
+                        ResponsiveFormRow(
                           children: [
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _makeController,
-                                label: 'الماركة (تويوتا، الخ)',
-                                prefixIcon: Icons.branding_watermark_rounded,
-                                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _makeController,
+                              label: 'الماركة (تويوتا، الخ)',
+                              prefixIcon: Icons.branding_watermark_rounded,
+                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _modelController,
-                                label: 'الموديل (كامري، الخ)',
-                                prefixIcon: Icons.directions_car_rounded,
-                                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _modelController,
+                              label: 'الموديل (كامري، الخ)',
+                              prefixIcon: Icons.directions_car_rounded,
+                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                             ),
                           ],
                         ),
                         const SizedBox(height: 20),
-                        Row(
+                        ResponsiveFormRow(
                           children: [
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _yearController,
-                                label: 'سنة الصنع',
-                                prefixIcon: Icons.calendar_today_rounded,
-                                keyboardType: TextInputType.number,
-                                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _yearController,
+                              label: 'سنة الصنع',
+                              prefixIcon: Icons.calendar_today_rounded,
+                              keyboardType: TextInputType.number,
+                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _colorController,
-                                label: 'اللون الخارجي',
-                                prefixIcon: Icons.color_lens_rounded,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _colorController,
+                              label: 'اللون الخارجي',
+                              prefixIcon: Icons.color_lens_rounded,
                             ),
                           ],
                         ),
@@ -163,27 +160,22 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
                           keyboardType: TextInputType.text,
                         ),
                         const SizedBox(height: 20),
-                        Row(
+                        ResponsiveFormRow(
                           children: [
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _priceController,
-                                label: 'سعر الشراء الفعلي',
-                                prefixIcon: Icons.payments_rounded,
-                                suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                keyboardType: TextInputType.number,
-                                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _priceController,
+                              label: 'سعر الشراء الفعلي',
+                              prefixIcon: Icons.payments_rounded,
+                              suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              keyboardType: TextInputType.number,
+                              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildPremiumTextField(
-                                controller: _marketValueController,
-                                label: 'القيمة السوقية الحالية',
-                                prefixIcon: Icons.analytics_rounded,
-                                suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                keyboardType: TextInputType.number,
-                              ),
+                            _buildPremiumTextField(
+                              controller: _marketValueController,
+                              label: 'القيمة السوقية الحالية',
+                              prefixIcon: Icons.analytics_rounded,
+                              suffix: const Text('ر.س', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              keyboardType: TextInputType.number,
                             ),
                           ],
                         ),
@@ -215,7 +207,9 @@ class _CreateVehicleScreenState extends ConsumerState<CreateVehicleScreen> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildFormHeader() {

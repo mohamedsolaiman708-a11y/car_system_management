@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../../core/utils/app_theme.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../core/utils/snack_bar_helper.dart';
 import '../../investors/data/sources/supabase_investor_data_source.dart';
 import '../../investors/presentation/investor_controller.dart';
@@ -321,43 +322,38 @@ class _VoucherScreenState extends ConsumerState<VoucherScreen> {
             // ── Body ─────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(28),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // ── Section 0: Party Type Selector (جهة التعامل) ───────
-                      _buildCard(
-                        title: 'جهة التعامل (الجهة الموجه إليها السند)',
-                        icon: Icons.account_box_rounded,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _partyTypeChoiceTile(
-                                label: 'مستثمر (مالي مباشر)',
-                                icon: Icons.savings_rounded,
-                                value: 'investor',
-                              ),
+                padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 16 : 28),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 860),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          // ── Section 0: Party Type Selector (جهة التعامل) ───────
+                          _buildCard(
+                            title: 'جهة التعامل (الجهة الموجه إليها السند)',
+                            icon: Icons.account_box_rounded,
+                            child: ResponsiveFormRow(
+                              children: [
+                                _partyTypeChoiceTile(
+                                  label: 'مستثمر (مالي مباشر)',
+                                  icon: Icons.savings_rounded,
+                                  value: 'investor',
+                                ),
+                                _partyTypeChoiceTile(
+                                  label: 'عميل (عقود/أقساط)',
+                                  icon: Icons.person_pin_rounded,
+                                  value: 'customer',
+                                ),
+                                _partyTypeChoiceTile(
+                                  label: 'جهة أخرى / مصاريف',
+                                  icon: Icons.business_rounded,
+                                  value: 'general',
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _partyTypeChoiceTile(
-                                label: 'عميل (عقود/أقساط)',
-                                icon: Icons.person_pin_rounded,
-                                value: 'customer',
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _partyTypeChoiceTile(
-                                label: 'جهة أخرى / مصاريف',
-                                icon: Icons.business_rounded,
-                                value: 'general',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
                       const SizedBox(height: 20),
 
                       // ── If Investor Selected: Dropdown + Balance Card ────
@@ -436,68 +432,62 @@ class _VoucherScreenState extends ConsumerState<VoucherScreen> {
                       ],
 
                       // ── Row 1: Date + Payment Method ─────────────
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      ResponsiveFormRow(
                         children: [
                           // Date picker card
-                          Expanded(
-                            child: _buildCard(
-                              title: 'التاريخ',
-                              icon: Icons.calendar_month_rounded,
-                              child: InkWell(
-                                onTap: _selectDate,
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today_rounded,
-                                          color: AppColors.primaryNavy, size: 18),
-                                      const SizedBox(width: 12),
-                                      Text(dateStr,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 15,
-                                              color: AppColors.primaryNavy)),
-                                      const Spacer(),
-                                      const Icon(Icons.edit_rounded, size: 16, color: Colors.grey),
-                                    ],
-                                  ),
+                          _buildCard(
+                            title: 'التاريخ',
+                            icon: Icons.calendar_month_rounded,
+                            child: InkWell(
+                              onTap: _selectDate,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today_rounded,
+                                        color: AppColors.primaryNavy, size: 18),
+                                    const SizedBox(width: 12),
+                                    Text(dateStr,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            color: AppColors.primaryNavy)),
+                                    const Spacer(),
+                                    const Icon(Icons.edit_rounded, size: 16, color: Colors.grey),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 20),
                           // Payment method card
-                          Expanded(
-                            child: _buildCard(
-                              title: 'طريقة السداد',
-                              icon: Icons.payments_rounded,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: _methodTile(
-                                      label: 'نقداً',
-                                      icon: Icons.money_rounded,
-                                      selected: _isCash,
-                                      onTap: () => setState(() => _isCash = true),
-                                    ),
+                          _buildCard(
+                            title: 'طريقة السداد',
+                            icon: Icons.payments_rounded,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _methodTile(
+                                    label: 'نقداً',
+                                    icon: Icons.money_rounded,
+                                    selected: _isCash,
+                                    onTap: () => setState(() => _isCash = true),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _methodTile(
-                                      label: 'شيك',
-                                      icon: Icons.receipt_long_rounded,
-                                      selected: !_isCash,
-                                      onTap: () => setState(() => _isCash = false),
-                                    ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _methodTile(
+                                    label: 'شيك',
+                                    icon: Icons.receipt_long_rounded,
+                                    selected: !_isCash,
+                                    onTap: () => setState(() => _isCash = false),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -505,37 +495,29 @@ class _VoucherScreenState extends ConsumerState<VoucherScreen> {
                       const SizedBox(height: 20),
 
                       // ── Row 2: Name + Amount ─────────────────────
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      ResponsiveFormRow(
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: _buildCard(
-                              title: nameLabel,
-                              icon: Icons.person_rounded,
-                              child: _buildField(
-                                controller: _nameController,
-                                hint: isReceipt
-                                    ? 'اسم الشخص / الجهة المُسلِّمة...'
-                                    : 'اسم الشخص / الجهة المُستلِمة...',
-                                required: true,
-                                readOnly: _partyType == 'investor',
-                              ),
+                          _buildCard(
+                            title: nameLabel,
+                            icon: Icons.person_rounded,
+                            child: _buildField(
+                              controller: _nameController,
+                              hint: isReceipt
+                                  ? 'اسم الشخص / الجهة المُسلِّمة...'
+                                  : 'اسم الشخص / الجهة المُستلِمة...',
+                              required: true,
+                              readOnly: _partyType == 'investor',
                             ),
                           ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            flex: 2,
-                            child: _buildCard(
-                              title: 'المبلغ (ريال)',
-                              icon: Icons.paid_rounded,
-                              child: _buildField(
-                                controller: _amountController,
-                                hint: '0.00',
-                                isNumber: true,
-                                required: true,
-                                onChanged: (_) => setState(() {}),
-                              ),
+                          _buildCard(
+                            title: 'المبلغ (ريال)',
+                            icon: Icons.paid_rounded,
+                            child: _buildField(
+                              controller: _amountController,
+                              hint: '0.00',
+                              isNumber: true,
+                              required: true,
+                              onChanged: (_) => setState(() {}),
                             ),
                           ),
                         ],
@@ -652,7 +634,8 @@ class _VoucherScreenState extends ConsumerState<VoucherScreen> {
                 ),
               ),
             ),
-          ],
+          ),
+            )  ],
         ),
       ),
     );

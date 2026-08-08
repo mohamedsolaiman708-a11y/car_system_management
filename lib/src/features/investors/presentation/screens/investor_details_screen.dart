@@ -8,6 +8,7 @@ import '../../domain/investor_transaction_type.dart';
 import '../../domain/investor.dart';
 import '../../../documents/presentation/widgets/universal_document_manager.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 
@@ -89,7 +90,7 @@ class _SmartCompactAppBar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(investor.fullName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                        Text(investor.email, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10)),
+                        Text(investor.email, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
                       ],
                     ),
                   ),
@@ -135,22 +136,25 @@ class _FinancialTab extends ConsumerWidget {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          // شريط الأرصدة (نحيف وموفر للمساحة)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black.withOpacity(0.05))),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _StatItem('سيولة متاحة', f.format(investor.availableBalance), Colors.green),
-                _StatItem('رأس مال مشغل', f.format(investor.deployedCapital), Colors.blue),
-                _StatItem('صافي أرباح', f.format(investor.totalProfitEarned), _gold),
-              ],
-            ),
-          ),
+      padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 12 : 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Column(
+            children: [
+              // شريط الأرصدة (نحيف وموفر للمساحة)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.black.withValues(alpha: 0.05))),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _StatItem('سيولة متاحة', f.format(investor.availableBalance), Colors.green),
+                    _StatItem('رأس مال مشغل', f.format(investor.deployedCapital), Colors.blue),
+                    _StatItem('صافي أرباح', f.format(investor.totalProfitEarned), _gold),
+                  ],
+                ),
+              ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -175,7 +179,7 @@ class _FinancialTab extends ConsumerWidget {
                   return Card(
                     elevation: 0,
                     margin: const EdgeInsets.only(bottom: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.black.withOpacity(0.02))),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.black.withValues(alpha: 0.02))),
                     child: ListTile(
                       dense: true,
                       visualDensity: VisualDensity.compact,
@@ -193,12 +197,14 @@ class _FinancialTab extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _StatItem(String l, String v, Color c) => Column(children: [Text(l, style: TextStyle(color: Colors.grey, fontSize: 9)), Text(v, style: TextStyle(color: c, fontWeight: FontWeight.bold, fontSize: 13))]);
 
-  Widget _actionBtn(BuildContext context, String l, IconData i, Color c, VoidCallback onTap) => InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black.withOpacity(0.05))), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(i, size: 14, color: c), const SizedBox(width: 4), Text(l, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _navy))])));
+  Widget _actionBtn(BuildContext context, String l, IconData i, Color c, VoidCallback onTap) => InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black.withValues(alpha: 0.05))), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(i, size: 14, color: c), const SizedBox(width: 4), Text(l, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _navy))])));
 
   Widget _buildFilterBar(BuildContext context) {
     final formattedRange = dateRange == null 
@@ -207,7 +213,7 @@ class _FinancialTab extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: _navy.withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: _navy.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -324,7 +330,7 @@ class _ProjectionsTab extends ConsumerWidget {
           return Container(
             margin: const EdgeInsets.only(bottom: 6),
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.blue.withOpacity(0.1))),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.blue.withValues(alpha: 0.1))),
             child: Row(
               children: [
                 const Icon(Icons.event_note, color: _navy, size: 12),

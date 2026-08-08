@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 import '../../../crm/presentation/crm_controller.dart';
 import '../../../crm/domain/customer.dart';
@@ -108,7 +109,6 @@ class _CreateInstallmentContractScreenState
     }
 
     int duration = 1;
-    double installmentAmount = totalValue;
 
     if (_installmentSubtype == 'installments') {
       final double instValue = double.tryParse(_installmentAmountController.text) ?? 0;
@@ -116,7 +116,6 @@ class _CreateInstallmentContractScreenState
         SnackBarHelper.showError(context, 'يرجى إدخال قيمة قسط صحيحة');
         return;
       }
-      installmentAmount = instValue;
       duration = (totalValue / instValue).ceil();
     } else {
       // وعدة
@@ -209,8 +208,18 @@ class _CreateInstallmentContractScreenState
               child: isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primaryNavy))
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: _buildCurrentStep(),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 860),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: ResponsiveLayout.isMobile(context) ? 16 : 32,
+                              vertical: 24,
+                            ),
+                            child: _buildCurrentStep(),
+                          ),
+                        ),
+                      ),
                     ),
             ),
             _buildControlButtons(isLoading),
@@ -442,6 +451,7 @@ class _CreateInstallmentContractScreenState
 
   Widget _buildGuarantorSection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -452,21 +462,56 @@ class _CreateInstallmentContractScreenState
             Switch(
               value: _hasGuarantor,
               onChanged: (v) => setState(() => _hasGuarantor = v),
-              activeColor: AppColors.accentGold,
+              activeThumbColor: AppColors.accentGold,
+              activeTrackColor: AppColors.accentGold.withValues(alpha: 0.4),
             ),
           ],
         ),
         if (_hasGuarantor) ...[
-          const SizedBox(height: 16),
-          _buildTextField(_gNameController, 'اسم الكفيل الكامل', Icons.person_outline),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildTextField(_gIdController, 'رقم الهوية', Icons.badge_outlined)),
+              ChoiceChip(
+                label: const Text('كفيل واحد'),
+                selected: _guarantorCount == 1,
+                onSelected: (_) => setState(() => _guarantorCount = 1),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _buildTextField(_gPhoneController, 'رقم الجوال', Icons.phone_android)),
+              ChoiceChip(
+                label: const Text('كفيلان'),
+                selected: _guarantorCount == 2,
+                onSelected: (_) => setState(() => _guarantorCount = 2),
+              ),
             ],
           ),
+          const SizedBox(height: 16),
+          const Text('بيانات الكفيل الأول:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryNavy)),
+          const SizedBox(height: 8),
+          _buildTextField(_g1NameController, 'اسم الكفيل الأول الكامل', Icons.person_outline),
+          const SizedBox(height: 12),
+          ResponsiveFormRow(
+            children: [
+              _buildTextField(_g1IdController, 'رقم الهوية', Icons.badge_outlined),
+              _buildTextField(_g1PhoneController, 'رقم الجوال', Icons.phone_android),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(_g1WorkController, 'جهة العمل / المهنة', Icons.work_outline),
+          if (_guarantorCount == 2) ...[
+            const SizedBox(height: 24),
+            const Text('بيانات الكفيل الثاني:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryNavy)),
+            const SizedBox(height: 8),
+            _buildTextField(_g2NameController, 'اسم الكفيل الثاني الكامل', Icons.person_outline),
+            const SizedBox(height: 12),
+            ResponsiveFormRow(
+              children: [
+                _buildTextField(_g2IdController, 'رقم الهوية', Icons.badge_outlined),
+                _buildTextField(_g2PhoneController, 'رقم الجوال', Icons.phone_android),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildTextField(_g2WorkController, 'جهة العمل / المهنة', Icons.work_outline),
+          ],
         ] else
           const Padding(
             padding: EdgeInsets.only(top: 8),
@@ -480,14 +525,51 @@ class _CreateInstallmentContractScreenState
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
     return _buildStepLayout(
       title: '٣. الحسابات والجدولة',
-      subtitle: 'تحديد القيمة النهائية للبيع وقيمة القسط الشهري لتوليد الجدول',
+      subtitle: 'تحديد نوع البيع بالأجل (أقساط شهرية أو وعدة) والقيمة الاتفاقية',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTextField(_totalSalePriceController, 'إجمالي قيمة العقد (مبيعات بالأرباح) *', Icons.money, isNumber: true),
+          // اختيار نوع عقد الأجل
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('صيغة البيع بالأجل:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryNavy)),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'installments', label: Text('بيع أقساط شهرية'), icon: Icon(Icons.view_list_rounded, size: 16)),
+                    ButtonSegment(value: 'waada', label: Text('بيع وعدة'), icon: Icon(Icons.event_rounded, size: 16)),
+                  ],
+                  selected: {_installmentSubtype},
+                  onSelectionChanged: (val) => setState(() => _installmentSubtype = val.first),
+                  style: ButtonStyle(
+                    textStyle: WidgetStateProperty.all(const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildTextField(
+            _totalSalePriceController,
+            _installmentSubtype == 'waada' ? 'سعر البيع الأجل (وعدة) *' : 'إجمالي قيمة العقد بالأقساط *',
+            Icons.money,
+            isNumber: true,
+          ),
           const SizedBox(height: 16),
-          _buildTextField(_installmentAmountController, 'قيمة القسط الشهري المطلوب *', Icons.payments, isNumber: true),
-          const SizedBox(height: 16),
-          _buildDatePicker('تاريخ استحقاق أول قسط', _firstInstallmentDate, (d) => setState(() => _firstInstallmentDate = d)),
+          if (_installmentSubtype == 'installments') ...[
+            _buildTextField(_installmentAmountController, 'قيمة القسط الشهري *', Icons.payments, isNumber: true),
+            const SizedBox(height: 16),
+            _buildDatePicker('تاريخ استحقاق أول قسط', _firstInstallmentDate, (d) => setState(() => _firstInstallmentDate = d)),
+          ] else
+            _buildDatePicker('تاريخ سداد الوعدة', _waadaDueDate, (d) => setState(() => _waadaDueDate = d)),
           const SizedBox(height: 32),
           _buildCalculatedSummary(f),
         ],
@@ -497,6 +579,37 @@ class _CreateInstallmentContractScreenState
 
   Widget _buildCalculatedSummary(intl.NumberFormat f) {
     final total = double.tryParse(_totalSalePriceController.text) ?? 0;
+
+    if (_installmentSubtype == 'waada') {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.primaryNavy,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: AppColors.primaryNavy.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5))],
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('مبلغ الوعدة الإجمالي', style: TextStyle(color: Colors.white70)),
+                Text('${f.format(total)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 24, fontWeight: FontWeight.w900)),
+              ],
+            ),
+            const Divider(color: Colors.white10, height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _summaryItem('نوع العقد', 'بيع وعدة (دفعة واحدة)'),
+                _summaryItem('تاريخ السداد', intl.DateFormat('yyyy/MM/dd').format(_waadaDueDate)),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     final inst = double.tryParse(_installmentAmountController.text) ?? 0;
     final int count = inst > 0 ? (total / inst).ceil() : 0;
     final endDate = _firstInstallmentDate.add(Duration(days: (count - 1) * 30));
@@ -506,7 +619,7 @@ class _CreateInstallmentContractScreenState
       decoration: BoxDecoration(
         color: AppColors.primaryNavy,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: AppColors.primaryNavy.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: AppColors.primaryNavy.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5))],
       ),
       child: Column(
         children: [
@@ -522,7 +635,7 @@ class _CreateInstallmentContractScreenState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _summaryItem('عدد الأقساط', '$count قسطاً'),
-              _summaryItem('تاريخ الانتهاء', intl.DateFormat('yyyy/MM').format(endDate)),
+              _summaryItem('تاريخ الانتهاء', intl.DateFormat('yyyy/MM/dd').format(endDate)),
             ],
           ),
         ],
@@ -543,7 +656,7 @@ class _CreateInstallmentContractScreenState
   Widget _buildControlButtons(bool isLoading) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, border: const Border(top: BorderSide(color: AppColors.bgGrey)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))]),
+      decoration: BoxDecoration(color: Colors.white, border: const Border(top: BorderSide(color: AppColors.bgGrey)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))]),
       child: SafeArea(
         child: Row(
           children: [

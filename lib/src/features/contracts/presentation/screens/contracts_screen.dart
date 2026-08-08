@@ -69,13 +69,18 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
         children: [
           // لوحة الإحصائيات التنفيذية
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            padding: EdgeInsets.fromLTRB(
+              ResponsiveLayout.isMobile(context) ? 16 : 24, 
+              24, 
+              ResponsiveLayout.isMobile(context) ? 16 : 24, 
+              0
+            ),
             child: _buildExecutiveStats(statsAsync, f),
           ),
 
           // شريط التصفية والبحث وعزل الأجل عن النقدي
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 16.0 : 24.0),
             child: Column(
               children: [
                 _buildTypeTabs(),
@@ -436,37 +441,58 @@ class _ContractsScreenState extends ConsumerState<ContractsScreen> {
     intl.NumberFormat f,
   ) {
     return statsAsync.when(
-      data: (stats) => Row(
-        children: [
+      data: (stats) {
+        final cards = [
           _buildExecutiveStatCard(
             'إجمالي العقود',
             stats['total'] ?? 0,
             Icons.assignment_rounded,
             Colors.blue,
           ),
-          const SizedBox(width: 20),
           _buildExecutiveStatCard(
             'عقود نشطة',
             stats['active'] ?? 0,
             Icons.check_circle_rounded,
             Colors.green,
           ),
-          const SizedBox(width: 20),
           _buildExecutiveStatCard(
             'متأخرات (قيمة)',
             f.format(stats['total_overdue'] ?? 0),
             Icons.warning_amber_rounded,
             Colors.red,
           ),
-          const SizedBox(width: 20),
           _buildExecutiveStatCard(
             'مسودات',
             stats['draft'] ?? 0,
             Icons.edit_note_rounded,
             Colors.orange,
           ),
-        ],
-      ),
+        ];
+
+        return LayoutBuilder(builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            // Mobile: 2x2 grid
+            return GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 2.2,
+              children: cards,
+            );
+          }
+          // Tablet/Desktop: row
+          return Row(
+            children: [
+              for (int i = 0; i < cards.length; i++) ...[
+                Expanded(child: cards[i]),
+                if (i < cards.length - 1) const SizedBox(width: 16),
+              ],
+            ],
+          );
+        });
+      },
       loading: () => const LinearProgressIndicator(),
       error: (_, __) => const SizedBox(),
     );

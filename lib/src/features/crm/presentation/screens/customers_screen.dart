@@ -27,12 +27,15 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(140),
+        preferredSize: Size.fromHeight(ResponsiveLayout.isMobile(context) ? 100 : 140),
         child: Container(
           color: AppColors.primaryNavy,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveLayout.isMobile(context) ? 16.0 : 24.0,
+                vertical: 12.0,
+              ),
               child: _buildPremiumHeader(),
             ),
           ),
@@ -42,7 +45,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
         children: [
           // شريط البحث والفلاتر
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 16.0 : 24.0),
             child: _buildModernSearchSection(),
           ),
 
@@ -75,24 +78,26 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'إدارة علاقات العملاء (CRM)',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'إدارة علاقات العملاء (CRM)',
+                style: TextStyle(
+                  fontSize: ResponsiveLayout.isMobile(context) ? 20 : 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'متابعة الملفات الشخصية، الجدارة الائتمانية، والنشاط التعاقدي',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'متابعة الملفات الشخصية، الجدارة الائتمانية، والنشاط التعاقدي',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+              ),
+            ],
+          ),
         ),
         if (ResponsiveLayout.isDesktop(context))
           ElevatedButton.icon(
@@ -117,7 +122,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 10)],
       ),
       child: Row(
         children: [
@@ -128,7 +133,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                 hintText: 'بحث باسم العميل، الهوية، أو رقم الهاتف...',
                 prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryNavy),
                 filled: true,
-                fillColor: AppColors.bgGrey.withOpacity(0.5),
+                fillColor: AppColors.bgGrey.withValues(alpha: 0.5),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
               ),
             ),
@@ -148,14 +153,15 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: SingleChildScrollView(
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withOpacity(0.02)),
-            dataRowHeight: 80,
+            headingRowColor: WidgetStateProperty.all(AppColors.primaryNavy.withValues(alpha: 0.02)),
+            dataRowMinHeight: 80,
+            dataRowMaxHeight: 80,
             headingRowHeight: 60,
             columns: const [
               DataColumn(label: Text('ملف العميل', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy))),
@@ -170,7 +176,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: AppColors.primaryNavy.withOpacity(0.05),
+                      backgroundColor: AppColors.primaryNavy.withValues(alpha: 0.05),
                       child: Text(c.fullName.isNotEmpty ? c.fullName[0] : '?',
                           style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
                     ),
@@ -232,7 +238,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }

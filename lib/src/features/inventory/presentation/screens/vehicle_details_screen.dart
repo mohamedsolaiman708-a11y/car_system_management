@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/vehicle.dart';
 import '../inventory_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
 import '../../../../core/utils/error_handler.dart';
 
@@ -47,7 +48,7 @@ class VehicleDetailsScreen extends ConsumerWidget {
           return SingleChildScrollView(
             child: Column(
               children: [
-                _buildPremiumHeader(vehicle, f),
+                _buildPremiumHeader(context, vehicle, f),
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
@@ -79,65 +80,134 @@ class VehicleDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPremiumHeader(Vehicle vehicle, intl.NumberFormat f) {
+  Widget _buildPremiumHeader(BuildContext context, Vehicle vehicle, intl.NumberFormat f) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(32, 20, 32, 40),
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 16 : 32,
+        isMobile ? 20 : 20,
+        isMobile ? 16 : 32,
+        isMobile ? 24 : 40,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.primaryNavy,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: const Icon(Icons.directions_car_filled_rounded, size: 80, color: AppColors.accentGold),
-          ),
-          const SizedBox(width: 32),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: isMobile
+          ? Column(
               children: [
-                _StatusBadgeLarge(status: vehicle.status),
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: const Icon(Icons.directions_car_filled_rounded, size: 50, color: AppColors.accentGold),
+                ),
                 const SizedBox(height: 16),
+                _StatusBadgeLarge(status: vehicle.status),
+                const SizedBox(height: 12),
                 Text('${vehicle.make} ${vehicle.model}',
-                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
                   children: [
-                    const Icon(Icons.fingerprint_rounded, color: Colors.white54, size: 14),
-                    const SizedBox(width: 8),
-                    Text('رقم الهيكل: ${vehicle.vin}', style: const TextStyle(color: Colors.white54, fontSize: 14)),
-                    const SizedBox(width: 24),
-                    const Icon(Icons.calendar_today_rounded, color: Colors.white54, size: 14),
-                    const SizedBox(width: 8),
-                    Text('سنة الصنع: ${vehicle.year}', style: const TextStyle(color: Colors.white54, fontSize: 14)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.fingerprint_rounded, color: Colors.white54, size: 14),
+                        const SizedBox(width: 6),
+                        Text('رقم الهيكل: ${vehicle.vin}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today_rounded, color: Colors.white54, size: 14),
+                        const SizedBox(width: 6),
+                        Text('سنة الصنع: ${vehicle.year}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                      ],
+                    ),
                   ],
                 ),
               ],
+            )
+          : Row(
+              children: [
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: const Icon(Icons.directions_car_filled_rounded, size: 80, color: AppColors.accentGold),
+                ),
+                const SizedBox(width: 32),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _StatusBadgeLarge(status: vehicle.status),
+                      const SizedBox(height: 16),
+                      Text('${vehicle.make} ${vehicle.model}',
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.fingerprint_rounded, color: Colors.white54, size: 14),
+                          const SizedBox(width: 8),
+                          Text('رقم الهيكل: ${vehicle.vin}', style: const TextStyle(color: Colors.white54, fontSize: 14)),
+                          const SizedBox(width: 24),
+                          const Icon(Icons.calendar_today_rounded, color: Colors.white54, size: 14),
+                          const SizedBox(width: 8),
+                          Text('سنة الصنع: ${vehicle.year}', style: const TextStyle(color: Colors.white54, fontSize: 14)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildFinancialSnapshot(Vehicle vehicle, intl.NumberFormat f) {
-    return Row(
-      children: [
-        _buildFinCard('تكلفة الشراء', f.format(vehicle.purchasePrice), Colors.blue),
-        const SizedBox(width: 20),
-        _buildFinCard('القيمة السوقية', f.format(vehicle.estimatedMarketValue ?? 0), Colors.green),
-        const SizedBox(width: 20),
-        _buildFinCard('رقم اللوحة', vehicle.licensePlate ?? 'N/A', AppColors.accentGold, isCurrency: false),
-      ],
-    );
+    final cards = [
+      _buildFinCard('تكلفة الشراء', f.format(vehicle.purchasePrice), Colors.blue),
+      _buildFinCard('القيمة السوقية', f.format(vehicle.estimatedMarketValue ?? 0), Colors.green),
+      _buildFinCard('رقم اللوحة', vehicle.licensePlate ?? 'N/A', AppColors.accentGold, isCurrency: false),
+    ];
+
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 600) {
+        return Column(
+          children: [
+            cards[0],
+            const SizedBox(height: 12),
+            cards[1],
+            const SizedBox(height: 12),
+            cards[2],
+          ],
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: cards[0]),
+          const SizedBox(width: 16),
+          Expanded(child: cards[1]),
+          const SizedBox(width: 16),
+          Expanded(child: cards[2]),
+        ],
+      );
+    });
   }
 
   Widget _buildFinCard(String label, String value, Color color, {bool isCurrency = true}) {
@@ -202,6 +272,31 @@ class VehicleDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildActionPanel(BuildContext context, WidgetRef ref, Vehicle vehicle) {
+    final isMobile = ResponsiveLayout.isMobile(context);
+    final buttons = [
+      if (vehicle.status == 'available')
+        ElevatedButton.icon(
+          onPressed: () => context.push('/contracts/new?vehicleId=${vehicle.id}'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.successGreen,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(0, 48),
+          ),
+          icon: const Icon(Icons.add_task_rounded),
+          label: const Text('تعميد عقد تمويل جديد'),
+        ),
+      OutlinedButton.icon(
+        onPressed: () => _toggleMaintenance(context, ref, vehicle),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: vehicle.status == 'maintenance' ? Colors.green : Colors.orange),
+          foregroundColor: vehicle.status == 'maintenance' ? Colors.green : Colors.orange.shade800,
+          minimumSize: const Size(0, 48),
+        ),
+        icon: Icon(vehicle.status == 'maintenance' ? Icons.check_circle_outline : Icons.build_circle_outlined),
+        label: Text(vehicle.status == 'maintenance' ? 'إنهاء الصيانة وإتاحة المركبة' : 'إصدار أمر صيانة'),
+      ),
+    ];
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -209,31 +304,24 @@ class VehicleDetailsScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.primaryNavy.withValues(alpha: 0.1)),
       ),
-      child: Row(
-        children: [
-          if (vehicle.status == 'available')
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => context.push('/contracts/new?vehicleId=${vehicle.id}'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.successGreen, foregroundColor: Colors.white),
-                icon: const Icon(Icons.add_task_rounded),
-                label: const Text('تعميد عقد تمويل جديد'),
-              ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < buttons.length; i++) ...[
+                  buttons[i],
+                  if (i < buttons.length - 1) const SizedBox(height: 12),
+                ],
+              ],
+            )
+          : Row(
+              children: [
+                for (int i = 0; i < buttons.length; i++) ...[
+                  Expanded(child: buttons[i]),
+                  if (i < buttons.length - 1) const SizedBox(width: 16),
+                ],
+              ],
             ),
-          if (vehicle.status == 'available') const SizedBox(width: 16),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _toggleMaintenance(context, ref, vehicle),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: vehicle.status == 'maintenance' ? Colors.green : Colors.orange),
-                foregroundColor: vehicle.status == 'maintenance' ? Colors.green : Colors.orange.shade800,
-              ),
-              icon: Icon(vehicle.status == 'maintenance' ? Icons.check_circle_outline : Icons.build_circle_outlined),
-              label: Text(vehicle.status == 'maintenance' ? 'إنهاء الصيانة وإتاحة المركبة' : 'إصدار أمر صيانة'),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -11,6 +11,7 @@ import '../../../documents/presentation/widgets/universal_document_manager.dart'
 import '../../../investors/presentation/widgets/fund_contract_dialog.dart';
 import '../../../accounting/presentation/accounting_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/utils/arabic_translator.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
@@ -91,7 +92,7 @@ class ContractDetailsScreen extends ConsumerWidget {
               length: 7,
               child: Column(
                 children: [
-                  _buildPremiumHeader(contract),
+                  _buildPremiumHeader(context, contract),
                   _buildModernTabBar(),
                   Expanded(
                     child: Container(
@@ -129,9 +130,15 @@ class ContractDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPremiumHeader(Contract contract) {
+  Widget _buildPremiumHeader(BuildContext context, Contract contract) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 16 : 24,
+        8,
+        isMobile ? 16 : 24,
+        isMobile ? 20 : 32,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.primaryNavy,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -139,40 +146,43 @@ class ContractDetailsScreen extends ConsumerWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isMobile ? 10 : 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.assignment_rounded,
-              size: 40,
+              size: isMobile ? 28 : 40,
               color: AppColors.accentGold,
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      'عقد رقم: ${contract.contractNo}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                    Expanded(
+                      child: Text(
+                        'عقد رقم: ${contract.contractNo}',
+                        style: TextStyle(
+                          fontSize: isMobile ? 18 : 22,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     _StatusBadge(status: contract.status),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   'العميل: ${contract.customer?['full_name'] ?? "-"}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: isMobile ? 12 : 13),
                 ),
               ],
             ),

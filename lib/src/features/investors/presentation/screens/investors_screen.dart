@@ -35,18 +35,24 @@ class _InvestorsScreenState extends ConsumerState<InvestorsScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: AppColors.bgGrey,
         appBar: AppBar(
-          toolbarHeight: 180,
+          toolbarHeight: isMobile ? 220 : 160,
           backgroundColor: AppColors.primaryNavy,
           automaticallyImplyLeading: false,
           elevation: 0,
           flexibleSpace: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(32, 24, 32, 60),
+              padding: EdgeInsets.fromLTRB(
+                isMobile ? 16 : 32,
+                16,
+                isMobile ? 16 : 32,
+                isMobile ? 50 : 60,
+              ),
               child: _buildHeader(context, ref),
             ),
           ),
@@ -63,6 +69,18 @@ class _InvestorsScreenState extends ConsumerState<InvestorsScreen> with SingleTi
             WithdrawalRequestsList(),
           ],
         ),
+        floatingActionButton: isMobile
+            ? FloatingActionButton.extended(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => const CreateInvestorDialog(),
+                ),
+                backgroundColor: AppColors.accentGold,
+                foregroundColor: AppColors.primaryNavy,
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                label: const Text('مستثمر جديد', style: TextStyle(fontWeight: FontWeight.bold)),
+              )
+            : null,
       ),
     );
   }
@@ -78,6 +96,37 @@ class _InvestorsScreenState extends ConsumerState<InvestorsScreen> with SingleTi
     });
 
     final f = intl.NumberFormat.compactCurrency(symbol: 'ر.س', locale: 'ar');
+    final isMobile = ResponsiveLayout.isMobile(context);
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'إدارة المستثمرين والشركاء',
+                style: TextStyle(
+                  fontSize: 20, 
+                  fontWeight: FontWeight.w900, 
+                  color: Colors.white,
+                ),
+              ),
+              _buildExportMenu(ref),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildQuickStat('إجمالي المحافظ', f.format(totalCapital)),
+              const SizedBox(width: 32),
+              _buildQuickStat('الشركاء النشطين', count.toString()),
+            ],
+          ),
+        ],
+      );
+    }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -283,6 +332,7 @@ class ActiveInvestorsList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final investorsAsync = ref.watch(investorListControllerProvider);
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
+    final isMobile = ResponsiveLayout.isMobile(context);
 
     return investorsAsync.when(
       data: (investors) => RefreshIndicator(
@@ -290,7 +340,7 @@ class ActiveInvestorsList extends ConsumerWidget {
         child: investors.isEmpty
             ? _buildEmptyScrollable(context, 'لا يوجد مستثمرون حالياً', Icons.people_outline_rounded)
             : ListView.builder(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(isMobile ? 16 : 24),
                 itemCount: investors.length,
                 itemBuilder: (context, index) {
                   final inv = investors[index];
@@ -307,38 +357,80 @@ class ActiveInvestorsList extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(24),
                       child: Padding(
                         padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryNavy.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Center(
-                                child: Text(inv.fullName.isNotEmpty ? inv.fullName[0] : '?', 
-                                  style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: Column(
+                        child: isMobile
+                            ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
-                                  const SizedBox(height: 4),
-                                  Text(inv.email, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryNavy.withValues(alpha: 0.05),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: Center(
+                                          child: Text(inv.fullName.isNotEmpty ? inv.fullName[0] : '?', 
+                                            style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 18)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primaryNavy)),
+                                            const SizedBox(height: 2),
+                                            Text(inv.email, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.chevron_left_rounded, color: Colors.grey, size: 20),
+                                    ],
+                                  ),
+                                  const Divider(height: 24, color: AppColors.bgGrey),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildStatColumn('الرصيد المتاح', f.format(inv.availableBalance), AppColors.successGreen),
+                                      _buildStatColumn('رأس المال الموظف', f.format(inv.deployedCapital), AppColors.primaryNavy),
+                                    ],
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryNavy.withValues(alpha: 0.05),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Center(
+                                      child: Text(inv.fullName.isNotEmpty ? inv.fullName[0] : '?', 
+                                        style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold, fontSize: 20)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(inv.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy)),
+                                        const SizedBox(height: 4),
+                                        Text(inv.email, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                  _buildStatColumn('الرصيد المتاح', f.format(inv.availableBalance), AppColors.successGreen),
+                                  const SizedBox(width: 32),
+                                  _buildStatColumn('رأس المال الموظف', f.format(inv.deployedCapital), AppColors.primaryNavy),
+                                  const SizedBox(width: 12),
+                                  const Icon(Icons.chevron_left_rounded, color: Colors.grey, size: 20),
                                 ],
                               ),
-                            ),
-                            _buildStatColumn('الرصيد المتاح', f.format(inv.availableBalance), AppColors.successGreen),
-                            const SizedBox(width: 32),
-                            _buildStatColumn('رأس المال الموظف', f.format(inv.deployedCapital), AppColors.primaryNavy),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.chevron_left_rounded, color: Colors.grey, size: 20),
-                          ],
-                        ),
                       ),
                     ),
                   );
@@ -579,6 +671,7 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
       }
     }
 
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -593,99 +686,108 @@ class _PendingInvestorCardState extends ConsumerState<_PendingInvestorCard> {
           )
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.accentGold.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.person_add_rounded, color: AppColors.accentGold, size: 24),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fullName,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGold.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 6,
+                child: const Icon(Icons.person_add_rounded, color: AppColors.accentGold, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (email.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.email_outlined, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(email, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                        ],
-                      ),
-                    if (phone.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.phone_outlined, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                        ],
-                      ),
-                    if (nationalId.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.badge_outlined, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text('هوية: $nationalId', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                        ],
-                      ),
-                    if (formattedDate.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
-                          const SizedBox(width: 4),
-                          Text(formattedDate, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                        ],
-                      ),
+                    Text(
+                      fullName,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryNavy),
+                    ),
+                    if (formattedDate.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(formattedDate, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                    ],
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            runSpacing: 6,
+            children: [
+              if (email.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.email_outlined, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(email, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  ],
+                ),
+              if (phone.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.phone_outlined, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  ],
+                ),
+              if (nationalId.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.badge_outlined, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text('هوية: $nationalId', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
           if (_isLoading)
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryNavy),
+            const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryNavy),
+              ),
             )
           else
             Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                TextButton(
-                  onPressed: _reject,
-                  style: TextButton.styleFrom(foregroundColor: AppColors.errorRed),
-                  child: const Text('رفض الطلب', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _approve,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.successGreen,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(0, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _reject,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.errorRed,
+                      side: const BorderSide(color: AppColors.errorRed),
+                      minimumSize: const Size(0, 44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('رفض الطلب', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                  child: const Text('اعتماد القبول', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _approve,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.successGreen,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('اعتماد القبول', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
             ),

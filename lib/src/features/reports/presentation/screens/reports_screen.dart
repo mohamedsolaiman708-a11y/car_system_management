@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import '../reports_controller.dart';
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import 'collections_report_screen.dart';
 import 'report_detail_screen.dart';
 
@@ -29,29 +30,46 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgGrey,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(160),
+        preferredSize: Size.fromHeight(ResponsiveLayout.isMobile(context) ? 200 : 160),
         child: Container(
           color: AppColors.primaryNavy,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('مركز التقارير والذكاء المالي',
-                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('تحليل الأداء الاستثماري، التدفقات النقدية، والتقارير الرقابية',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
-                    ],
-                  ),
-                  _buildDateRangePicker(),
-                ],
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveLayout.isMobile(context) ? 16.0 : 24.0,
+                vertical: 16,
               ),
+              child: ResponsiveLayout.isMobile(context)
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('مركز التقارير والذكاء المالي',
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text('تحليل الأداء الاستثماري، التدفقات النقدية، والتقارير الرقابية',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11)),
+                        const SizedBox(height: 12),
+                        _buildDateRangePicker(),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('مركز التقارير والذكاء المالي',
+                                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                            const SizedBox(height: 4),
+                            Text('تحليل الأداء الاستثماري، التدفقات النقدية، والتقارير الرقابية',
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                          ],
+                        ),
+                        _buildDateRangePicker(),
+                      ],
+                    ),
             ),
           ),
         ),
@@ -117,15 +135,34 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
-    return Row(
-      children: [
-        _buildPremiumSummaryCard('إجمالي الأرباح التشغيلية', f.format(totalGross), Icons.payments_rounded, [const Color(0xFF6366F1), const Color(0xFF4F46E5)]),
-        const SizedBox(width: 20),
-        _buildPremiumSummaryCard('حصة المستثمرين', f.format(totalInvestor), Icons.groups_rounded, [const Color(0xFFF59E0B), const Color(0xFFD97706)]),
-        const SizedBox(width: 20),
-        _buildPremiumSummaryCard('صافي ربح المؤسسة', f.format(totalCompany), Icons.trending_up_rounded, [const Color(0xFF10B981), const Color(0xFF059669)]),
-      ],
-    );
+    final cards = [
+      _buildPremiumSummaryCard('إجمالي الأرباح التشغيلية', f.format(totalGross), Icons.payments_rounded, [const Color(0xFF6366F1), const Color(0xFF4F46E5)]),
+      _buildPremiumSummaryCard('حصة المستثمرين', f.format(totalInvestor), Icons.groups_rounded, [const Color(0xFFF59E0B), const Color(0xFFD97706)]),
+      _buildPremiumSummaryCard('صافي ربح المؤسسة', f.format(totalCompany), Icons.trending_up_rounded, [const Color(0xFF10B981), const Color(0xFF059669)]),
+    ];
+
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 600) {
+        return Column(
+          children: [
+            cards[0],
+            const SizedBox(height: 12),
+            cards[1],
+            const SizedBox(height: 12),
+            cards[2],
+          ],
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: cards[0]),
+          const SizedBox(width: 16),
+          Expanded(child: cards[1]),
+          const SizedBox(width: 16),
+          Expanded(child: cards[2]),
+        ],
+      );
+    });
   }
 
   Widget _buildPremiumSummaryCard(String title, String value, IconData icon, List<Color> gradient) {
@@ -155,13 +192,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   Widget _buildReportCategories() {
+    final isMobile = ResponsiveLayout.isMobile(context);
+    final isTablet = ResponsiveLayout.isTablet(context);
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 3,
-      mainAxisSpacing: 20,
-      crossAxisSpacing: 20,
-      childAspectRatio: 1.5,
+      crossAxisCount: isMobile ? 1 : (isTablet ? 2 : 3),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: isMobile ? 2.2 : 1.5,
       children: [
         _buildCategoryCard('تقرير الأرباح', 'تحليل العوائد والنمو', Icons.pie_chart_rounded, Colors.indigo, 'profit'),
         _buildCategoryCard('سجل التحصيل', 'متابعة الدفعات المستلمة', Icons.receipt_long_rounded, Colors.teal, 'collections'),
