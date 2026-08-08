@@ -510,17 +510,37 @@ class _PaymentsTab extends ConsumerWidget {
         if (contract.status == 'active')
           Padding(
             padding: const EdgeInsets.all(24),
-            child: ElevatedButton.icon(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (context) => AddPaymentDialog(contract: contract),
-              ),
-              icon: const Icon(Icons.add_card_rounded),
-              label: const Text('تسجيل دفعة سداد جديدة'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.successGreen,
-                minimumSize: const Size(double.infinity, 56),
-              ),
+            child: Column(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (context) => AddPaymentDialog(contract: contract),
+                  ),
+                  icon: const Icon(Icons.add_card_rounded),
+                  label: const Text('تسجيل دفعة سداد جديدة'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.successGreen,
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _showEarlySettlementDialog(context, ref, contract),
+                  icon: const Icon(Icons.check_circle_outline_rounded, color: AppColors.primaryNavy),
+                  label: const Text('سداد مبكر وإغلاق العقد', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    side: const BorderSide(color: AppColors.primaryNavy, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         Expanded(
@@ -550,6 +570,62 @@ class _PaymentsTab extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showEarlySettlementDialog(BuildContext context, WidgetRef ref, Contract contract) {
+    final controller = TextEditingController(text: contract.totalContractValue.toString());
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('سداد مبكر وإغلاق العقد النهائي'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('عقد رقم: ${contract.contractNo}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('إجمالي قيمة العقد الأساسية: ', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('${contract.totalContractValue} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'مبلغ التسوية والسداد المبكر النهائي (ريال) *',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.handshake_outlined),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryNavy),
+              onPressed: () async {
+                final amount = double.tryParse(controller.text) ?? 0.0;
+                if (amount <= 0) return;
+
+                Navigator.pop(context);
+                final success = await ref.read(contractControllerProvider.notifier).processPayment(
+                  contractId: contract.id,
+                  amount: amount,
+                  method: 'cash',
+                  reference: 'سداد مبكر وتسوية إغلاق عقد',
+                );
+                if (success) {
+                  await ref.read(contractControllerProvider.notifier).updateContract(contract.id, {'status': 'completed'});
+                  SnackBarHelper.showSuccess(context, 'تمت التسوية وإغلاق العقد بنجاح');
+                }
+              },
+              child: const Text('تأكيد التسوية وإغلاق العقد', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

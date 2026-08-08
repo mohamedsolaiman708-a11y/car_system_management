@@ -31,44 +31,58 @@ class _CreateInstallmentContractScreenState
     extends ConsumerState<CreateInstallmentContractScreen> {
   int _currentStep = 0;
 
+  // نوع عقد الأجل: أقساط أو وعدة (دفع مؤجل)
+  String _installmentSubtype = 'installments'; // 'installments' | 'waada'
+
   // البيانات الأساسية
-  String? _selectedVehicleId;
-  Vehicle? _selectedVehicle;
+  final List<Vehicle> _selectedVehicles = [];
   Investor? _selectedInvestor;
   Customer? _selectedCustomer;
+  
+  // بيانات الكفيل
   bool _hasGuarantor = false;
+  int _guarantorCount = 1; // 1 or 2
+  final _g1NameController = TextEditingController();
+  final _g1IdController = TextEditingController();
+  final _g1PhoneController = TextEditingController();
+  final _g1WorkController = TextEditingController();
+
+  final _g2NameController = TextEditingController();
+  final _g2IdController = TextEditingController();
+  final _g2PhoneController = TextEditingController();
+  final _g2WorkController = TextEditingController();
 
   // الحقول المالية
   final _totalSalePriceController = TextEditingController();
   final _installmentAmountController = TextEditingController();
   final DateTime _contractDate = DateTime.now();
   DateTime _firstInstallmentDate = DateTime.now().add(const Duration(days: 30));
-
-  // بيانات الكفيل
-  final _gNameController = TextEditingController();
-  final _gIdController = TextEditingController();
-  final _gPhoneController = TextEditingController();
+  DateTime _waadaDueDate = DateTime.now().add(const Duration(days: 365));
 
   @override
   void initState() {
     super.initState();
-    _selectedVehicleId = widget.initialVehicleId;
   }
 
   @override
   void dispose() {
     _totalSalePriceController.dispose();
     _installmentAmountController.dispose();
-    _gNameController.dispose();
-    _gIdController.dispose();
-    _gPhoneController.dispose();
+    _g1NameController.dispose();
+    _g1IdController.dispose();
+    _g1PhoneController.dispose();
+    _g1WorkController.dispose();
+    _g2NameController.dispose();
+    _g2IdController.dispose();
+    _g2PhoneController.dispose();
+    _g2WorkController.dispose();
     super.dispose();
   }
 
   void _nextStep() {
     if (_currentStep < 2) {
-      if (_currentStep == 0 && _selectedVehicleId == null) {
-        SnackBarHelper.showWarning(context, 'يرجى اختيار المركبة أولاً');
+      if (_currentStep == 0 && _selectedVehicles.isEmpty) {
+        SnackBarHelper.showWarning(context, 'يرجى اختيار سيارة واحدة على الأقل من المخزون');
         return;
       }
       if (_currentStep == 1 && (_selectedInvestor == null || _selectedCustomer == null)) {
@@ -87,18 +101,33 @@ class _CreateInstallmentContractScreenState
 
   Future<void> _submit() async {
     final double totalValue = double.tryParse(_totalSalePriceController.text) ?? 0;
-    final double installmentValue = double.tryParse(_installmentAmountController.text) ?? 0;
 
-    if (totalValue <= 0 || installmentValue <= 0) {
-      SnackBarHelper.showError(context, 'يرجى إدخال مبالغ صحيحة للقيمة الإجمالية والقسط');
+    if (totalValue <= 0) {
+      SnackBarHelper.showError(context, 'يرجى إدخال سعر بيع صحيح');
       return;
     }
 
-    final int duration = (totalValue / installmentValue).ceil();
+    int duration = 1;
+    double installmentAmount = totalValue;
+
+    if (_installmentSubtype == 'installments') {
+      final double instValue = double.tryParse(_installmentAmountController.text) ?? 0;
+      if (instValue <= 0) {
+        SnackBarHelper.showError(context, 'يرجى إدخال قيمة قسط صحيحة');
+        return;
+      }
+      installmentAmount = instValue;
+      duration = (totalValue / instValue).ceil();
+    } else {
+      // وعدة
+      final daysDiff = _waadaDueDate.difference(_contractDate).inDays;
+      duration = (daysDiff / 30).ceil();
+      if (duration < 1) duration = 1;
+    }
 
     final data = {
       'type': 'installments',
-      'inventory_item_id': _selectedVehicleId,
+      'inventory_item_id': _selectedVehicles.isNotEmpty ? _selectedVehicles.first.id : null,
       'investor_id': _selectedInvestor?.id,
       'customer_id': _selectedCustomer?.id,
       'principal_amount': totalValue,
@@ -107,17 +136,32 @@ class _CreateInstallmentContractScreenState
       'duration_months': duration,
       'start_date': _contractDate.toIso8601String(),
       'status': 'draft',
+      'notes': _installmentSubtype == 'waada' ? 'عقد بيع بالأجل (وعدة - سداد دفعة واحدة)' : 'عقد بيع بالأجل (أقساط)',
+      'vehicles_list': _selectedVehicles.map((v) => {
+        'id': v.id,
+        'make': v.make,
+        'model': v.model,
+        'year': v.year,
+        'license_plate': v.licensePlate,
+      }).toList(),
       if (_hasGuarantor) ...{
-        'guarantor_1_name': _gNameController.text.trim(),
-        'guarantor_1_id': _gIdController.text.trim(),
-        'guarantor_1_phone': _gPhoneController.text.trim(),
+        'guarantor_1_name': _g1NameController.text.trim(),
+        'guarantor_1_id': _g1IdController.text.trim(),
+        'guarantor_1_phone': _g1PhoneController.text.trim(),
+        'guarantor_1_work': _g1WorkController.text.trim(),
+        if (_guarantorCount == 2) ...{
+          'guarantor_2_name': _g2NameController.text.trim(),
+          'guarantor_2_id': _g2IdController.text.trim(),
+          'guarantor_2_phone': _g2PhoneController.text.trim(),
+          'guarantor_2_work': _g2WorkController.text.trim(),
+        },
       },
     };
 
     final success = await ref.read(contractControllerProvider.notifier).createContract(data);
 
     if (success && mounted) {
-      SnackBarHelper.showSuccess(context, 'تم إنشاء مسودة العقد بنجاح');
+      SnackBarHelper.showSuccess(context, 'تم إنشاء مسودة عقد البيع بالأجل بنجاح');
       context.pop();
     }
   }
@@ -148,7 +192,7 @@ class _CreateInstallmentContractScreenState
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
             onPressed: () => context.pop(),
           ),
-          title: const Text('إصدار عقد تمويل جديد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: const Text('إصدار عقد بيع بالأجل (أقساط / وعدة)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
           actions: [
             Center(
               child: Padding(
@@ -209,50 +253,71 @@ class _CreateInstallmentContractScreenState
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 0);
 
     return _buildStepLayout(
-      title: '١. اختيار المركبة',
-      subtitle: 'اختر السيارة من المخزون المتاح لإصدار العقد عليها',
+      title: '١. اختيار السيارات من المخزون',
+      subtitle: 'اختر سيارة أو أكثر من السيارات المتاحة بالمخزون لإضافتها للعقد',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           vehiclesAsync.when(
             data: (list) {
-              if (_selectedVehicleId != null && _selectedVehicle == null) {
-                try { _selectedVehicle = list.firstWhere((v) => v.id == _selectedVehicleId); } catch(_) {}
-              }
-              return DropdownButtonFormField<String>(
-                value: _selectedVehicleId,
-                decoration: const InputDecoration(labelText: 'قائمة السيارات المتاحة', prefixIcon: Icon(Icons.directions_car)),
-                items: list.map((v) => DropdownMenuItem(value: v.id, child: Text('${v.make} ${v.model} (${v.year}) - ${v.licensePlate ?? "بدون لوحة"}'))).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _selectedVehicleId = val;
-                    _selectedVehicle = list.firstWhere((v) => v.id == val);
-                  });
-                },
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: 'إضافة سيارة من المخزون', 
+                      prefixIcon: Icon(Icons.directions_car),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                    ),
+                    items: list.map((v) => DropdownMenuItem(
+                      value: v.id, 
+                      child: Text('${v.make} ${v.model} (${v.year}) - لوحة: ${v.licensePlate ?? "بدون"}'),
+                    )).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        final v = list.firstWhere((x) => x.id == val);
+                        if (!_selectedVehicles.any((element) => element.id == v.id)) {
+                          setState(() {
+                            _selectedVehicles.add(v);
+                          });
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  if (_selectedVehicles.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: const Text('لم يتم اختيار أي سيارة بعد. يرجى اختيار سيارة من القائمة أعلاه.', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                    )
+                  else
+                    Column(
+                      children: _selectedVehicles.map((v) => Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: const Icon(Icons.directions_car_filled, color: AppColors.primaryNavy),
+                          title: Text('${v.make} ${v.model} (${v.year})'),
+                          subtitle: Text('لوحة: ${v.licensePlate ?? "بدون"} | الشراء: ${f.format(v.purchasePrice)} ر.س'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => setState(() => _selectedVehicles.removeWhere((x) => x.id == v.id)),
+                          ),
+                        ),
+                      )).toList(),
+                    ),
+                ],
               );
             },
             loading: () => const LinearProgressIndicator(),
             error: (_, __) => const Text('حدث خطأ في تحميل بيانات المخزون'),
           ),
-          if (_selectedVehicle != null) ...[
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blue.shade100)),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.blue),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('تكلفة شراء هذه المركبة (للعلم):', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                      Text('${f.format(_selectedVehicle!.purchasePrice)} ر.س', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -261,12 +326,12 @@ class _CreateInstallmentContractScreenState
   Widget _stepParties() {
     return _buildStepLayout(
       title: '٢. أطراف العقد والضمانات',
-      subtitle: 'تحديد البائع الممول، المشتري، وبيانات الكفيل إن وُجدت',
+      subtitle: 'تحديد البائع الممول، المشتري، وبيانات الكفيل الغارم إن وجد',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchSelectionTile(
-            label: 'المستثمر (الطرف الأول)',
+            label: 'المستثمر (الطرف الأول - البائع)',
             hint: 'ابحث عن مستثمر...',
             icon: Icons.account_balance,
             selectedName: _selectedInvestor?.fullName,

@@ -36,6 +36,8 @@ class _CreateCashContractScreenState
   String? _selectedCustomerId;
 
   final _cashPriceController = TextEditingController();
+  final _servicesCollectedController = TextEditingController();
+  final _servicesCostController = TextEditingController();
   final _witness1NameController = TextEditingController();
   final _witness2NameController = TextEditingController();
   final _notesController = TextEditingController();
@@ -52,6 +54,8 @@ class _CreateCashContractScreenState
   @override
   void dispose() {
     _cashPriceController.dispose();
+    _servicesCollectedController.dispose();
+    _servicesCostController.dispose();
     _witness1NameController.dispose();
     _witness2NameController.dispose();
     _notesController.dispose();
@@ -220,34 +224,16 @@ class _CreateCashContractScreenState
                               ),
                             ],
                           ),
+                          // 5. خدمات نقل الملكية والإصدار الاختيارية
+                          _buildOptionalServicesCard(),
                           const SizedBox(height: 24),
 
-                          // الشهود وملاحظات العقد
+                          // 6. الشهود وملاحظات العقد
                           _buildSectionCard(
-                            stepNumber: '٥',
-                            title: 'الشهود وملاحظات العقد النقدي',
+                            stepNumber: '٦',
+                            title: 'ملاحظات العقد النقدي',
                             icon: Icons.assignment_rounded,
                             children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildTextField(
-                                      _witness1NameController,
-                                      'اسم الشاهد الأول',
-                                      Icons.people_outline_rounded,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildTextField(
-                                      _witness2NameController,
-                                      'اسم الشاهد الثاني',
-                                      Icons.people_outline_rounded,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
                               _buildTextField(
                                 _notesController,
                                 'شروط أو ملاحظات إضافية على البيع النقدي',
@@ -577,9 +563,44 @@ class _CreateCashContractScreenState
     );
   }
 
+  Widget _buildOptionalServicesCard() {
+    return _buildSectionCard(
+      stepNumber: '٥',
+      title: 'خدمات نقل الملكية والإصدار (اختيارية)',
+      icon: Icons.design_services_rounded,
+      children: [
+        const Text(
+          'تشمل خدمات نقل الملكية، تجديد الرخصة، سداد المخالفات، تغيير اللوحات، التأمين، ومنصة تم.',
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          _servicesCollectedController,
+          'إجمالي المبلغ المستلم من العميل مقابل الخدمات (ريال)',
+          Icons.payments_outlined,
+          isNumber: true,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          _servicesCostController,
+          'إجمالي التكلفة الحكومية الفعلية المسددة (ريال)',
+          Icons.account_balance_wallet_outlined,
+          isNumber: true,
+        ),
+      ],
+    );
+  }
+
   Widget _buildCashSummaryCard() {
     final f = intl.NumberFormat.currency(symbol: '', decimalDigits: 2);
-    final price = double.tryParse(_cashPriceController.text) ?? 0.0;
+    final vehiclePrice = double.tryParse(_cashPriceController.text) ?? 0.0;
+    final collectedServices = double.tryParse(_servicesCollectedController.text) ?? 0.0;
+    final costServices = double.tryParse(_servicesCostController.text) ?? 0.0;
+
+    final grossRevenue = (collectedServices - costServices) > 0 ? (collectedServices - costServices) : 0.0;
+    final netProfit = grossRevenue / 1.15;
+    final vatAmount = grossRevenue - netProfit;
+    final grandTotal = vehiclePrice + collectedServices;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -602,7 +623,7 @@ class _CreateCashContractScreenState
               Icon(Icons.task_alt_rounded, color: AppColors.accentGold),
               SizedBox(width: 10),
               Text(
-                'إجمالي قيمة العقد النقدي المباشر',
+                'ملخص العمليات المالية والمحاسبية للمبيعات النقدية',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -612,22 +633,42 @@ class _CreateCashContractScreenState
             ],
           ),
           const Divider(color: Colors.white24, height: 24),
+          _summaryRow('سعر المركبة الاتفاقي النقدي', '${f.format(vehiclePrice)} ر.س', isGold: true),
+          if (collectedServices > 0) ...[
+            const SizedBox(height: 8),
+            _summaryRow('إجمالي المقبوض للخدمات', '${f.format(collectedServices)} ر.س'),
+            _summaryRow('التكلفة الحكومية المسددة', '${f.format(costServices)} ر.س'),
+            _summaryRow('الإيراد الخاضع للضريبة', '${f.format(grossRevenue)} ر.س'),
+            _summaryRow('الصافي المعترف به كإيراد', '${f.format(netProfit)} ر.س'),
+            _summaryRow('ضريبة القيمة المضافة المستحقة (15%)', '${f.format(vatAmount)} ر.س'),
+          ],
+          const Divider(color: Colors.white24, height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'سعر المركبة النقدي صافي',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Text(
-                '${f.format(price)} ر.س',
-                style: const TextStyle(
-                  color: AppColors.accentGold,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const Text('إجمالي الدفعة المستلمة من المشتري', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text('${f.format(grandTotal)} ر.س', style: const TextStyle(color: AppColors.accentGold, fontSize: 22, fontWeight: FontWeight.bold)),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryRow(String label, String value, {bool isGold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          Text(
+            value,
+            style: TextStyle(
+              color: isGold ? AppColors.accentGold : Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ],
       ),

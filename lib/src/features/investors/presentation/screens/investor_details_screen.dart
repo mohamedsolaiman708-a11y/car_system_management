@@ -201,22 +201,39 @@ class _FinancialTab extends ConsumerWidget {
   Widget _actionBtn(BuildContext context, String l, IconData i, Color c, VoidCallback onTap) => InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black.withOpacity(0.05))), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(i, size: 14, color: c), const SizedBox(width: 4), Text(l, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _navy))])));
 
   Widget _buildFilterBar(BuildContext context) {
+    final formattedRange = dateRange == null 
+        ? 'كل الفترات المالية' 
+        : '${intl.DateFormat('yyyy/MM/dd').format(dateRange!.start)} إلى ${intl.DateFormat('yyyy/MM/dd').format(dateRange!.end)}';
+
     return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: _navy.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: _navy.withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('تقرير أرباح الفترة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('تقرير أرباح وعمليات المستثمر', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _navy)),
+              const SizedBox(height: 2),
+              Text('نطاق التقرير: $formattedRange', style: const TextStyle(fontSize: 10, color: Colors.blueGrey)),
+            ],
+          ),
           InkWell(
             onTap: () async {
-              final picked = await showDateRangePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now());
+              final picked = await showDateRangePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)));
               if (picked != null) onDateRangeSelected(picked);
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(4)),
-              child: const Text('تصفية التاريخ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _navy)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(6)),
+              child: const Row(
+                children: [
+                  Icon(Icons.calendar_month, size: 14, color: _navy),
+                  SizedBox(width: 4),
+                  Text('تصفية الفترة الزمنية', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _navy)),
+                ],
+              ),
             ),
           ),
         ],
