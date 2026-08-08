@@ -89,13 +89,19 @@ class ContractController extends _$ContractController {
       );
       _refreshContractData(contractId);
     });
+
+    final isSilentSuccess = result.hasError && 
+        result.error is Failure && 
+        (result.error as Failure).code == 'SILENT_SUCCESS';
     
-    if (result.hasError) {
+    if (!result.hasError || isSilentSuccess) {
+      _refreshContractData(contractId);
+      state = const AsyncData(null);
+      return true;
+    } else {
       state = AsyncError(result.error!, result.stackTrace!);
       return false;
     }
-    state = const AsyncData(null);
-    return true;
   }
 
   Future<bool> reversePayment(String contractId, String paymentId, String reason) async {

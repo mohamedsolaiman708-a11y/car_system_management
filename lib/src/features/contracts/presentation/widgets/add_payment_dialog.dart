@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/contract.dart';
 import '../contract_controller.dart';
 import '../../../../core/utils/snack_bar_helper.dart';
+import '../../../../core/utils/error_handler.dart';
 
 class AddPaymentDialog extends ConsumerStatefulWidget {
   final Contract contract;
@@ -21,6 +22,8 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
   
   String _paymentMethod = 'cash';
   final _idempotencyKey = const Uuid().v4();
+
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -64,6 +67,7 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _amountController,
+                  enabled: !_isSubmitting,
                   decoration: const InputDecoration(
                     labelText: 'المبلغ المستلم *',
                     suffixText: 'ر.س',
@@ -72,7 +76,7 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
                   ),
                   keyboardType: TextInputType.number,
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'مطلب';
+                    if (val == null || val.isEmpty) return 'مطلوب';
                     final amount = double.tryParse(val);
                     if (amount == null || amount <= 0) return 'مبلغ غير صحيح';
                     if (amount > remainingBalance) return 'المبلغ يتجاوز المديونية المتبقية';
@@ -89,20 +93,22 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
                     DropdownMenuItem(value: 'bank_transfer', child: Text('تحويل بنكي')),
                     DropdownMenuItem(value: 'pos', child: Text('شبكة / مدى')),
                   ],
-                  onChanged: (val) => setState(() => _paymentMethod = val!),
+                  onChanged: _isSubmitting ? null : (val) => setState(() => _paymentMethod = val!),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _refController,
+                  enabled: !_isSubmitting,
                   decoration: InputDecoration(
                     labelText: _paymentMethod == 'check' ? 'رقم الشيك *' : 'رقم المرجع / العملية', 
                     border: const OutlineInputBorder()
                   ),
-                  validator: (v) => (_paymentMethod == 'check' && v!.isEmpty) ? 'مطلوب للشيكات' : null,
+                  validator: (v) => (_paymentMethod == 'check' && (v == null || v.isEmpty)) ? 'مطلوب للشيكات' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _notesController,
+                  enabled: !_isSubmitting,
                   maxLines: 2,
                   decoration: const InputDecoration(labelText: 'ملاحظات إضافية', border: OutlineInputBorder()),
                 ),
@@ -111,11 +117,20 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: _isSubmitting ? null : () => Navigator.pop(context), 
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton.icon(
-            onPressed: _submit,
-            icon: const Icon(Icons.check_circle_rounded),
-            label: const Text('تسجيل وسداد'),
+            onPressed: _isSubmitting ? null : _submit,
+            icon: _isSubmitting 
+              ? const SizedBox(
+                  width: 18, 
+                  height: 18, 
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Icon(Icons.check_circle_rounded),
+            label: Text(_isSubmitting ? 'جاري الحفظ...' : 'تسجيل وسداد'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32), 
               foregroundColor: Colors.white,
@@ -129,18 +144,36 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
     if (_formKey.currentState!.validate()) {
-      final success = await ref.read(contractControllerProvider.notifier).processPayment(
-        contractId: widget.contract.id,
-        amount: double.parse(_amountController.text),
-        method: _paymentMethod,
-        reference: '${_refController.text} | ${_notesController.text}'.trim(),
-        idempotencyKey: _idempotencyKey,
-      );
+      setState(() => _isSubmitting = true);
+      
+      try {
+        final success = await ref.read(contractControllerProvider.notifier).processPayment(
+          contractId: widget.contract.id,
+          amount: double.parse(_amountController.text),
+          method: _paymentMethod,
+          reference: '${_refController.text} | ${_notesController.text}'.trim(),
+          idempotencyKey: _idempotencyKey,
+        );
 
-      if (mounted && success) {
-        Navigator.pop(context);
-        SnackBarHelper.showSuccess(context, 'تم تسجيل السداد بنجاح');
+        if (mounted) {
+          if (success) {
+            Navigator.of(context).pop();
+            SnackBarHelper.showSuccess(context, 'تم تسجيل السداد بنجاح');
+          } else {
+            setState(() => _isSubmitting = false);
+            final errorState = ref.read(contractControllerProvider);
+            if (errorState.hasError) {
+              SnackBarHelper.showError(context, Failure.fromException(errorState.error).message);
+            }
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isSubmitting = false);
+          SnackBarHelper.showError(context, 'فشل تسجيل السداد: ${Failure.fromException(e).message}');
+        }
       }
     }
   }
